@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:hexmos.com)",
+      "Bash(curl -sL \"https://api.github.com/repos/jame581/GodotPrompter/contents/\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(x['name'],x['type']\\) for x in d]\")",
+      "Bash(find /tmp -name \"GodotPrompter\" -maxdepth 2 -type d)",
+      "Read(//c/Users/LHS/**)"
+    ]
+  }
+}
