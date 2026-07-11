@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="WaveDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/wave_definition.gd" id="1_wave"]
+
+[resource]
+script = ExtResource("1_wave")
+wave_index = 5
+wave_id = &"wave_5"
+pressure_theme = &"compound_finale"
+enemy_ids = Array[StringName]([&"ruptured", &"doorbreaker", &"armored_scavenger", &"wet_gunner"])
+forced_event_ids = Array[StringName]([&"faction_war"])
+spawn_budget_multiplier = 2.0

@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/base/base_core.gd" id="1_core"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_core"]
+albedo_color = Color(0.95, 0.78, 0.35, 1)
+emission_enabled = true
+emission = Color(0.95, 0.55, 0.22, 1)
+emission_energy_multiplier = 0.8
+
+[sub_resource type="BoxMesh" id="BoxMesh_core"]
+size = Vector3(1.4, 2.4, 1.4)
+
+[node name="BaseCore" type="Node3D"]
+script = ExtResource("1_core")
+
+[node name="CoreMesh" type="MeshInstance3D" parent="."]
+material_override = SubResource("StandardMaterial3D_core")
+mesh = SubResource("BoxMesh_core")
+
+[node name="CoreLight" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.76, 0.45, 1)
+light_energy = 4.0
+omni_range = 9.0
+
+[node name="HealthComponent" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_health")
+max_health = 400.0
+broadcast_base_core_events = true

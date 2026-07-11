@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+weapon_id = &"pistol"
+display_name = "Pistol"
+weapon_kind = 2
+base_damage = 24.0
+stamina_cost = 0.0
+supports_block = false
+ammo_type = &"light_ammo"
+magazine_size = 8
+reload_seconds = 1.3
+noise_radius = 28.0
+effective_range = 18.0

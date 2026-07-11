@@ -1,3 +1,37 @@
-# Godot 4+ specific ignores
+# Godot editor data
 .godot/
+
+# Godot export artifacts
 /android/
+export/
+*.apk
+*.aab
+*.ipa
+*.exe
+*.x86_64
+*.x86_32
+*.arm32
+*.arm64
+*.pck
+*.zip
+
+# C# / Mono build output
+.mono/
+.import/
+bin/
+obj/
+*.csproj.user
+*.sln.user
+*.user
+
+# IDE and OS files
+.vs/
+.vscode/settings.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local assistant / machine state
+.claude/settings.local.json
+.godot-prompter-cache/

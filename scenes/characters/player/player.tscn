@@ -1,0 +1,69 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/characters/player/player_3d_controller.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/components/stamina_component.gd" id="3_stamina"]
+[ext_resource type="Script" path="res://scripts/components/hunger_component.gd" id="4_hunger"]
+[ext_resource type="Script" path="res://scripts/components/status_container.gd" id="5_status"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_color = Color(0.24, 0.48, 0.9, 1)
+roughness = 0.65
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_marker"]
+albedo_color = Color(1, 0.78, 0.22, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_marker"]
+size = Vector3(0.18, 0.18, 0.6)
+
+[node name="Player" type="CharacterBody3D"]
+floor_snap_length = 0.2
+script = ExtResource("1_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="BodyMesh" type="MeshInstance3D" parent="."]
+material_override = SubResource("StandardMaterial3D_body")
+mesh = SubResource("CapsuleMesh_body")
+
+[node name="ForwardMarker" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, -0.55)
+material_override = SubResource("StandardMaterial3D_marker")
+mesh = SubResource("BoxMesh_marker")
+
+[node name="Head" type="Node3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Head"]
+current = true
+
+[node name="Components" type="Node" parent="."]
+
+[node name="HealthComponent" type="Node" parent="Components"]
+unique_name_in_owner = true
+script = ExtResource("2_health")
+broadcast_player_events = true
+
+[node name="StaminaComponent" type="Node" parent="Components"]
+unique_name_in_owner = true
+script = ExtResource("3_stamina")
+broadcast_player_events = true
+
+[node name="HungerComponent" type="Node" parent="Components"]
+unique_name_in_owner = true
+script = ExtResource("4_hunger")
+broadcast_player_events = true
+
+[node name="StatusContainer" type="Node" parent="Components"]
+unique_name_in_owner = true
+script = ExtResource("5_status")

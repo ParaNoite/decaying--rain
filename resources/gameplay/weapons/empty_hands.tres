@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+weapon_id = &"empty_hands"
+display_name = "Empty Hands"
+weapon_kind = 0
+base_damage = 5.0
+stamina_cost = 6.0
+windup_seconds = 0.1
+recovery_seconds = 0.25
+supports_block = true
+block_efficiency = 0.35

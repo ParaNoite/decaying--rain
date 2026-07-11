@@ -1,0 +1,81 @@
+[gd_scene format=3 uid="uid://n26nik2xmfwg"]
+
+[ext_resource type="Script" uid="uid://r7vgt4kfr3qp" path="res://scripts/Player/player_3d_controller.gd" id="1_3nlqh"]
+
+[sub_resource type="Environment" id="Environment_pi3og"]
+background_mode = 1
+background_color = Color(0.55, 0.72, 0.9, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.65, 0.7, 0.78, 1)
+ambient_light_energy = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4a24g"]
+albedo_color = Color(0.22, 0.32, 0.24, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_ywlbu"]
+size = Vector3(20, 0.2, 20)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lmaky"]
+size = Vector3(20, 0.2, 20)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_tjr1w"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kg0a4"]
+albedo_color = Color(0.25, 0.48, 0.95, 1)
+roughness = 0.55
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_r6bup"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fchn5"]
+albedo_color = Color(1, 0.78, 0.22, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_5m3mj"]
+size = Vector3(0.18, 0.18, 0.6)
+
+[node name="Minimal3DMovement" type="Node3D" unique_id=1901868376]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=908930329]
+environment = SubResource("Environment_pi3og")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1893228998]
+transform = Transform3D(0.81915206, -0.4055798, 0.4055798, 0, 0.70710677, 0.70710677, -0.57357645, -0.579228, 0.579228, 0, 0, 0)
+light_energy = 2.5
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=617342819]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="FloorMesh" type="MeshInstance3D" parent="Floor" unique_id=1231700995]
+material_override = SubResource("StandardMaterial3D_4a24g")
+mesh = SubResource("BoxMesh_ywlbu")
+
+[node name="FloorCollision" type="CollisionShape3D" parent="Floor" unique_id=1589409507]
+shape = SubResource("BoxShape3D_lmaky")
+
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1290291607]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4)
+floor_snap_length = 0.2
+script = ExtResource("1_3nlqh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=871118891]
+shape = SubResource("CapsuleShape3D_tjr1w")
+
+[node name="BodyMesh" type="MeshInstance3D" parent="Player" unique_id=1476792543]
+material_override = SubResource("StandardMaterial3D_kg0a4")
+mesh = SubResource("CapsuleMesh_r6bup")
+
+[node name="Head" type="Node3D" parent="Player" unique_id=460225715]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Player/Head" unique_id=489900993]
+current = true
+
+[node name="ForwardMarker" type="MeshInstance3D" parent="Player" unique_id=1388717332]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, -0.55)
+material_override = SubResource("StandardMaterial3D_fchn5")
+mesh = SubResource("BoxMesh_5m3mj")

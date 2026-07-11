@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_definition.gd" id="1_enemy"]
+
+[resource]
+script = ExtResource("1_enemy")
+enemy_id = &"ruptured"
+display_name = "Ruptured"
+faction_id = &"wet_dead"
+pressure_role = 0
+max_health = 55.0
+move_speed = 3.8
+attack_damage = 9.0
+attack_range = 1.25

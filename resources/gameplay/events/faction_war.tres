@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RandomEventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/random_event_definition.gd" id="1_event"]
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"faction_war"
+display_name = "Faction War"
+description = "Late-run faction conflict injects elite pressure into the route or wave plan."
+timing = 2
+selection_weight = 1.0
+min_wave_index = 4
+max_wave_index = 5
+tags = Array[StringName]([&"faction", &"elite_pressure", &"late_run"])
