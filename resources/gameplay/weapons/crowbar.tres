@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+weapon_id = &"crowbar"
+display_name = "Crowbar"
+weapon_kind = 1
+base_damage = 18.0
+stamina_cost = 12.0
+windup_seconds = 0.16
+recovery_seconds = 0.35
+supports_block = true
+block_efficiency = 0.75

@@ -1,0 +1,113 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/levels/mvp_skeleton.gd" id="1_level"]
+[ext_resource type="Script" path="res://scripts/systems/run/phase_controller.gd" id="2_phase"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://scenes/base/base_core.tscn" id="4_core"]
+[ext_resource type="PackedScene" path="res://scenes/base/repairable_barrier.tscn" id="5_barrier"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/resource_node.tscn" id="6_resource"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="7_hud"]
+[ext_resource type="Resource" path="res://resources/gameplay/mvp_run_config.tres" id="8_run"]
+
+[sub_resource type="Environment" id="Environment_mvp"]
+background_mode = 1
+background_color = Color(0.18, 0.22, 0.25, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.42, 0.48, 0.55, 1)
+ambient_light_energy = 0.65
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.21, 0.24, 0.23, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(42, 0.2, 42)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(42, 0.2, 42)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+albedo_color = Color(0.28, 0.3, 0.33, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+size = Vector3(12, 2.5, 0.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(12, 2.5, 0.4)
+
+[node name="MvpSkeleton" type="Node3D"]
+script = ExtResource("1_level")
+
+[node name="PhaseController" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_phase")
+run_config = ExtResource("8_run")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_mvp")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.819152, -0.40558, 0.40558, 0, 0.707107, 0.707107, -0.573576, -0.579228, 0.579228, 0, 0, 0)
+light_energy = 1.8
+shadow_enabled = true
+
+[node name="Blockout" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="Blockout"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="FloorMesh" type="MeshInstance3D" parent="Blockout/Floor"]
+material_override = SubResource("StandardMaterial3D_floor")
+mesh = SubResource("BoxMesh_floor")
+
+[node name="FloorCollision" type="CollisionShape3D" parent="Blockout/Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="NorthWall" type="StaticBody3D" parent="Blockout"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, -8)
+
+[node name="WallMesh" type="MeshInstance3D" parent="Blockout/NorthWall"]
+material_override = SubResource("StandardMaterial3D_wall")
+mesh = SubResource("BoxMesh_wall")
+
+[node name="WallCollision" type="CollisionShape3D" parent="Blockout/NorthWall"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="Base" type="Node3D" parent="."]
+
+[node name="BaseCore" parent="Base" instance=ExtResource("4_core")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -2)
+
+[node name="NorthBarrier" parent="Base" instance=ExtResource("5_barrier")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -5.6)
+
+[node name="ScavengeArea" type="Node3D" parent="."]
+
+[node name="NearResource" parent="ScavengeArea" instance=ExtResource("6_resource")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.4, 3)
+resource_id = &"near_resource"
+
+[node name="MidResource" parent="ScavengeArea" instance=ExtResource("6_resource")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.4, 8)
+resource_id = &"mid_resource"
+
+[node name="FarResource" parent="ScavengeArea" instance=ExtResource("6_resource")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.4, 13)
+resource_id = &"far_resource"
+
+[node name="SpawnPoints" type="Node3D" parent="."]
+
+[node name="EnemyEntranceA" type="Marker3D" parent="SpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -10)
+
+[node name="EnemyEntranceB" type="Marker3D" parent="SpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -10)
+
+[node name="EnemyEntranceC" type="Marker3D" parent="SpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4)
+
+[node name="HUD" parent="." instance=ExtResource("7_hud")]

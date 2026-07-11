@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ProfessionDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/profession_definition.gd" id="1_profession"]
+
+[resource]
+script = ExtResource("1_profession")
+profession_id = &"deserter"
+display_name = "Deserter"
+description = "Combat-oriented MVP profession. Starts with reliable weapon access and converts rare headshots into short reload tempo."
+starting_weapon_ids = Array[StringName]([&"crowbar", &"pistol"])
+starting_item_ids = Array[StringName]([&"bandage"])
+ammo_pickup_multiplier = 2.0
+firearm_stability_multiplier = 1.15
+status_ids_on_spawn = Array[StringName]([&"deserter_baseline"])
+ability_id = &"charged_sidearm"

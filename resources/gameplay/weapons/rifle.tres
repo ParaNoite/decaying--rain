@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+weapon_id = &"rifle"
+display_name = "Rifle"
+weapon_kind = 2
+base_damage = 45.0
+stamina_cost = 0.0
+supports_block = false
+ammo_type = &"rifle_ammo"
+magazine_size = 10
+reload_seconds = 2.0
+noise_radius = 50.0
+effective_range = 35.0

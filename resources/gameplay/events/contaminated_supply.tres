@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RandomEventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/random_event_definition.gd" id="1_event"]
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"contaminated_supply"
+display_name = "Contaminated Supply"
+description = "High-value resource cache inside a contaminated route branch."
+timing = 0
+selection_weight = 1.0
+min_wave_index = 1
+max_wave_index = 5
+tags = Array[StringName]([&"scavenge", &"contamination", &"reward_risk"])

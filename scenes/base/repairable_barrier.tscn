@@ -1,0 +1,29 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/base/repairable_barrier.gd" id="1_barrier"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_barrier"]
+size = Vector3(3, 2.2, 0.35)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_barrier"]
+albedo_color = Color(0.42, 0.35, 0.29, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_barrier"]
+size = Vector3(3, 2.2, 0.35)
+
+[node name="RepairableBarrier" type="StaticBody3D"]
+script = ExtResource("1_barrier")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_barrier")
+
+[node name="BarrierMesh" type="MeshInstance3D" parent="."]
+material_override = SubResource("StandardMaterial3D_barrier")
+mesh = SubResource("BoxMesh_barrier")
+
+[node name="HealthComponent" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_health")
+max_health = 150.0

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+weapon_id = &"shotgun"
+display_name = "Shotgun"
+weapon_kind = 2
+base_damage = 70.0
+stamina_cost = 0.0
+supports_block = false
+ammo_type = &"shells"
+magazine_size = 5
+reload_seconds = 2.2
+noise_radius = 45.0
+effective_range = 9.0

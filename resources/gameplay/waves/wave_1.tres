@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="WaveDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/wave_definition.gd" id="1_wave"]
+
+[resource]
+script = ExtResource("1_wave")
+wave_index = 1
+wave_id = &"wave_1"
+pressure_theme = &"melee_intro"
+enemy_ids = Array[StringName]([&"ruptured"])
+spawn_budget_multiplier = 1.0
