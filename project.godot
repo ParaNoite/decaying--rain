@@ -28,7 +28,6 @@ MCPRuntimeProbe="*res://addons/godot_mcp/runtime/mcp_runtime_probe.gd"
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [dotnet]
 
@@ -52,18 +51,18 @@ spawn_point=""
 [layer_names]
 
 2d_physics/layer_1="Player"
-2d_physics/layer_2="Enemy"
-2d_physics/layer_3="Item"
-2d_physics/layer_4="Boundary"
-2d_physics/layer_5="Player_Bullets"
-2d_physics/layer_6="Enemy_Bullets"
-2d_physics/layer_7="Player_invinsible"
 3d_physics/layer_1="World"
+2d_physics/layer_2="Enemy"
 3d_physics/layer_2="Player"
+2d_physics/layer_3="Item"
 3d_physics/layer_3="Enemy"
+2d_physics/layer_4="Boundary"
 3d_physics/layer_4="Interactable"
+2d_physics/layer_5="Player_Bullets"
 3d_physics/layer_5="Player_Hitbox"
+2d_physics/layer_6="Enemy_Bullets"
 3d_physics/layer_6="Enemy_Hitbox"
+2d_physics/layer_7="Player_invinsible"
 3d_physics/layer_7="Base"
 
 [physics]

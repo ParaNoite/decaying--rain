@@ -22,6 +22,22 @@ The run flow uses stable phase ids:
 
 Feature branches should emit phase changes through `GameManager.change_phase()` or consume `EventBus.phase_changed`.
 
+## Player Watch UI
+
+The player watch is a hold-to-open modal UI used during play for high-level run context.
+
+- Input action: `watch`
+- Open behavior: press and hold to enter watch view, release to exit.
+- UI behavior: release mouse, show holographic watch UI, and keep only walking available while the watch is open.
+- Visible data: wave countdown, map view, and detail panels.
+
+Suggested signals:
+
+- `watch_state_changed(active: bool)`
+- `wave_timer_changed(remaining_seconds, total_seconds, wave_index)`
+
+While watch is active, combat, interaction, sprint, slide, reload, parry, and shove are blocked by the player state layer.
+
 ## Content Data
 
 Gameplay content should be introduced through Resource classes first:

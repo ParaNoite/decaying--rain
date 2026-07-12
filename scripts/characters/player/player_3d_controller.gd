@@ -80,7 +80,12 @@ func receive_damage(data: DamageEventData) -> void:
 	if combat_state_machine.parry_active and data.source_tags.has(&"melee"):
 		if _event_bus != null:
 			_event_bus.combat_hit.emit(data)
+			_event_bus.debug_test_notice.emit("Parry success: blocked %.0f damage" % data.amount, &"combat")
+			_event_bus.combat_feedback.emit("PARRY SUCCESS", &"success")
 		return
+	_emit_debug_notice("Player hit: -%.0f HP" % data.amount, &"combat")
+	if _event_bus != null:
+		_event_bus.combat_feedback.emit("HIT -%.0f" % data.amount, &"danger")
 	apply_damage(data.amount)
 
 

@@ -31,6 +31,11 @@ This repo uses a split Godot layout so content, scenes, and runtime code can evo
 - Unrelated systems communicate through `EventBus`.
 - Data definitions are Resources, not hard-coded dictionaries in scene scripts.
 
+## UI Layers
+
+- `scripts/ui/`: HUD, modal overlays, and screen controllers.
+- The player watch UI is a modal overlay that can freeze most player actions while still showing run context such as wave countdown and map detail.
+
 ## Legacy Paths
 
 The existing `scripts/Player/` prototype controller is legacy content. New work should use the lowercase domain folders under `scripts/`. Migrate legacy files only in a focused refactor branch.

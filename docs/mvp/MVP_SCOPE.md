@@ -15,6 +15,7 @@ The MVP validates whether the core loop works before expanding content.
 - Hunger.
 - Status system interface stubs.
 - Lightweight meta unlock placeholders.
+- Hold-to-open player watch UI with wave countdown, map, and detail panel.
 
 ## Out Of Scope
 
@@ -26,6 +27,7 @@ The MVP validates whether the core loop works before expanding content.
 - Full true-ending chain.
 - Boss system.
 - Permanent stat growth.
+- Free-roam map browsing outside the watch UI.
 
 ## Success Criteria
 

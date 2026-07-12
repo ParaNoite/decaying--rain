@@ -8,6 +8,7 @@ extends CanvasLayer
 @onready var core_label: Label = %CoreLabel
 @onready var prompt_label: Label = %PromptLabel
 @onready var debug_notice_stack: VBoxContainer = %DebugNoticeStack
+@onready var combat_banner_label: Label = %CombatBannerLabel
 @onready var watch_panel: Control = %WatchPanel
 @onready var watch_wave_label: Label = %WatchWaveLabel
 @onready var watch_timer_label: Label = %WatchTimerLabel
@@ -16,6 +17,7 @@ extends CanvasLayer
 const MAX_DEBUG_NOTICE_COUNT: int = 5
 
 var _event_bus = null
+var _combat_banner_tween: Tween
 
 
 func _ready() -> void:
@@ -31,6 +33,7 @@ func _ready() -> void:
 	_event_bus.resource_looted.connect(_on_resource_looted)
 	_event_bus.interaction_prompt_changed.connect(_on_interaction_prompt_changed)
 	_event_bus.debug_test_notice.connect(_on_debug_test_notice)
+	_event_bus.combat_feedback.connect(_on_combat_feedback)
 	_event_bus.watch_state_changed.connect(_on_watch_state_changed)
 	_event_bus.wave_timer_changed.connect(_on_wave_timer_changed)
 	_event_bus.player_died.connect(_on_player_died)
@@ -56,6 +59,8 @@ func _exit_tree() -> void:
 		_event_bus.interaction_prompt_changed.disconnect(_on_interaction_prompt_changed)
 	if _event_bus.debug_test_notice.is_connected(_on_debug_test_notice):
 		_event_bus.debug_test_notice.disconnect(_on_debug_test_notice)
+	if _event_bus.combat_feedback.is_connected(_on_combat_feedback):
+		_event_bus.combat_feedback.disconnect(_on_combat_feedback)
 	if _event_bus.watch_state_changed.is_connected(_on_watch_state_changed):
 		_event_bus.watch_state_changed.disconnect(_on_watch_state_changed)
 	if _event_bus.wave_timer_changed.is_connected(_on_wave_timer_changed):
@@ -110,6 +115,30 @@ func _on_debug_test_notice(message: String, category: StringName) -> void:
 	_trim_debug_notices()
 
 	get_tree().create_timer(3.0).timeout.connect(_remove_debug_notice.bind(notice_label), CONNECT_ONE_SHOT)
+
+
+func _on_combat_feedback(message: String, tone: StringName) -> void:
+	if combat_banner_label == null:
+		return
+
+	if _combat_banner_tween != null:
+		_combat_banner_tween.kill()
+
+	combat_banner_label.text = message
+	combat_banner_label.visible = true
+	combat_banner_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	match tone:
+		&"success":
+			combat_banner_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.45, 1.0))
+		&"danger":
+			combat_banner_label.add_theme_color_override("font_color", Color(1.0, 0.22, 0.18, 1.0))
+		_:
+			combat_banner_label.add_theme_color_override("font_color", Color(0.92, 0.96, 1.0, 1.0))
+
+	_combat_banner_tween = create_tween()
+	_combat_banner_tween.tween_interval(0.55)
+	_combat_banner_tween.tween_property(combat_banner_label, "modulate:a", 0.0, 0.35)
+	_combat_banner_tween.tween_callback(combat_banner_label.hide)
 
 
 func _on_watch_state_changed(active: bool) -> void:

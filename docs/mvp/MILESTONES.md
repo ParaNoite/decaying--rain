@@ -40,12 +40,13 @@ Goal: full MVP roster is connected.
 - Hunger.
 - Status interface.
 - 2 random events.
+- Hold-to-open player watch UI with wave countdown, map, and detail panel.
 
 ## M4: Demo Ready
 
 Goal: readable demo build.
 
-- HUD and feedback.
+- HUD, watch UI, and feedback.
 - Basic audio hooks.
 - Simple visual replacements.
 - Win/fail settlement and restart flow.

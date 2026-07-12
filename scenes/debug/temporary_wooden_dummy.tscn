@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/debug/temporary_wooden_dummy.gd" id="1_dummy"]
 
@@ -9,6 +9,13 @@ roughness = 0.86
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hurt"]
 albedo_color = Color(0.95, 0.72, 0.28, 1)
 roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_warning"]
+albedo_color = Color(1, 0.05, 0.04, 1)
+emission_enabled = true
+emission = Color(1, 0.03, 0.02, 1)
+emission_energy_multiplier = 0.85
+roughness = 0.62
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_destroyed"]
 albedo_color = Color(0.18, 0.17, 0.16, 1)
@@ -32,6 +39,7 @@ collision_mask = 1
 script = ExtResource("1_dummy")
 destroyed_material = SubResource("StandardMaterial3D_destroyed")
 hurt_material = SubResource("StandardMaterial3D_hurt")
+warning_material = SubResource("StandardMaterial3D_warning")
 
 [node name="BodyMesh" type="MeshInstance3D" parent="."]
 unique_name_in_owner = true
@@ -53,5 +61,5 @@ unique_name_in_owner = true
 transform = Transform3D(0.0339761, 0, 0.999423, 0, 1, 0, -0.999423, 0, 0.0339761, 0, 2.25, 0)
 pixel_size = 0.015
 billboard = 1
-text = "TEMP TEST DUMMY - DELETE LATER\nNOT AN ENEMY TEMPLATE\nREADY\nHP -- / --"
+text = "TEMP TEST DUMMY - DELETE LATER\nNOT AN ENEMY TEMPLATE\nREADY\nHP -- / --\nATK -- / RANGE --"
 horizontal_alignment = 1
