@@ -36,7 +36,8 @@ Goal: full MVP roster is connected.
 
 - 4 enemy definitions.
 - 5 wave definitions.
-- Deserter profession.
+- Opening Perk / profession prototype: deserter.
+- Perk active skill, shared baseline stats, and explicit advantage/disadvantage rules.
 - Hunger.
 - Status interface.
 - 2 random events.

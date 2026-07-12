@@ -10,7 +10,8 @@ The MVP validates whether the core loop works before expanding content.
 - 4 firearms: pistol, shotgun, SMG, rifle.
 - 3 melee options: empty hands, balanced tool, heavy axe.
 - 4 enemies: ruptured, doorbreaker, armored scavenger, wet gunner.
-- 1 profession prototype: deserter.
+- Opening Perk / profession selection with at least 1 prototype: deserter.
+- Each Perk has 1 active skill, shared baseline stats, and 0-3 unique advantages plus 0-3 unique disadvantages.
 - 2 random events: contaminated supply, faction war.
 - Hunger.
 - Status system interface stubs.
@@ -27,6 +28,8 @@ The MVP validates whether the core loop works before expanding content.
 - Full true-ending chain.
 - Boss system.
 - Permanent stat growth.
+- Skill trees or in-run perk leveling.
+- Perk-specific hidden base stat sheets; Perks modify shared baseline stats only through explicit advantages and disadvantages.
 - Free-roam map browsing outside the watch UI.
 
 ## Success Criteria

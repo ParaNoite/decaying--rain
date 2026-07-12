@@ -18,6 +18,7 @@ const _KEY_ACTIONS: Dictionary[StringName, Key] = {
 	&"watch": KEY_TAB,
 	&"parry": KEY_Q,
 	&"shove": KEY_F,
+	&"active_skill": KEY_X,
 	&"interact": KEY_E,
 	&"reload": KEY_R,
 	&"attack_secondary": KEY_C,

@@ -12,6 +12,7 @@ var primary_attack_buffered: bool = false
 var secondary_attack_buffered: bool = false
 var parry_buffered: bool = false
 var shove_buffered: bool = false
+var active_skill_buffered: bool = false
 var reload_buffered: bool = false
 var weapon_next_buffered: bool = false
 var weapon_previous_buffered: bool = false
@@ -40,6 +41,8 @@ func handle_input(event: InputEvent) -> void:
 		parry_buffered = true
 	if event.is_action_pressed("shove"):
 		shove_buffered = true
+	if event.is_action_pressed("active_skill"):
+		active_skill_buffered = true
 	if event.is_action_pressed("reload"):
 		reload_buffered = true
 	if event.is_action_pressed("weapon_next"):
@@ -80,6 +83,10 @@ func consume_shove() -> bool:
 	return _consume("shove_buffered")
 
 
+func consume_active_skill() -> bool:
+	return _consume("active_skill_buffered")
+
+
 func consume_reload() -> bool:
 	return _consume("reload_buffered")
 
@@ -108,6 +115,7 @@ func clear_action_buffers() -> void:
 	secondary_attack_buffered = false
 	parry_buffered = false
 	shove_buffered = false
+	active_skill_buffered = false
 	reload_buffered = false
 	weapon_next_buffered = false
 	weapon_previous_buffered = false

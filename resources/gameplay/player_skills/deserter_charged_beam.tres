@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="PlayerActiveSkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/player_active_skill_definition.gd" id="1_skill"]
+
+[resource]
+script = ExtResource("1_skill")
+skill_id = &"deserter_charged_beam"
+display_name = "Charged Beam"
+description = "Temporary MVP active skill for the Deserter perk. This is a standalone skill effect, not a firearm, inventory item, or weapon slot."
+effect_id = &"charged_beam"
+cooldown_seconds = 1.25
+windup_seconds = 0.18
+stamina_cost = 8.0
+allowed_phases = Array[StringName]([])
+beam_damage = 42.0
+beam_range = 36.0
+beam_tags = Array[StringName]([&"active_skill", &"charged_beam", &"deserter"])
+beam_color = Color(0.25, 0.9, 1, 0.9)
+beam_width = 0.22
+beam_visual_duration = 0.34
+beam_visual_origin_offset = Vector3(0.34, -0.22, -0.45)
+beam_impact_size = 0.46
+activation_message = "Charging beam"
+fired_message = "Charged beam"
+ready_message = "Charged beam ready"

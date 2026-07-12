@@ -47,11 +47,17 @@ Gameplay content should be introduced through Resource classes first:
 - `EnemyDefinition`
 - `WeaponDefinition`
 - `ProfessionDefinition`
+- `PlayerActiveSkillDefinition`
+- `PerkRuleDefinition`
 - `StatusEffectDefinition`
 - `LootTableDefinition`
 - `RandomEventDefinition`
 
 Implementation nodes should read these definitions rather than hard-code MVP values.
+
+`ProfessionDefinition` is the opening Perk package. All Perks share the same baseline player stats; Perk differences are expressed through advantage/disadvantage rule modifiers, status effects, action restrictions, and one active skill reference. A Perk must not define a separate hidden base stat sheet.
+
+Each Perk has exactly one `PlayerActiveSkillDefinition` in MVP. Skill cooldowns, charges, temporary modifiers, and selected Perk state are runtime data owned by player components, not mutable Resource state.
 
 ## Combat
 

@@ -3,7 +3,7 @@ extends Resource
 
 @export_group("Melee")
 @export_range(0.0, 1000.0, 0.5) var unarmed_damage: float = 5.0
-@export_range(0.0, 5.0, 0.05) var melee_range: float = 2.0
+@export_range(0.0, 8.0, 0.05) var melee_range: float = 4.0
 @export_range(0.0, 10.0, 0.05) var melee_radius: float = 0.6
 @export_range(0.0, 5.0, 0.05) var combo_input_window: float = 0.6
 @export_range(0.0, 10.0, 0.1) var final_combo_damage_multiplier: float = 2.0
