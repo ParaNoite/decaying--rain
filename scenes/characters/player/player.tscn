@@ -1,10 +1,23 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene format=3 uid="uid://bo15ug8lepyjl"]
 
 [ext_resource type="Script" path="res://scripts/characters/player/player_3d_controller.gd" id="1_player"]
-[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health"]
-[ext_resource type="Script" path="res://scripts/components/stamina_component.gd" id="3_stamina"]
-[ext_resource type="Script" path="res://scripts/components/hunger_component.gd" id="4_hunger"]
-[ext_resource type="Script" path="res://scripts/components/status_container.gd" id="5_status"]
+[ext_resource type="Resource" path="res://resources/gameplay/player/mvp_player_movement.tres" id="2_movement"]
+[ext_resource type="Resource" path="res://resources/gameplay/player/mvp_player_combat.tres" id="3_combat"]
+[ext_resource type="Script" path="res://scripts/characters/player/player_input_reader.gd" id="4_input"]
+[ext_resource type="Script" path="res://scripts/characters/player/player_movement_motor.gd" id="5_motor"]
+[ext_resource type="Script" path="res://scripts/characters/player/player_camera_rig.gd" id="6_camera"]
+[ext_resource type="Script" path="res://scripts/characters/player/player_interaction_driver.gd" id="7_interaction"]
+[ext_resource type="Script" path="res://scripts/characters/player/player_combat_driver.gd" id="8_combat_driver"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="9_health"]
+[ext_resource type="Script" path="res://scripts/components/stamina_component.gd" id="10_stamina"]
+[ext_resource type="Script" path="res://scripts/components/hunger_component.gd" id="11_hunger"]
+[ext_resource type="Script" path="res://scripts/components/status_container.gd" id="12_status"]
+[ext_resource type="Script" path="res://scripts/characters/player/states/player_locomotion_state_machine.gd" id="13_locomotion"]
+[ext_resource type="Script" path="res://scripts/characters/player/states/player_combat_state_machine.gd" id="14_combat_state"]
+[ext_resource type="Script" path="res://scripts/characters/player/states/player_interaction_state_machine.gd" id="15_interaction_state"]
+[ext_resource type="Script" path="res://scripts/characters/player/states/player_condition_state_machine.gd" id="16_condition"]
+[ext_resource type="Script" path="res://scripts/characters/player/states/player_watch_state_machine.gd" id="17_watch"]
+[ext_resource type="Resource" path="res://resources/gameplay/weapons/empty_hands.tres" id="18_empty_hands"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.35
@@ -25,20 +38,28 @@ albedo_color = Color(1, 0.78, 0.22, 1)
 size = Vector3(0.18, 0.18, 0.6)
 
 [node name="Player" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 1
 floor_snap_length = 0.2
 script = ExtResource("1_player")
+movement_definition = ExtResource("2_movement")
+combat_definition = ExtResource("3_combat")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_player")
 
-[node name="BodyMesh" type="MeshInstance3D" parent="."]
+[node name="Visuals" type="Node3D" parent="."]
+
+[node name="BodyMesh" type="MeshInstance3D" parent="Visuals"]
 material_override = SubResource("StandardMaterial3D_body")
 mesh = SubResource("CapsuleMesh_body")
 
-[node name="ForwardMarker" type="MeshInstance3D" parent="."]
+[node name="ForwardMarker" type="MeshInstance3D" parent="Visuals"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, -0.55)
 material_override = SubResource("StandardMaterial3D_marker")
 mesh = SubResource("BoxMesh_marker")
+
+[node name="WeaponVisualRoot" type="Node3D" parent="Visuals"]
 
 [node name="Head" type="Node3D" parent="."]
 unique_name_in_owner = true
@@ -47,23 +68,123 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
 [node name="Camera3D" type="Camera3D" parent="Head"]
 current = true
 
+[node name="InteractionRayCast3D" type="RayCast3D" parent="Head"]
+unique_name_in_owner = true
+enabled = true
+target_position = Vector3(0, 0, -3)
+collision_mask = 8
+collide_with_areas = true
+
+[node name="Sockets" type="Node3D" parent="."]
+
+[node name="RightHandSocket" type="Marker3D" parent="Sockets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.95, -0.35)
+
+[node name="LeftHandSocket" type="Marker3D" parent="Sockets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 0.95, -0.35)
+
+[node name="BackSocket" type="Marker3D" parent="Sockets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0.3)
+
 [node name="Components" type="Node" parent="."]
 
 [node name="HealthComponent" type="Node" parent="Components"]
 unique_name_in_owner = true
-script = ExtResource("2_health")
+script = ExtResource("9_health")
 broadcast_player_events = true
 
 [node name="StaminaComponent" type="Node" parent="Components"]
 unique_name_in_owner = true
-script = ExtResource("3_stamina")
+script = ExtResource("10_stamina")
 broadcast_player_events = true
 
 [node name="HungerComponent" type="Node" parent="Components"]
 unique_name_in_owner = true
-script = ExtResource("4_hunger")
+script = ExtResource("11_hunger")
 broadcast_player_events = true
 
 [node name="StatusContainer" type="Node" parent="Components"]
 unique_name_in_owner = true
-script = ExtResource("5_status")
+script = ExtResource("12_status")
+
+[node name="InputReader" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("4_input")
+
+[node name="MovementMotor" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("5_motor")
+movement_definition = ExtResource("2_movement")
+
+[node name="CameraRig" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("6_camera")
+movement_definition = ExtResource("2_movement")
+
+[node name="InteractionDriver" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("7_interaction")
+
+[node name="CombatDriver" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("8_combat_driver")
+combat_definition = ExtResource("3_combat")
+default_weapon = ExtResource("18_empty_hands")
+
+[node name="StateMachines" type="Node" parent="."]
+
+[node name="LocomotionStateMachine" type="Node" parent="StateMachines"]
+unique_name_in_owner = true
+script = ExtResource("13_locomotion")
+movement_definition = ExtResource("2_movement")
+
+[node name="CombatStateMachine" type="Node" parent="StateMachines"]
+unique_name_in_owner = true
+script = ExtResource("14_combat_state")
+combat_definition = ExtResource("3_combat")
+
+[node name="InteractionStateMachine" type="Node" parent="StateMachines"]
+unique_name_in_owner = true
+script = ExtResource("15_interaction_state")
+
+[node name="WatchStateMachine" type="Node" parent="StateMachines"]
+unique_name_in_owner = true
+script = ExtResource("17_watch")
+
+[node name="PlayerConditionStateMachine" type="Node" parent="StateMachines"]
+unique_name_in_owner = true
+script = ExtResource("16_condition")
+
+[node name="Sensors" type="Node" parent="."]
+
+[node name="GroundProbe" type="RayCast3D" parent="Sensors"]
+enabled = true
+target_position = Vector3(0, -1.1, 0)
+collision_mask = 1
+
+[node name="ThreatProbe" type="Area3D" parent="Sensors"]
+collision_layer = 0
+collision_mask = 4
+
+[node name="BaseProximityProbe" type="Area3D" parent="Sensors"]
+collision_layer = 0
+collision_mask = 64
+
+[node name="Timers" type="Node" parent="."]
+
+[node name="SlideCooldownTimer" type="Timer" parent="Timers"]
+one_shot = true
+
+[node name="InteractHoldTimer" type="Timer" parent="Timers"]
+one_shot = true
+
+[node name="DamageIFrameTimer" type="Timer" parent="Timers"]
+one_shot = true
+
+[node name="AudioEmitters" type="Node" parent="."]
+
+[node name="FootstepPlayer" type="AudioStreamPlayer3D" parent="AudioEmitters"]
+
+[node name="BreathPlayer" type="AudioStreamPlayer3D" parent="AudioEmitters"]
+
+[node name="ActionPlayer" type="AudioStreamPlayer3D" parent="AudioEmitters"]

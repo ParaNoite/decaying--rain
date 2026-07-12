@@ -12,20 +12,32 @@ const _KEY_ACTIONS: Dictionary[StringName, Key] = {
 	&"move_back": KEY_S,
 	&"move_left": KEY_A,
 	&"move_right": KEY_D,
+	&"jump": KEY_SPACE,
 	&"sprint": KEY_SHIFT,
 	&"slide": KEY_CTRL,
-	&"block": KEY_Q,
+	&"watch": KEY_TAB,
+	&"parry": KEY_Q,
 	&"shove": KEY_F,
 	&"interact": KEY_E,
 	&"reload": KEY_R,
-	&"use_consumable": KEY_C,
-	&"switch_weapon": KEY_TAB,
+	&"attack_secondary": KEY_C,
+	&"inventory": KEY_I,
+	&"pause": KEY_ESCAPE,
 	&"debug_restart": KEY_F5,
 }
 
 const _MOUSE_ACTIONS: Dictionary[StringName, MouseButton] = {
-	&"light_attack": MOUSE_BUTTON_LEFT,
-	&"heavy_attack": MOUSE_BUTTON_RIGHT,
+	&"attack_primary": MOUSE_BUTTON_LEFT,
+	&"attack_secondary": MOUSE_BUTTON_RIGHT,
+	&"weapon_next": MOUSE_BUTTON_WHEEL_UP,
+	&"weapon_previous": MOUSE_BUTTON_WHEEL_DOWN,
+}
+
+const _LEGACY_ACTION_ALIASES: Dictionary[StringName, StringName] = {
+	&"block": &"parry",
+	&"light_attack": &"attack_primary",
+	&"heavy_attack": &"attack_secondary",
+	&"switch_weapon": &"weapon_next",
 }
 
 var current_run_id: StringName = &"none"
@@ -86,15 +98,17 @@ func _ensure_default_input_map() -> void:
 	for action_name: StringName in _MOUSE_ACTIONS.keys():
 		_ensure_mouse_action(action_name, _MOUSE_ACTIONS[action_name])
 
+	_ensure_legacy_action_aliases()
+
 
 func _ensure_key_action(action_name: StringName, keycode: Key) -> void:
 	if not InputMap.has_action(action_name):
 		InputMap.add_action(action_name)
 
-	if not InputMap.action_get_events(action_name).is_empty():
+	if _action_has_key_event(action_name, keycode):
 		return
 
-	var event := InputEventKey.new()
+	var event: InputEventKey = InputEventKey.new()
 	event.physical_keycode = keycode
 	InputMap.action_add_event(action_name, event)
 
@@ -103,12 +117,41 @@ func _ensure_mouse_action(action_name: StringName, button: MouseButton) -> void:
 	if not InputMap.has_action(action_name):
 		InputMap.add_action(action_name)
 
-	if not InputMap.action_get_events(action_name).is_empty():
+	if _action_has_mouse_event(action_name, button):
 		return
 
-	var event := InputEventMouseButton.new()
+	var event: InputEventMouseButton = InputEventMouseButton.new()
 	event.button_index = button
 	InputMap.action_add_event(action_name, event)
+
+
+func _ensure_legacy_action_aliases() -> void:
+	for alias_name: StringName in _LEGACY_ACTION_ALIASES.keys():
+		var source_name: StringName = _LEGACY_ACTION_ALIASES[alias_name]
+		if not InputMap.has_action(alias_name):
+			InputMap.add_action(alias_name)
+		if not InputMap.action_get_events(alias_name).is_empty():
+			continue
+		for event: InputEvent in InputMap.action_get_events(source_name):
+			InputMap.action_add_event(alias_name, event.duplicate())
+
+
+func _action_has_key_event(action_name: StringName, keycode: Key) -> bool:
+	for event: InputEvent in InputMap.action_get_events(action_name):
+		if event is InputEventKey:
+			var key_event: InputEventKey = event as InputEventKey
+			if key_event.physical_keycode == keycode:
+				return true
+	return false
+
+
+func _action_has_mouse_event(action_name: StringName, button: MouseButton) -> bool:
+	for event: InputEvent in InputMap.action_get_events(action_name):
+		if event is InputEventMouseButton:
+			var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+			if mouse_event.button_index == button:
+				return true
+	return false
 
 
 func _event_bus() -> Node:

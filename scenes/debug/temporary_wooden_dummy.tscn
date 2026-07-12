@@ -1,0 +1,57 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/temporary_wooden_dummy.gd" id="1_dummy"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_default"]
+albedo_color = Color(0.52, 0.34, 0.18, 1)
+roughness = 0.86
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hurt"]
+albedo_color = Color(0.95, 0.72, 0.28, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_destroyed"]
+albedo_color = Color(0.18, 0.17, 0.16, 1)
+roughness = 0.95
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_body"]
+top_radius = 0.35
+bottom_radius = 0.45
+height = 1.8
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_body"]
+radius = 0.45
+height = 1.8
+
+[sub_resource type="BoxMesh" id="BoxMesh_marker"]
+size = Vector3(1.2, 0.08, 0.08)
+
+[node name="TemporaryWoodenDummy_DELETE_LATER_DO_NOT_USE_AS_ENEMY_TEMPLATE" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_dummy")
+destroyed_material = SubResource("StandardMaterial3D_destroyed")
+hurt_material = SubResource("StandardMaterial3D_hurt")
+
+[node name="BodyMesh" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+material_override = SubResource("StandardMaterial3D_default")
+mesh = SubResource("CylinderMesh_body")
+
+[node name="CrossMarker" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 1.45, 0)
+material_override = SubResource("StandardMaterial3D_hurt")
+mesh = SubResource("BoxMesh_marker")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CylinderShape3D_body")
+
+[node name="StatusLabel" type="Label3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(0.0339761, 0, 0.999423, 0, 1, 0, -0.999423, 0, 0.0339761, 0, 2.25, 0)
+pixel_size = 0.015
+billboard = 1
+text = "TEMP TEST DUMMY - DELETE LATER\nNOT AN ENEMY TEMPLATE\nREADY\nHP -- / --"
+horizontal_alignment = 1

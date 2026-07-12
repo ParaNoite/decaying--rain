@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="PlayerMovementDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/player_movement_definition.gd" id="1_movement"]
+
+[resource]
+script = ExtResource("1_movement")
+walk_speed = 5.0
+sprint_speed = 10.5
+slide_speed = 12.0
+watch_walk_speed = 3.0
+acceleration = 34.0
+deceleration = 28.0
+air_control_multiplier = 0.45
+jump_velocity = 4.8
+gravity_multiplier = 1.0
+coyote_time = 0.1
+jump_buffer_time = 0.12
+sprint_stamina_per_second = 16.0
+slide_stamina_cost = 25.0
+slide_duration = 0.35
+slide_cooldown = 1.0
+mouse_sensitivity = 0.0025
+pitch_limit_degrees = 80.0

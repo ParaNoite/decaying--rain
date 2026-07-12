@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="PlayerCombatDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/player_combat_definition.gd" id="1_combat"]
+
+[resource]
+script = ExtResource("1_combat")
+unarmed_damage = 5.0
+melee_range = 2.0
+melee_radius = 0.6
+combo_input_window = 0.6
+final_combo_damage_multiplier = 2.0
+light_attack_stamina_cost = 8.0
+shove_stamina_cost = 18.0
+light_attack_windup = 0.12
+light_attack_recovery = 0.28
+parry_window = 0.22
+parry_recovery = 0.35
+shove_duration = 0.25
+shove_cooldown = 0.55
+shove_range = 1.4
+shove_radius = 0.85
+shove_stagger = 30.0

@@ -9,6 +9,8 @@ const PHASE_SETTLEMENT: StringName = &"settlement"
 @export var run_config: RunConfig
 
 var phase_time_remaining: float = 0.0
+var phase_duration_seconds: float = 0.0
+var _timer_broadcast_remaining: float = 0.0
 
 
 func begin_run(config: RunConfig = null) -> void:
@@ -17,7 +19,9 @@ func begin_run(config: RunConfig = null) -> void:
 	if game_manager == null:
 		return
 	game_manager.start_mvp_run(run_config)
-	phase_time_remaining = _duration_for_phase(game_manager.current_phase)
+	phase_duration_seconds = _duration_for_phase(game_manager.current_phase)
+	phase_time_remaining = phase_duration_seconds
+	_broadcast_wave_timer()
 
 
 func _process(delta: float) -> void:
@@ -25,6 +29,10 @@ func _process(delta: float) -> void:
 		return
 
 	phase_time_remaining -= delta
+	_timer_broadcast_remaining -= delta
+	if _timer_broadcast_remaining <= 0.0:
+		_broadcast_wave_timer()
+
 	if phase_time_remaining <= 0.0:
 		_advance_phase()
 
@@ -46,7 +54,9 @@ func _advance_phase() -> void:
 		_:
 			return
 
-	phase_time_remaining = _duration_for_phase(game_manager.current_phase)
+	phase_duration_seconds = _duration_for_phase(game_manager.current_phase)
+	phase_time_remaining = phase_duration_seconds
+	_broadcast_wave_timer()
 
 
 func _advance_wave_or_complete() -> void:
@@ -90,3 +100,12 @@ func _duration_for_phase(phase: StringName) -> float:
 
 func _game_manager() -> Node:
 	return get_node_or_null("/root/GameManager")
+
+
+func _broadcast_wave_timer() -> void:
+	_timer_broadcast_remaining = 0.25
+	var event_bus = get_node_or_null("/root/EventBus")
+	var game_manager = _game_manager()
+	if event_bus == null or game_manager == null:
+		return
+	event_bus.wave_timer_changed.emit(maxf(0.0, phase_time_remaining), phase_duration_seconds, game_manager.current_wave_index)

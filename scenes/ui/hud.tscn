@@ -12,6 +12,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="TopLeft" type="VBoxContainer" parent="Root"]
 layout_mode = 1
@@ -49,3 +50,93 @@ text = "FOOD -- / --"
 unique_name_in_owner = true
 layout_mode = 2
 text = "CORE -- / --"
+
+[node name="PromptLabel" type="Label" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -72.0
+offset_right = 160.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+horizontal_alignment = 1
+text = ""
+
+[node name="DebugNoticeStack" type="VBoxContainer" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -424.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 176.0
+grow_horizontal = 0
+alignment = 2
+mouse_filter = 2
+
+[node name="WatchPanel" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="WatchMargin" type="MarginContainer" parent="Root/WatchPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 40
+
+[node name="WatchStack" type="VBoxContainer" parent="Root/WatchPanel/WatchMargin"]
+layout_mode = 2
+
+[node name="WatchWaveLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Wave --"
+
+[node name="WatchTimerLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "--"
+
+[node name="WatchMapLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+layout_mode = 2
+text = "Map: Base / Scavenge corridor"
+
+[node name="WatchDetailLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+layout_mode = 2
+text = "Details: loop status, resource pressure, return timing"
+
+[node name="DeathLabel" type="Label" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -24.0
+offset_right = 220.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+text = ""

@@ -7,8 +7,15 @@ signal looted(payload: Dictionary)
 @export var loot_table: LootTableDefinition
 @export var one_shot: bool = true
 
+@onready var interactable: InteractableComponent = get_node_or_null("%InteractableComponent")
+
 var has_been_looted: bool = false
 var _loot_resolver := LootResolver.new()
+
+
+func _ready() -> void:
+	if interactable != null:
+		interactable.interacted.connect(_on_interacted)
 
 
 func can_loot() -> bool:
@@ -27,3 +34,9 @@ func loot() -> Dictionary[StringName, int]:
 	if event_bus != null:
 		event_bus.resource_looted.emit(resource_id, payload)
 	return payload
+
+
+func _on_interacted(_actor: Node) -> void:
+	loot()
+	if interactable != null and not can_loot():
+		interactable.enabled = false

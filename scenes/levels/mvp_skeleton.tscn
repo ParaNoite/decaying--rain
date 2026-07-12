@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/mvp_skeleton.gd" id="1_level"]
 [ext_resource type="Script" path="res://scripts/systems/run/phase_controller.gd" id="2_phase"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/interactables/resource_node.tscn" id="6_resource"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="7_hud"]
 [ext_resource type="Resource" path="res://resources/gameplay/mvp_run_config.tres" id="8_run"]
+[ext_resource type="PackedScene" path="res://scenes/debug/temporary_wooden_dummy.tscn" id="9_dummy"]
 
 [sub_resource type="Environment" id="Environment_mvp"]
 background_mode = 1
@@ -95,6 +96,11 @@ resource_id = &"mid_resource"
 [node name="FarResource" parent="ScavengeArea" instance=ExtResource("6_resource")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.4, 13)
 resource_id = &"far_resource"
+
+[node name="TemporaryTestingTargets_DELETE_LATER" type="Node3D" parent="."]
+
+[node name="TemporaryWoodenDummy_DELETE_LATER_DO_NOT_USE_AS_ENEMY_TEMPLATE" parent="TemporaryTestingTargets_DELETE_LATER" instance=ExtResource("9_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.2)
 
 [node name="SpawnPoints" type="Node3D" parent="."]
 
