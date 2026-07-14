@@ -31,9 +31,33 @@ func interact(actor: Node) -> void:
 	focused_interactable.interact(actor)
 
 
+func get_focus_action_id() -> StringName:
+	if focused_interactable == null:
+		return &"interact"
+	return focused_interactable.get_action_id()
+
+
+func get_focus_hold_duration() -> float:
+	if focused_interactable == null:
+		return 0.0
+	return focused_interactable.hold_duration
+
+
+func update_hold_prompt(elapsed: float) -> void:
+	if focused_interactable == null:
+		return
+	var duration: float = maxf(0.01, focused_interactable.hold_duration)
+	var progress: int = clampi(roundi(elapsed / duration * 100.0), 0, 100)
+	_emit_prompt("%s  %d%%" % [focused_interactable.prompt, progress])
+
+
 func clear_prompt() -> void:
 	focused_interactable = null
 	_emit_prompt("")
+
+
+func restore_prompt() -> void:
+	_emit_prompt(_prompt_for_focus())
 
 
 func _find_focus() -> InteractableComponent:

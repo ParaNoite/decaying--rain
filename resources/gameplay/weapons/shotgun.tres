@@ -15,3 +15,6 @@ magazine_size = 5
 reload_seconds = 2.2
 noise_radius = 45.0
 effective_range = 9.0
+fire_interval_seconds = 0.9
+pellet_count = 8
+spread_degrees = 5.0

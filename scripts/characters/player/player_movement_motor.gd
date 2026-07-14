@@ -78,8 +78,8 @@ func start_slide(body: CharacterBody3D, input_vector: Vector2) -> bool:
 	return true
 
 
-func apply_slide(body: CharacterBody3D) -> void:
-	var horizontal: Vector3 = slide_direction * _movement().slide_speed
+func apply_slide(body: CharacterBody3D, speed_multiplier: float = 1.0) -> void:
+	var horizontal: Vector3 = slide_direction * _movement().slide_speed * maxf(0.0, speed_multiplier)
 	body.velocity.x = horizontal.x
 	body.velocity.z = horizontal.z
 

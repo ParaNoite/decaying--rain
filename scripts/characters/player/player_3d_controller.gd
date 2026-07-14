@@ -10,8 +10,13 @@ extends CharacterBody3D
 @onready var combat_driver: PlayerCombatDriver = %CombatDriver
 @onready var interaction_driver: PlayerInteractionDriver = %InteractionDriver
 @onready var health: HealthComponent = %HealthComponent
-@onready var profession_component = %ProfessionComponent
-@onready var skill_component = %PlayerSkillComponent
+@onready var stamina: StaminaComponent = %StaminaComponent
+@onready var hunger: HungerComponent = %HungerComponent
+@onready var status_container: StatusContainer = %StatusContainer
+@onready var inventory_component: PlayerInventoryComponent = %PlayerInventoryComponent
+@onready var loadout_component: PlayerLoadoutComponent = %PlayerLoadoutComponent
+@onready var profession_component: PlayerProfessionComponent = %ProfessionComponent
+@onready var skill_component: PlayerSkillComponent = %PlayerSkillComponent
 @onready var locomotion_state_machine: PlayerLocomotionStateMachine = %LocomotionStateMachine
 @onready var combat_state_machine: PlayerCombatStateMachine = %CombatStateMachine
 @onready var interaction_state_machine: PlayerInteractionStateMachine = %InteractionStateMachine
@@ -21,17 +26,24 @@ extends CharacterBody3D
 
 var _event_bus = null
 var _game_manager = null
+var inventory_open: bool = false
 
 
 func _ready() -> void:
 	add_to_group("player")
 	_event_bus = get_node_or_null("/root/EventBus")
 	_game_manager = get_node_or_null("/root/GameManager")
+	if _event_bus != null:
+		_event_bus.phase_changed.connect(_on_phase_changed)
+		_event_bus.inventory_item_use_requested.connect(_on_inventory_item_use_requested)
 
 	_apply_definitions()
-	camera_rig.capture_mouse()
+	_initialize_runtime_components()
+	_apply_profession_statuses()
+	# Mouse is not captured by default — player clicks to capture
 
 	health.died.connect(_on_died)
+	status_container.status_tick.connect(_on_status_tick)
 	locomotion_state_machine.state_changed.connect(_on_locomotion_state_changed)
 	combat_state_machine.state_changed.connect(_on_combat_state_changed)
 	interaction_state_machine.state_changed.connect(_on_interaction_state_changed)
@@ -41,7 +53,18 @@ func _ready() -> void:
 	skill_component.action_blocked.connect(_on_action_blocked)
 
 
+func _exit_tree() -> void:
+	if _event_bus == null:
+		return
+	if _event_bus.phase_changed.is_connected(_on_phase_changed):
+		_event_bus.phase_changed.disconnect(_on_phase_changed)
+	if _event_bus.inventory_item_use_requested.is_connected(_on_inventory_item_use_requested):
+		_event_bus.inventory_item_use_requested.disconnect(_on_inventory_item_use_requested)
+
+
 func _input(event: InputEvent) -> void:
+	if inventory_open:
+		return
 	if not Input.is_action_pressed("watch") and camera_rig.recapture_from_click(event):
 		get_viewport().set_input_as_handled()
 		return
@@ -66,12 +89,24 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	input_reader.refresh()
+	_update_overlay_state()
 	movement_motor.tick_timers(delta, is_on_floor())
 	movement_motor.apply_gravity(self, delta)
 
 	var constraints: Dictionary = condition_state_machine.update()
-	constraints.merge(watch_state_machine.update(input_reader), true)
-	constraints.merge(skill_component.update(self, input_reader, constraints, delta), true)
+	_apply_profession_constraints(constraints)
+	if inventory_open:
+		_merge_constraints(constraints, {
+			"movement_disabled": true,
+			"combat_blocked": true,
+			"interaction_blocked": true,
+			"mobility_blocked": true,
+			"inventory_open": true,
+		})
+	if stamina != null:
+		stamina.recovery_multiplier = maxf(0.0, float(constraints.get("stamina_recovery_multiplier", 1.0)))
+	_merge_constraints(constraints, watch_state_machine.update(input_reader))
+	_merge_constraints(constraints, skill_component.update(self, input_reader, constraints, delta))
 
 	interaction_state_machine.update(self, input_reader, constraints, delta)
 	combat_state_machine.update(self, input_reader, constraints, delta)
@@ -87,20 +122,68 @@ func apply_damage(amount: float) -> void:
 	health.take_damage(amount)
 
 
+func apply_status(status: StatusEffectDefinition, duration_override: float = -1.0) -> bool:
+	if status == null or status_container == null:
+		return false
+	if profession_component != null and profession_component.is_status_immune(status.status_id):
+		_emit_action_blocked(&"status", &"status_immune")
+		return false
+	var final_duration: float = duration_override
+	if not status.is_permanent_until_removed:
+		var base_duration: float = duration_override if duration_override >= 0.0 else status.duration_seconds
+		if profession_component != null:
+			base_duration *= profession_component.get_status_duration_multiplier(status.status_id)
+		final_duration = base_duration
+	return status_container.apply_status(status, final_duration)
+
+
+func apply_status_by_id(status_id: StringName, duration_override: float = -1.0) -> bool:
+	if status_container == null:
+		return false
+	for definition: StatusEffectDefinition in status_container.status_definitions:
+		if definition != null and definition.status_id == status_id:
+			return apply_status(definition, duration_override)
+	return false
+
+
+func receive_loot(payload: Dictionary) -> void:
+	if inventory_component != null:
+		inventory_component.add_loot(payload)
+
+
+func remove_status(status_id: StringName) -> void:
+	if status_container != null:
+		status_container.remove_status(status_id)
+
+
+func has_status(status_id: StringName) -> bool:
+	return status_container != null and status_container.has_status(status_id)
+
+
 func receive_damage(data: DamageEventData) -> void:
 	if data == null or not data.is_valid_hit():
 		return
 	if combat_state_machine.parry_active and data.source_tags.has(&"melee"):
+		_apply_parry_counter(data)
 		if _event_bus != null:
 			_event_bus.combat_hit.emit(data)
 			_event_bus.debug_test_notice.emit("Parry success: blocked %.0f damage" % data.amount, &"combat")
 			_event_bus.combat_feedback.emit("PARRY SUCCESS", &"success")
 		return
-	_emit_debug_notice("Player hit: -%.0f HP" % data.amount, &"combat")
+	combat_state_machine.interrupt()
+	var incoming_multiplier: float = 1.0
+	if status_container != null:
+		incoming_multiplier = float(status_container.get_constraints().get("incoming_damage_multiplier", 1.0))
+	var final_amount: float = data.amount * incoming_multiplier
+	_emit_debug_notice("Player hit: -%.0f HP" % final_amount, &"combat")
 	if _event_bus != null:
-		_event_bus.combat_feedback.emit("HIT -%.0f" % data.amount, &"danger")
+		_event_bus.combat_feedback.emit("HIT -%.0f" % final_amount, &"danger")
 	_call_hands(&"play_hurt")
-	apply_damage(data.amount)
+	apply_damage(final_amount)
+	if data.stagger >= combat_definition.stagger_threshold:
+		apply_status_by_id(&"staggered")
+	if data.amount >= combat_definition.bleeding_damage_threshold:
+		apply_status_by_id(&"bleeding")
 
 
 func heal(amount: float) -> void:
@@ -120,6 +203,108 @@ func _apply_definitions() -> void:
 	if combat_definition != null:
 		combat_driver.combat_definition = combat_definition
 		combat_state_machine.combat_definition = combat_definition
+
+
+func _initialize_runtime_components() -> void:
+	if profession_component == null:
+		return
+	if inventory_component != null:
+		inventory_component.initialize(
+			profession_component.get_starting_item_ids(),
+			profession_component.get_stat_multiplier(&"ammo_pickup")
+		)
+	if loadout_component != null:
+		loadout_component.initialize(profession_component.get_starting_weapon_ids())
+
+
+func _apply_profession_constraints(constraints: Dictionary) -> void:
+	if profession_component == null:
+		return
+	constraints["blocked_action_ids"] = profession_component.get_blocked_action_ids()
+	constraints["outgoing_damage_multiplier"] = float(constraints.get("outgoing_damage_multiplier", 1.0)) * profession_component.get_stat_multiplier(&"outgoing_damage")
+	constraints["movement_speed_multiplier"] = float(constraints.get("movement_speed_multiplier", 1.0)) * profession_component.get_stat_multiplier(&"movement_speed")
+	constraints["stamina_recovery_multiplier"] = float(constraints.get("stamina_recovery_multiplier", 1.0)) * profession_component.get_stat_multiplier(&"stamina_recovery")
+	constraints["firearm_spread_multiplier"] = profession_component.get_stat_multiplier(&"firearm_stability")
+
+
+func _apply_profession_statuses() -> void:
+	if status_container == null or profession_component == null:
+		return
+	if profession_component.profession_definition == null:
+		return
+	for status_id: StringName in profession_component.profession_definition.status_ids_on_spawn:
+		status_container.apply_status_by_id(status_id)
+
+
+func _on_status_tick(
+	_status_id: StringName,
+	health_delta: float,
+	stamina_delta: float,
+	hunger_delta: float,
+) -> void:
+	if health != null:
+		if health_delta >= 0.0:
+			health.heal(health_delta)
+		else:
+			health.take_damage(-health_delta)
+	if stamina != null:
+		if stamina_delta >= 0.0:
+			stamina.recover(stamina_delta)
+		else:
+			stamina.consume(-stamina_delta)
+	if hunger != null:
+		if hunger_delta >= 0.0:
+			hunger.restore_hunger(hunger_delta)
+		else:
+			hunger.consume_hunger(-hunger_delta)
+
+
+func use_item(item_id: StringName) -> bool:
+	if inventory_component == null or inventory_component.get_quantity(item_id) <= 0:
+		_emit_action_blocked(&"use_item", &"item_unavailable")
+		return false
+	match item_id:
+		&"bandage":
+			heal(30.0)
+			remove_status(&"bleeding")
+		&"food_ration":
+			hunger.restore_hunger(35.0)
+		_:
+			_emit_action_blocked(&"use_item", &"unsupported_item")
+			return false
+	inventory_component.remove_item(item_id)
+	_emit_debug_notice("Used %s" % String(item_id).replace("_", " ").capitalize(), &"inventory")
+	return true
+
+
+func _on_inventory_item_use_requested(item_id: StringName) -> void:
+	use_item(item_id)
+
+
+func _on_phase_changed(_previous_phase: StringName, current_phase: StringName, _wave_index: int) -> void:
+	if current_phase == &"rain":
+		var rain_duration: float = 120.0
+		if _game_manager != null and _game_manager.active_run_config != null:
+			rain_duration = _game_manager.active_run_config.default_rain_seconds
+		apply_status_by_id(&"rain_exposure", rain_duration)
+	else:
+		remove_status(&"rain_exposure")
+
+
+func _apply_parry_counter(data: DamageEventData) -> void:
+	var attacker: Object = instance_from_id(data.attacker_id)
+	if not (attacker is Node):
+		return
+	var counter: DamageEventData = DamageEventData.new()
+	counter.attacker_id = get_instance_id()
+	counter.target_id = data.attacker_id
+	counter.amount = 0.0
+	counter.stagger = combat_definition.parry_stagger
+	counter.source_tags = [&"parry", &"melee"]
+	counter.hit_position = global_position
+	var attacker_node: Node = attacker as Node
+	if attacker_node.has_method("receive_damage"):
+		attacker_node.call("receive_damage", counter)
 
 
 func _on_died() -> void:
@@ -154,6 +339,12 @@ func _on_combat_state_changed(_previous_state: StringName, current_state: String
 		PlayerCombatStateMachine.STATE_LIGHT_ATTACK:
 			_emit_debug_notice("Action: primary attack", &"action")
 			_call_hands(&"play_attack", [combat_driver.combo_index])
+		PlayerCombatStateMachine.STATE_FIRE:
+			_emit_debug_notice("Action: firearm fired", &"combat")
+			_call_hands(&"play_attack", [1])
+		PlayerCombatStateMachine.STATE_RELOAD:
+			_emit_debug_notice("Action: reloading", &"combat")
+			_call_hands(&"play_interact")
 		PlayerCombatStateMachine.STATE_PARRY:
 			_emit_debug_notice("Action: parry window", &"action")
 			_call_hands(&"play_parry", [combat_state_machine.state_time_remaining])
@@ -248,7 +439,34 @@ func _call_hands(method_name: StringName, args: Array = []) -> void:
 
 
 func _consume_deferred_inputs() -> void:
-	input_reader.consume_weapon_next()
-	input_reader.consume_weapon_previous()
-	input_reader.consume_inventory()
 	input_reader.consume_pause()
+
+
+func _update_overlay_state() -> void:
+	if not input_reader.consume_inventory():
+		return
+	inventory_open = not inventory_open
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if inventory_open else Input.MOUSE_MODE_CAPTURED
+	if _event_bus != null:
+		_event_bus.inventory_visibility_changed.emit(inventory_open)
+
+
+func _emit_action_blocked(action_id: StringName, reason_id: StringName) -> void:
+	if _event_bus != null:
+		_event_bus.player_action_blocked.emit(action_id, reason_id)
+
+
+func _merge_constraints(target: Dictionary, incoming: Dictionary) -> void:
+	const boolean_constraints: Array[StringName] = [
+		&"movement_disabled",
+		&"combat_blocked",
+		&"interaction_blocked",
+		&"mobility_blocked",
+	]
+	for key: StringName in boolean_constraints:
+		if incoming.has(key):
+			target[key] = bool(target.get(key, false)) or bool(incoming[key])
+
+	for key: Variant in incoming.keys():
+		if not boolean_constraints.has(key):
+			target[key] = incoming[key]

@@ -9,6 +9,7 @@ signal stamina_changed(old_value: float, new_value: float)
 @export var broadcast_player_events: bool = false
 
 var current_stamina: float = 100.0
+var recovery_multiplier: float = 1.0
 
 
 func _ready() -> void:
@@ -18,7 +19,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if auto_recover:
-		recover(recovery_per_second * delta)
+		recover(recovery_per_second * recovery_multiplier * delta)
 
 
 func can_consume(amount: float) -> bool:

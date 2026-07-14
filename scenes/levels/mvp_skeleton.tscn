@@ -1,8 +1,8 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene format=3 uid="uid://bnuitexl8jyq1"]
 
-[ext_resource type="Script" path="res://scripts/levels/mvp_skeleton.gd" id="1_level"]
-[ext_resource type="Script" path="res://scripts/systems/run/phase_controller.gd" id="2_phase"]
-[ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="3_player"]
+[ext_resource type="Script" uid="uid://clgfm8ko3q20x" path="res://scripts/levels/mvp_skeleton.gd" id="1_level"]
+[ext_resource type="Script" uid="uid://dt2ctdpw0sx48" path="res://scripts/systems/run/phase_controller.gd" id="2_phase"]
+[ext_resource type="PackedScene" uid="uid://bo15ug8lepyjl" path="res://scenes/characters/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://scenes/base/base_core.tscn" id="4_core"]
 [ext_resource type="PackedScene" path="res://scenes/base/repairable_barrier.tscn" id="5_barrier"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/resource_node.tscn" id="6_resource"]
@@ -37,83 +37,83 @@ size = Vector3(12, 2.5, 0.4)
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
 size = Vector3(12, 2.5, 0.4)
 
-[node name="MvpSkeleton" type="Node3D"]
+[node name="MvpSkeleton" type="Node3D" unique_id=574335612]
 script = ExtResource("1_level")
 
-[node name="PhaseController" type="Node" parent="."]
+[node name="PhaseController" type="Node" parent="." unique_id=912586221]
 unique_name_in_owner = true
 script = ExtResource("2_phase")
 run_config = ExtResource("8_run")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1940466975]
 environment = SubResource("Environment_mvp")
 
-[node name="Sun" type="DirectionalLight3D" parent="."]
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=189635010]
 transform = Transform3D(0.819152, -0.40558, 0.40558, 0, 0.707107, 0.707107, -0.573576, -0.579228, 0.579228, 0, 0, 0)
 light_energy = 1.8
 shadow_enabled = true
 
-[node name="Blockout" type="Node3D" parent="."]
+[node name="Blockout" type="Node3D" parent="." unique_id=396803114]
 
-[node name="Floor" type="StaticBody3D" parent="Blockout"]
+[node name="Floor" type="StaticBody3D" parent="Blockout" unique_id=1938054715]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
 
-[node name="FloorMesh" type="MeshInstance3D" parent="Blockout/Floor"]
+[node name="FloorMesh" type="MeshInstance3D" parent="Blockout/Floor" unique_id=1234974364]
 material_override = SubResource("StandardMaterial3D_floor")
 mesh = SubResource("BoxMesh_floor")
 
-[node name="FloorCollision" type="CollisionShape3D" parent="Blockout/Floor"]
+[node name="FloorCollision" type="CollisionShape3D" parent="Blockout/Floor" unique_id=2000586530]
 shape = SubResource("BoxShape3D_floor")
 
-[node name="NorthWall" type="StaticBody3D" parent="Blockout"]
+[node name="NorthWall" type="StaticBody3D" parent="Blockout" unique_id=1392334900]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, -8)
 
-[node name="WallMesh" type="MeshInstance3D" parent="Blockout/NorthWall"]
+[node name="WallMesh" type="MeshInstance3D" parent="Blockout/NorthWall" unique_id=923855440]
 material_override = SubResource("StandardMaterial3D_wall")
 mesh = SubResource("BoxMesh_wall")
 
-[node name="WallCollision" type="CollisionShape3D" parent="Blockout/NorthWall"]
+[node name="WallCollision" type="CollisionShape3D" parent="Blockout/NorthWall" unique_id=103230791]
 shape = SubResource("BoxShape3D_wall")
 
-[node name="Base" type="Node3D" parent="."]
+[node name="Base" type="Node3D" parent="." unique_id=1730945476]
 
-[node name="BaseCore" parent="Base" instance=ExtResource("4_core")]
+[node name="BaseCore" parent="Base" unique_id=1100476935 instance=ExtResource("4_core")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -2)
 
-[node name="NorthBarrier" parent="Base" instance=ExtResource("5_barrier")]
+[node name="NorthBarrier" parent="Base" unique_id=1897202163 instance=ExtResource("5_barrier")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -5.6)
 
-[node name="ScavengeArea" type="Node3D" parent="."]
+[node name="ScavengeArea" type="Node3D" parent="." unique_id=150326954]
 
-[node name="NearResource" parent="ScavengeArea" instance=ExtResource("6_resource")]
+[node name="NearResource" parent="ScavengeArea" unique_id=961127877 instance=ExtResource("6_resource")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.4, 3)
 resource_id = &"near_resource"
 
-[node name="MidResource" parent="ScavengeArea" instance=ExtResource("6_resource")]
+[node name="MidResource" parent="ScavengeArea" unique_id=1445181692 instance=ExtResource("6_resource")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.4, 8)
 resource_id = &"mid_resource"
 
-[node name="FarResource" parent="ScavengeArea" instance=ExtResource("6_resource")]
+[node name="FarResource" parent="ScavengeArea" unique_id=1912367092 instance=ExtResource("6_resource")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.4, 13)
 resource_id = &"far_resource"
 
-[node name="TemporaryTestingTargets_DELETE_LATER" type="Node3D" parent="."]
+[node name="TemporaryTestingTargets_DELETE_LATER" type="Node3D" parent="." unique_id=583458419]
 
-[node name="TemporaryWoodenDummy_DELETE_LATER_DO_NOT_USE_AS_ENEMY_TEMPLATE" parent="TemporaryTestingTargets_DELETE_LATER" instance=ExtResource("9_dummy")]
+[node name="TemporaryWoodenDummy_DELETE_LATER_DO_NOT_USE_AS_ENEMY_TEMPLATE" parent="TemporaryTestingTargets_DELETE_LATER" unique_id=1323935885 instance=ExtResource("9_dummy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.2)
 
-[node name="SpawnPoints" type="Node3D" parent="."]
+[node name="SpawnPoints" type="Node3D" parent="." unique_id=470361610]
 
-[node name="EnemyEntranceA" type="Marker3D" parent="SpawnPoints"]
+[node name="EnemyEntranceA" type="Marker3D" parent="SpawnPoints" unique_id=1980677264]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -10)
 
-[node name="EnemyEntranceB" type="Marker3D" parent="SpawnPoints"]
+[node name="EnemyEntranceB" type="Marker3D" parent="SpawnPoints" unique_id=969450376]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -10)
 
-[node name="EnemyEntranceC" type="Marker3D" parent="SpawnPoints"]
+[node name="EnemyEntranceC" type="Marker3D" parent="SpawnPoints" unique_id=1418608333]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
 
-[node name="Player" parent="." instance=ExtResource("3_player")]
+[node name="Player" parent="." unique_id=758451577 instance=ExtResource("3_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4)
 
-[node name="HUD" parent="." instance=ExtResource("7_hud")]
+[node name="HUD" parent="." unique_id=1537201166 instance=ExtResource("7_hud")]

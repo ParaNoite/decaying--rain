@@ -23,3 +23,14 @@ enum StatusCategory {
 @export_range(0.0, 10.0, 0.05) var stamina_recovery_multiplier: float = 1.0
 @export_range(0.0, 10.0, 0.05) var incoming_damage_multiplier: float = 1.0
 @export_range(0.0, 10.0, 0.05) var outgoing_damage_multiplier: float = 1.0
+@export_range(0.0, 10.0, 0.05) var movement_speed_multiplier: float = 1.0
+@export var movement_disabled: bool = false
+@export var mobility_blocked: bool = false
+@export var combat_blocked: bool = false
+@export var interaction_blocked: bool = false
+
+@export_group("Periodic Effects")
+@export_range(0.0, 60.0, 0.1) var tick_interval_seconds: float = 0.0
+@export var health_delta_per_tick: float = 0.0
+@export var stamina_delta_per_tick: float = 0.0
+@export var hunger_delta_per_tick: float = 0.0

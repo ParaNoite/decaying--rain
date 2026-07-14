@@ -1,7 +1,9 @@
-[gd_resource type="Resource" script_class="ProfessionDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="ProfessionDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/profession_definition.gd" id="1_profession"]
 [ext_resource type="Resource" path="res://resources/gameplay/player_skills/deserter_charged_beam.tres" id="2_skill"]
+[ext_resource type="Resource" path="res://resources/gameplay/perk_rules/deserter_rain_hardened.tres" id="3_advantage"]
+[ext_resource type="Resource" path="res://resources/gameplay/perk_rules/deserter_field_inexperience.tres" id="4_disadvantage"]
 
 [resource]
 script = ExtResource("1_profession")
@@ -10,8 +12,10 @@ display_name = "Deserter"
 description = "Combat-oriented MVP perk. Starts with reliable weapon access and can fire a standalone charged beam active skill for testing."
 starting_weapon_ids = Array[StringName]([&"crowbar", &"pistol"])
 starting_item_ids = Array[StringName]([&"bandage"])
-ammo_pickup_multiplier = 1.0
+ammo_pickup_multiplier = 1.25
 firearm_stability_multiplier = 1.0
 status_ids_on_spawn = Array[StringName]([&"deserter_baseline"])
 ability_id = &"deserter_charged_beam"
 active_skill = ExtResource("2_skill")
+advantages = Array[Resource]([ExtResource("3_advantage")])
+disadvantages = Array[Resource]([ExtResource("4_disadvantage")])

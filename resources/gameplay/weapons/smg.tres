@@ -15,3 +15,6 @@ magazine_size = 24
 reload_seconds = 1.8
 noise_radius = 38.0
 effective_range = 14.0
+fire_interval_seconds = 0.08
+automatic = true
+spread_degrees = 1.8

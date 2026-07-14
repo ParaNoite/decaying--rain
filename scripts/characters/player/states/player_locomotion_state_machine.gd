@@ -31,10 +31,14 @@ func physics_update(body: CharacterBody3D, input_reader: PlayerInputReader, cons
 	var input_vector: Vector2 = input_reader.move_vector
 	var can_use_mobility: bool = not constraints.get("mobility_blocked", false)
 	var watch_active: bool = constraints.get("watch_active", false)
+	var speed_multiplier: float = maxf(0.0, float(constraints.get("movement_speed_multiplier", 1.0)))
 	var jumped: bool = false
 
-	if input_reader.consume_jump() and can_use_mobility and not watch_active:
-		motor.buffer_jump()
+	if input_reader.consume_jump():
+		if _action_blocked(constraints, &"jump"):
+			_emit_blocked(&"jump")
+		elif can_use_mobility and not watch_active:
+			motor.buffer_jump()
 
 	if can_use_mobility and not watch_active:
 		jumped = motor.consume_jump_if_allowed(body)
@@ -45,21 +49,23 @@ func physics_update(body: CharacterBody3D, input_reader: PlayerInputReader, cons
 		_transition_to(STATE_FALL)
 
 	if input_reader.consume_slide() and can_use_mobility and not watch_active and body.is_on_floor():
-		if stamina == null or stamina.consume(_movement().slide_stamina_cost):
+		if _action_blocked(constraints, &"slide"):
+			_emit_blocked(&"slide")
+		elif stamina == null or stamina.consume(_movement().slide_stamina_cost):
 			if motor.start_slide(body, input_vector):
 				_transition_to(STATE_SLIDE)
 
 	if motor.is_sliding() and can_use_mobility and not watch_active:
-		motor.apply_slide(body)
+		motor.apply_slide(body, speed_multiplier)
 		_transition_to(STATE_SLIDE)
 		return
 
-	var target_speed: float = _movement().walk_speed
-	var can_sprint: bool = input_reader.wants_sprint and input_vector != Vector2.ZERO and body.is_on_floor() and can_use_mobility and not watch_active
+	var target_speed: float = _movement().walk_speed * speed_multiplier
+	var can_sprint: bool = input_reader.wants_sprint and not _action_blocked(constraints, &"sprint") and input_vector != Vector2.ZERO and body.is_on_floor() and can_use_mobility and not watch_active
 	if watch_active:
-		target_speed = _movement().watch_walk_speed
+		target_speed = _movement().watch_walk_speed * speed_multiplier
 	elif can_sprint and _consume_sprint_stamina(delta):
-		target_speed = _movement().sprint_speed
+		target_speed = _movement().sprint_speed * speed_multiplier
 
 	var control_multiplier: float = 1.0 if body.is_on_floor() else _movement().air_control_multiplier
 	motor.apply_ground_motion(body, input_vector, target_speed, delta, control_multiplier)
@@ -71,7 +77,7 @@ func physics_update(body: CharacterBody3D, input_reader: PlayerInputReader, cons
 			_transition_to(STATE_FALL)
 	elif input_vector == Vector2.ZERO:
 		_transition_to(STATE_IDLE)
-	elif is_equal_approx(target_speed, _movement().sprint_speed):
+	elif is_equal_approx(target_speed, _movement().sprint_speed * speed_multiplier):
 		_transition_to(STATE_SPRINT)
 	else:
 		_transition_to(STATE_WALK)
@@ -100,3 +106,14 @@ func _movement() -> PlayerMovementDefinition:
 	var fallback: PlayerMovementDefinition = PlayerMovementDefinition.new()
 	movement_definition = fallback
 	return fallback
+
+
+func _action_blocked(constraints: Dictionary, action_id: StringName) -> bool:
+	var blocked_actions: Array = constraints.get("blocked_action_ids", [])
+	return blocked_actions.has(action_id)
+
+
+func _emit_blocked(action_id: StringName) -> void:
+	var event_bus: Node = get_node_or_null("/root/EventBus")
+	if event_bus != null:
+		event_bus.player_action_blocked.emit(action_id, &"perk_restriction")

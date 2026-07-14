@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatusEffectDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/status_effect_definition.gd" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+status_id = &"bleeding"
+display_name = "Bleeding"
+category = 2
+description = "Lose health periodically until the wound closes."
+duration_seconds = 18.0
+tick_interval_seconds = 2.0
+health_delta_per_tick = -2.0

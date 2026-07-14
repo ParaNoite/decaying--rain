@@ -27,6 +27,10 @@ enum WeaponKind {
 @export_range(0.0, 20.0, 0.05) var reload_seconds: float = 0.0
 @export_range(0.0, 200.0, 0.5) var noise_radius: float = 0.0
 @export_range(0.0, 20.0, 0.1) var effective_range: float = 0.0
+@export_range(0.02, 5.0, 0.01) var fire_interval_seconds: float = 0.25
+@export var automatic: bool = false
+@export_range(1, 16, 1) var pellet_count: int = 1
+@export_range(0.0, 20.0, 0.1) var spread_degrees: float = 0.0
 
 
 func is_firearm() -> bool:

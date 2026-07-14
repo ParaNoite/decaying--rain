@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="StatusEffectDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/status_effect_definition.gd" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+status_id = &"staggered"
+display_name = "Staggered"
+category = 2
+description = "Movement and combat are briefly interrupted."
+duration_seconds = 0.6
+mobility_blocked = true
+combat_blocked = true
+interaction_blocked = true
+movement_speed_multiplier = 0.25

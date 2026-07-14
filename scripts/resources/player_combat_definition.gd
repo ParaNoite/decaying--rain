@@ -17,6 +17,9 @@ extends Resource
 @export_range(0.0, 5.0, 0.05) var light_attack_recovery: float = 0.28
 @export_range(0.0, 5.0, 0.05) var parry_window: float = 0.22
 @export_range(0.0, 5.0, 0.05) var parry_recovery: float = 0.35
+@export_range(0.0, 1000.0, 1.0) var parry_stagger: float = 45.0
+@export_range(0.0, 1000.0, 1.0) var stagger_threshold: float = 20.0
+@export_range(0.0, 1000.0, 1.0) var bleeding_damage_threshold: float = 25.0
 @export_range(0.0, 5.0, 0.05) var shove_duration: float = 0.25
 @export_range(0.0, 5.0, 0.05) var shove_cooldown: float = 0.55
 

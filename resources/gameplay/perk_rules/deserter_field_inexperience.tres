@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="PerkRuleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/perk_rule_definition.gd" id="1_rule"]
+
+[resource]
+script = ExtResource("1_rule")
+rule_id = &"deserter_field_inexperience"
+display_name = "Field Inexperience"
+description = "The deserter cannot perform field repairs."
+kind = 3
+action_ids = Array[StringName]([&"repair"])
+hud_message = "Field repair unavailable"

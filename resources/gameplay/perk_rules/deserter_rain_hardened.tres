@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PerkRuleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/perk_rule_definition.gd" id="1_rule"]
+
+[resource]
+script = ExtResource("1_rule")
+rule_id = &"deserter_rain_hardened"
+display_name = "Rain Hardened"
+description = "Rain exposure statuses wear off faster."
+kind = 2
+status_ids = Array[StringName]([&"rain_exposure"])
+multiplier = 0.75
+hud_message = "Rain exposure duration -25%"

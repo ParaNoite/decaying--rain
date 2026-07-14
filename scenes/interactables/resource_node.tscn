@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/interactables/resource_node.gd" id="1_resource"]
 [ext_resource type="Script" path="res://scripts/components/interactable_component.gd" id="2_interactable"]
+[ext_resource type="Resource" path="res://resources/loot/mvp_scavenge.tres" id="3_loot"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_resource"]
 albedo_color = Color(0.25, 0.8, 0.72, 1)
@@ -15,6 +16,7 @@ size = Vector3(1.2, 1.2, 1.2)
 
 [node name="ResourceNode" type="Node3D"]
 script = ExtResource("1_resource")
+loot_table = ExtResource("3_loot")
 
 [node name="ResourceMesh" type="MeshInstance3D" parent="."]
 material_override = SubResource("StandardMaterial3D_resource")
@@ -26,6 +28,8 @@ collision_layer = 8
 collision_mask = 0
 script = ExtResource("2_interactable")
 prompt = "Loot resource"
+interaction_kind = 2
+hold_duration = 0.7
 
 [node name="InteractionShape" type="CollisionShape3D" parent="InteractableComponent"]
 shape = SubResource("BoxShape3D_interaction")

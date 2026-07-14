@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LootEntryDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/loot_entry_definition.gd" id="1_entry"]
+
+[resource]
+script = ExtResource("1_entry")
+item_id = &"bandage"
+drop_chance = 0.5
+min_quantity = 1
+max_quantity = 1
+tags = Array[StringName]([&"medical"])

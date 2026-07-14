@@ -6,15 +6,19 @@ signal state_changed(previous_state: StringName, current_state: StringName)
 const STATE_NORMAL: StringName = &"normal"
 const STATE_HUNGRY: StringName = &"hungry"
 const STATE_EXHAUSTED: StringName = &"exhausted"
+const STATE_BLEEDING: StringName = &"bleeding"
+const STATE_STAGGERED: StringName = &"staggered"
 const STATE_DEAD: StringName = &"dead"
 
 @export var health_path: NodePath = ^"../../Components/HealthComponent"
 @export var stamina_path: NodePath = ^"../../Components/StaminaComponent"
 @export var hunger_path: NodePath = ^"../../Components/HungerComponent"
+@export var status_container_path: NodePath = ^"../../Components/StatusContainer"
 
 @onready var health: HealthComponent = get_node(health_path)
 @onready var stamina: StaminaComponent = get_node(stamina_path)
 @onready var hunger: HungerComponent = get_node(hunger_path)
+@onready var status_container: StatusContainer = get_node(status_container_path)
 
 var current_state: StringName = STATE_NORMAL
 
@@ -32,6 +36,8 @@ func update() -> Dictionary:
 		"mobility_blocked": false,
 		"outgoing_damage_multiplier": 1.0,
 	}
+	if status_container != null:
+		constraints.merge(status_container.get_constraints(), true)
 
 	if health != null and not health.is_alive():
 		_transition_to(STATE_DEAD)
@@ -41,12 +47,16 @@ func update() -> Dictionary:
 		constraints["mobility_blocked"] = true
 		return constraints
 
-	if stamina != null and stamina.current_stamina <= 0.0:
+	if status_container != null and status_container.has_status(&"staggered"):
+		_transition_to(STATE_STAGGERED)
+	elif status_container != null and status_container.has_status(&"bleeding"):
+		_transition_to(STATE_BLEEDING)
+	elif stamina != null and stamina.current_stamina <= 0.0:
 		_transition_to(STATE_EXHAUSTED)
 		constraints["mobility_blocked"] = true
 	elif hunger != null and hunger.is_hungry:
 		_transition_to(STATE_HUNGRY)
-		constraints["outgoing_damage_multiplier"] = 0.75
+		constraints["outgoing_damage_multiplier"] *= 0.75
 	else:
 		_transition_to(STATE_NORMAL)
 

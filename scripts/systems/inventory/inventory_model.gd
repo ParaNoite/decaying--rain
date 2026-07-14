@@ -14,6 +14,19 @@ func add_item(item_id: StringName, quantity: int = 1) -> void:
 	changed.emit(to_dictionary())
 
 
+func add_items(payload: Dictionary) -> void:
+	var changed_any: bool = false
+	for item_value: Variant in payload.keys():
+		var item_id: StringName = StringName(item_value)
+		var quantity: int = int(payload[item_value])
+		if item_id == &"" or quantity <= 0:
+			continue
+		items[item_id] = items.get(item_id, 0) + quantity
+		changed_any = true
+	if changed_any:
+		changed.emit(to_dictionary())
+
+
 func remove_item(item_id: StringName, quantity: int = 1) -> bool:
 	if item_id == &"" or quantity <= 0:
 		return false

@@ -36,7 +36,9 @@ func loot() -> Dictionary[StringName, int]:
 	return payload
 
 
-func _on_interacted(_actor: Node) -> void:
-	loot()
+func _on_interacted(actor: Node) -> void:
+	var payload: Dictionary[StringName, int] = loot()
+	if not payload.is_empty() and actor != null and actor.has_method("receive_loot"):
+		actor.call("receive_loot", payload)
 	if interactable != null and not can_loot():
 		interactable.enabled = false
