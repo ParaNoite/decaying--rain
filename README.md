@@ -10,7 +10,7 @@ The current workstream is the `mvp` integration branch. New gameplay work should
 - Preparation: short 30-second conversion window for repair, healing, and loadout choices.
 - Rain defense: wave survival around a fixed beacon base.
 - Combat: melee, block, shove, stamina, and scarce firearms.
-- MVP scope: 5 rain waves, 4 enemies, 4 firearms, 3 melee options, deserter profession, hunger, status interface stubs.
+- MVP scope: 5 rain waves, 4 enemies, 4 firearms, 3 melee options, deserter profession, hunger, and unified damage/buff resolution.
 
 ## Project Layout
 

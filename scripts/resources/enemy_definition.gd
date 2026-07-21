@@ -20,6 +20,7 @@ enum PressureRole {
 @export_range(0.1, 20.0, 0.1) var move_speed: float = 4.0
 @export_range(0.1, 50.0, 0.1) var attack_damage: float = 10.0
 @export_range(0.1, 10.0, 0.1) var attack_range: float = 1.5
+@export_range(0.1, 20.0, 0.1) var attack_cooldown_seconds: float = 1.5
 
 @export_group("AI")
 @export var preferred_target_tags: Array[StringName] = [&"player"]

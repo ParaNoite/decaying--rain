@@ -4,7 +4,6 @@ extends StaticBody3D
 # Temporary MVP test target only.
 # Do not use this as an enemy template. Real enemies must follow the dedicated enemy system.
 
-@export_range(1.0, 1000.0, 1.0) var max_health: float = 120.0
 @export var destroyed_material: StandardMaterial3D
 @export var hurt_material: StandardMaterial3D
 @export var warning_material: StandardMaterial3D
@@ -16,13 +15,13 @@ extends StaticBody3D
 
 @onready var label: Label3D = %StatusLabel
 @onready var body_mesh: MeshInstance3D = %BodyMesh
+@onready var health: HealthComponent = %HealthComponent
 
 const STATE_IDLE: StringName = &"idle"
 const STATE_WARNING: StringName = &"warning"
 const STATE_STRIKE: StringName = &"strike"
 const STATE_COOLDOWN: StringName = &"cooldown"
 
-var current_health: float = 120.0
 var attack_state: StringName = STATE_IDLE
 var _state_time_remaining: float = 0.0
 var _event_bus = null
@@ -32,14 +31,14 @@ var _default_material: Material
 func _ready() -> void:
 	add_to_group("enemy")
 	_event_bus = get_node_or_null("/root/EventBus")
-	current_health = max_health
+	health.died.connect(_on_health_died)
 	_default_material = body_mesh.material_override
 	_enter_state(STATE_IDLE)
-	_emit_notice("Temporary wooden dummy ready: HP %.0f / %.0f" % [current_health, max_health], &"dummy")
+	_emit_notice("Temporary wooden dummy ready: HP %.0f / %.0f" % [health.current_health, health.max_health], &"dummy")
 
 
 func _physics_process(delta: float) -> void:
-	if current_health <= 0.0:
+	if not health.is_alive():
 		return
 
 	_state_time_remaining = maxf(0.0, _state_time_remaining - delta)
@@ -60,40 +59,48 @@ func _physics_process(delta: float) -> void:
 
 
 func receive_damage(data: DamageEventData) -> void:
-	if data == null:
-		return
-
-	if data.amount <= 0.0:
-		_update_label("HIT: stagger %.1f" % data.stagger)
-		_emit_notice("Dummy shoved/staggered: HP %.0f / %.0f" % [current_health, max_health], &"dummy")
-		return
-
-	_apply_damage(data.amount)
-	if _event_bus != null:
-		_event_bus.combat_hit.emit(data)
+	var resolver: Node = get_node_or_null("/root/DamageResolver")
+	if resolver != null:
+		resolver.call("resolve_damage", data, self)
 
 
 func apply_damage(amount: float) -> void:
-	_apply_damage(amount)
+	if amount <= 0.0:
+		return
+	var damage: DamageEventData = DamageEventData.new()
+	damage.target_id = get_instance_id()
+	damage.amount = amount
+	damage.source_tags = [&"legacy_apply_damage"]
+	damage.bypass_outgoing_modifiers = true
+	receive_damage(damage)
 
 
-func _apply_damage(amount: float) -> void:
-	if current_health <= 0.0:
+func on_damage_resolved(result: DamageResolutionData) -> void:
+	if not result.applied:
+		return
+	if result.final_amount <= 0.0:
+		_update_label("HIT: stagger %.1f" % result.event.stagger)
+		_emit_notice("Dummy shoved/staggered: HP %.0f / %.0f" % [health.current_health, health.max_health], &"dummy")
+		return
+	if not health.is_alive():
 		return
 
-	current_health = maxf(0.0, current_health - amount)
-	if current_health <= 0.0:
-		_update_label("DESTROYED")
-		if destroyed_material != null:
-			body_mesh.material_override = destroyed_material
-		_emit_notice("Dummy destroyed: HP 0 / %.0f" % max_health, &"dummy")
-		return
-
-	_update_label("HIT -%.0f" % amount)
+	_update_label("HIT -%.0f" % result.final_amount)
 	if hurt_material != null:
 		body_mesh.material_override = hurt_material
 		get_tree().create_timer(0.18).timeout.connect(_restore_material, CONNECT_ONE_SHOT)
-	_emit_notice("Dummy hit: HP %.0f / %.0f" % [current_health, max_health], &"dummy")
+	_emit_notice("Dummy hit: HP %.0f / %.0f" % [health.current_health, health.max_health], &"dummy")
+
+
+func get_health_component() -> HealthComponent:
+	return health
+
+
+func _on_health_died() -> void:
+	_update_label("DESTROYED")
+	if destroyed_material != null:
+		body_mesh.material_override = destroyed_material
+	_emit_notice("Dummy destroyed: HP 0 / %.0f" % health.max_health, &"dummy")
 
 
 func _enter_state(next_state: StringName) -> void:
@@ -148,15 +155,15 @@ func _perform_melee_attack() -> void:
 
 
 func _restore_material() -> void:
-	if current_health > 0.0 and is_instance_valid(body_mesh):
+	if health.is_alive() and is_instance_valid(body_mesh):
 		body_mesh.material_override = _default_material
 
 
 func _update_label(state_text: String) -> void:
 	label.text = "TEMP TEST DUMMY - DELETE LATER\nNOT AN ENEMY TEMPLATE\n%s\nHP %.0f / %.0f\nATK %.0f / RANGE %.1f" % [
 		state_text,
-		current_health,
-		max_health,
+		health.current_health,
+		health.max_health,
 		attack_damage,
 		attack_range,
 	]

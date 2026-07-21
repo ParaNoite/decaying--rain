@@ -9,6 +9,19 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="7_hud"]
 [ext_resource type="Resource" path="res://resources/gameplay/mvp_run_config.tres" id="8_run"]
 [ext_resource type="PackedScene" path="res://scenes/debug/temporary_wooden_dummy.tscn" id="9_dummy"]
+[ext_resource type="Script" uid="uid://b21sdw6pkqs8k" path="res://scripts/resources/wave_definition.gd" id="10_wave_script"]
+[ext_resource type="Script" uid="uid://dcoffbioobbqk" path="res://scripts/resources/enemy_definition.gd" id="11_enemy_script"]
+[ext_resource type="Script" uid="uid://5wi87h42u7i3" path="res://scripts/systems/run/wave_director.gd" id="12_wave_director"]
+[ext_resource type="PackedScene" path="res://scenes/characters/enemies/enemy_stub.tscn" id="13_enemy_scene"]
+[ext_resource type="Resource" uid="uid://c1qbvv3lwqly8" path="res://resources/gameplay/waves/wave_1.tres" id="14_wave_1"]
+[ext_resource type="Resource" uid="uid://vyitay622e7y" path="res://resources/gameplay/waves/wave_2.tres" id="15_wave_2"]
+[ext_resource type="Resource" uid="uid://cgxpskrns6emu" path="res://resources/gameplay/waves/wave_3.tres" id="16_wave_3"]
+[ext_resource type="Resource" uid="uid://pukimjjccvlr" path="res://resources/gameplay/waves/wave_4.tres" id="17_wave_4"]
+[ext_resource type="Resource" uid="uid://cs72y2q7ps87c" path="res://resources/gameplay/waves/wave_5.tres" id="18_wave_5"]
+[ext_resource type="Resource" path="res://resources/gameplay/enemies/ruptured.tres" id="19_ruptured"]
+[ext_resource type="Resource" path="res://resources/gameplay/enemies/doorbreaker.tres" id="20_doorbreaker"]
+[ext_resource type="Resource" path="res://resources/gameplay/enemies/armored_scavenger.tres" id="21_armored_scavenger"]
+[ext_resource type="Resource" path="res://resources/gameplay/enemies/wet_gunner.tres" id="22_wet_gunner"]
 
 [sub_resource type="Environment" id="Environment_mvp"]
 background_mode = 1
@@ -59,6 +72,7 @@ shadow_enabled = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
 
 [node name="FloorMesh" type="MeshInstance3D" parent="Blockout/Floor" unique_id=1234974364]
+transform = Transform3D(7.895, 0, 0, 0, 7.895, 0, 0, 0, 7.895, 0, 0, 0)
 material_override = SubResource("StandardMaterial3D_floor")
 mesh = SubResource("BoxMesh_floor")
 
@@ -105,13 +119,22 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.2)
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=470361610]
 
 [node name="EnemyEntranceA" type="Marker3D" parent="SpawnPoints" unique_id=1980677264]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0, -6.2)
 
 [node name="EnemyEntranceB" type="Marker3D" parent="SpawnPoints" unique_id=969450376]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, -6.2)
 
 [node name="EnemyEntranceC" type="Marker3D" parent="SpawnPoints" unique_id=1418608333]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4.2)
+
+[node name="Enemies" type="Node3D" parent="." unique_id=1503611110]
+
+[node name="WaveDirector" type="Node" parent="." unique_id=1840012210]
+unique_name_in_owner = true
+script = ExtResource("12_wave_director")
+enemy_scene = ExtResource("13_enemy_scene")
+wave_definitions = Array[ExtResource("10_wave_script")]([ExtResource("14_wave_1"), ExtResource("15_wave_2"), ExtResource("16_wave_3"), ExtResource("17_wave_4"), ExtResource("18_wave_5")])
+enemy_definitions = Array[ExtResource("11_enemy_script")]([ExtResource("19_ruptured"), ExtResource("20_doorbreaker"), ExtResource("21_armored_scavenger"), ExtResource("22_wet_gunner")])
 
 [node name="Player" parent="." unique_id=758451577 instance=ExtResource("3_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4)

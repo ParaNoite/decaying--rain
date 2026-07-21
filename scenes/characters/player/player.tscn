@@ -12,7 +12,6 @@
 [ext_resource type="Script" uid="uid://cbdeyixajddyv" path="res://scripts/components/stamina_component.gd" id="10_stamina"]
 [ext_resource type="Script" uid="uid://b62bs0cwcv44q" path="res://scripts/components/hunger_component.gd" id="11_hunger"]
 [ext_resource type="Script" uid="uid://d08ty8ajb7ksp" path="res://scripts/components/status_container.gd" id="12_status"]
-[ext_resource type="Script" uid="uid://c2y04f18utf8i" path="res://scripts/resources/status_effect_definition.gd" id="12_status_effect"]
 [ext_resource type="Script" uid="uid://gdse1mng5y6b" path="res://scripts/characters/player/states/player_locomotion_state_machine.gd" id="13_locomotion"]
 [ext_resource type="Script" uid="uid://dbfogyj8pi6xi" path="res://scripts/characters/player/states/player_combat_state_machine.gd" id="14_combat_state"]
 [ext_resource type="Script" uid="uid://cs2w32agaaptq" path="res://scripts/characters/player/states/player_interaction_state_machine.gd" id="15_interaction_state"]
@@ -23,8 +22,6 @@
 [ext_resource type="Script" uid="uid://cxqgr648d2vbw" path="res://scripts/characters/player/player_profession_component.gd" id="20_profession_component"]
 [ext_resource type="Script" uid="uid://bn6dhjrypodbv" path="res://scripts/characters/player/player_skill_component.gd" id="21_skill_component"]
 [ext_resource type="Resource" path="res://resources/gameplay/professions/deserter.tres" id="22_deserter"]
-[ext_resource type="Resource" path="res://resources/gameplay/statuses/deserter_baseline.tres" id="23_deserter_status"]
-[ext_resource type="Resource" path="res://resources/gameplay/statuses/rain_exposure.tres" id="24_rain_exposure"]
 [ext_resource type="Script" uid="uid://55e22ej2daqa" path="res://scripts/characters/player/player_inventory_component.gd" id="25_inventory"]
 [ext_resource type="Script" uid="uid://b6462kfss2rsj" path="res://scripts/characters/player/player_loadout_component.gd" id="26_loadout"]
 [ext_resource type="Script" uid="uid://bu7pigdfx0oay" path="res://scripts/resources/weapon_definition.gd" id="26_weapon_definition"]
@@ -34,8 +31,6 @@
 [ext_resource type="Resource" path="res://resources/gameplay/weapons/shotgun.tres" id="30_shotgun"]
 [ext_resource type="Resource" path="res://resources/gameplay/weapons/smg.tres" id="31_smg"]
 [ext_resource type="Resource" path="res://resources/gameplay/weapons/rifle.tres" id="32_rifle"]
-[ext_resource type="Resource" path="res://resources/gameplay/statuses/staggered.tres" id="33_staggered"]
-[ext_resource type="Resource" path="res://resources/gameplay/statuses/bleeding.tres" id="34_bleeding"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.35
@@ -164,7 +159,6 @@ broadcast_player_events = true
 [node name="StatusContainer" type="Node" parent="Components" unique_id=494459623]
 unique_name_in_owner = true
 script = ExtResource("12_status")
-status_definitions = Array[ExtResource("12_status_effect")]([ExtResource("23_deserter_status"), ExtResource("24_rain_exposure"), ExtResource("33_staggered"), ExtResource("34_bleeding")])
 
 [node name="PlayerInventoryComponent" type="Node" parent="Components" unique_id=47023612]
 unique_name_in_owner = true

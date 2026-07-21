@@ -17,7 +17,6 @@ var combo_index: int = 0
 var combo_time_remaining: float = 0.0
 var shove_cooldown_remaining: float = 0.0
 var fire_cooldown_remaining: float = 0.0
-var outgoing_damage_multiplier: float = 1.0
 var firearm_spread_multiplier: float = 1.0
 
 var _event_bus = null
@@ -49,7 +48,7 @@ func try_light_attack(attacker: Node3D) -> bool:
 	combo_index = 1 if combo_time_remaining <= 0.0 else wrapi(combo_index + 1, 1, 4)
 	combo_time_remaining = combat.combo_input_window
 
-	var damage: float = _base_damage() * outgoing_damage_multiplier
+	var damage: float = _base_damage()
 	if combo_index == 3:
 		damage *= combat.final_combo_damage_multiplier
 
@@ -122,7 +121,7 @@ func _try_firearm_attack(attacker: Node3D) -> bool:
 
 	fire_cooldown_remaining = current_weapon.fire_interval_seconds
 	var pellet_count: int = maxi(1, current_weapon.pellet_count)
-	var damage_per_pellet: float = current_weapon.base_damage * outgoing_damage_multiplier / float(pellet_count)
+	var damage_per_pellet: float = current_weapon.base_damage / float(pellet_count)
 	for pellet_index: int in pellet_count:
 		_fire_ray(attacker, damage_per_pellet, pellet_index)
 
@@ -173,14 +172,12 @@ func _fire_ray(attacker: Node3D, damage: float, pellet_index: int) -> void:
 	hit_data.hit_position = result.get("position", receiver.global_position if receiver is Node3D else Vector3.ZERO)
 	if receiver.has_method("receive_damage"):
 		receiver.call("receive_damage", hit_data)
-	elif receiver.has_method("apply_damage"):
-		receiver.call("apply_damage", damage)
 
 
 func _find_damage_receiver(node: Node) -> Node:
 	var current: Node = node
 	while current != null:
-		if current.has_method("receive_damage") or current.has_method("apply_damage"):
+		if current.has_method("receive_damage"):
 			return current
 		current = current.get_parent()
 	return null
@@ -234,10 +231,6 @@ func _emit_best_melee_hit(
 
 	if best_target.has_method("receive_damage"):
 		best_target.receive_damage(hit_data)
-	elif damage > 0.0 and best_target.has_method("apply_damage"):
-		best_target.apply_damage(damage)
-	elif _event_bus != null:
-		_event_bus.combat_hit.emit(hit_data)
 
 
 func _base_damage() -> float:

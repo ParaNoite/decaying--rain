@@ -1,6 +1,27 @@
-[gd_resource type="Resource" script_class="WaveDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="WaveDefinition" format=3 uid="uid://cs72y2q7ps87c"]
 
-[ext_resource type="Script" path="res://scripts/resources/wave_definition.gd" id="1_wave"]
+[ext_resource type="Script" uid="uid://b21sdw6pkqs8k" path="res://scripts/resources/wave_definition.gd" id="1_wave"]
+[ext_resource type="Script" uid="uid://v5r8w6q1x2ya" path="res://scripts/resources/wave_enemy_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="WaveEnemyEntry_ruptured_5"]
+script = ExtResource("2_entry")
+enemy_id = &"ruptured"
+count = 5
+
+[sub_resource type="Resource" id="WaveEnemyEntry_doorbreaker_5a"]
+script = ExtResource("2_entry")
+enemy_id = &"doorbreaker"
+count = 2
+
+[sub_resource type="Resource" id="WaveEnemyEntry_armored_5a"]
+script = ExtResource("2_entry")
+enemy_id = &"armored_scavenger"
+count = 2
+
+[sub_resource type="Resource" id="WaveEnemyEntry_wet_gunner_5a"]
+script = ExtResource("2_entry")
+enemy_id = &"wet_gunner"
+count = 2
 
 [resource]
 script = ExtResource("1_wave")
@@ -8,5 +29,6 @@ wave_index = 5
 wave_id = &"wave_5"
 pressure_theme = &"compound_finale"
 enemy_ids = Array[StringName]([&"ruptured", &"doorbreaker", &"armored_scavenger", &"wet_gunner"])
-forced_event_ids = Array[StringName]([&"faction_war"])
+spawn_entries = Array[ExtResource("2_entry")]([SubResource("WaveEnemyEntry_ruptured_5"), SubResource("WaveEnemyEntry_doorbreaker_5a"), SubResource("WaveEnemyEntry_armored_5a"), SubResource("WaveEnemyEntry_wet_gunner_5a")])
 spawn_budget_multiplier = 2.0
+forced_event_ids = Array[StringName]([&"faction_war"])

@@ -314,8 +314,18 @@ Condition
 - `HealthComponent` 管生命值，只负责数值和死亡信号。
 - `StaminaComponent` 管体力，不直接知道移动或战斗状态。
 - `HungerComponent` 管饥饿值，向 condition 状态机提供阈值。
-- `StatusContainer` 管可见状态，状态不叠层，同类状态再次施加时覆盖或刷新。
+- `StatusContainer` 只保存已裁决的运行时状态、层数、剩余时间和 Tick 计时；默认同类状态刷新，也可由 `StatusEffectDefinition.stack_policy` 明确覆盖或叠层。
 - `PlayerConditionStateMachine` 负责把这些组件状态折算成行动限制、视觉压制和数值惩罚。
+
+### 统一 DamageResolver / BuffResolver
+
+- 攻击、技能、环境和持续伤害只创建原始 `DamageEventData`；攻方倍率、暴击、伤害类型倍率、守方倍率和最终扣血统一由 Autoload `DamageResolver` 裁决。
+- 玩家门面保留 `receive_damage()` 作为目标接口，但它只能委托 `DamageResolver`，不得直接调用 `HealthComponent.take_damage()`。
+- 状态查找、免疫、持续时间修正、施加、移除、约束汇总和周期效果统一由 Autoload `BuffResolver` 裁决。
+- `StatusContainer` 的 `apply_resolved_status()` / `remove_resolved_status()` 是解析器内部提交接口，不是技能、角色或关卡脚本的调用入口。
+- 周期掉血由 `BuffResolver` 转换成带来源和伤害类型的 `DamageEventData`，再交给 `DamageResolver`；DOT 不得直接扣生命。
+- 玩家和敌人共享同一套状态合同。敌人硬直使用 `staggered` 状态，不维护敌人专属的第二套硬直计时器。
+- HUD、音频和调试系统消费 `EventBus.damage_resolved`、`status_applied`、`status_removed` 和 `status_list_changed`，不参与玩法裁决。
 
 ### Perk / Profession Skill System
 

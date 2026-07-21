@@ -22,6 +22,13 @@ When working on Godot-specific code, invoke the relevant GodotPrompter skill bef
 - `save-load` for settings, saves, and schema migration.
 - `gdscript-patterns` for typed GDScript.
 
+## AI Tool Port
+
+- All AI clients and assistant conversations for this repository must use the Godot MCP endpoint on port `19080`.
+- The expected endpoint is `http://localhost:19080/mcp`, matching `.mcp.json`.
+- If an AI client cannot connect to port `19080`, it must stop Godot-related work immediately and notify the user instead of continuing with assumptions.
+- Do not silently fall back to another port unless the user explicitly updates the repository configuration.
+
 ## Code Shape
 
 - New runtime code goes in `scripts/` using lowercase paths.

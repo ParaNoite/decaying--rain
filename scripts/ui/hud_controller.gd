@@ -65,6 +65,8 @@ func _ready() -> void:
 	_event_bus.watch_state_changed.connect(_on_watch_state_changed)
 	_event_bus.wave_timer_changed.connect(_on_wave_timer_changed)
 	_event_bus.player_died.connect(_on_player_died)
+	_event_bus.enemy_spawned.connect(_on_enemy_spawned)
+	_event_bus.enemy_died.connect(_on_enemy_died)
 	use_bandage_button.pressed.connect(_request_item_use.bind(&"bandage"))
 	use_food_button.pressed.connect(_request_item_use.bind(&"food_ration"))
 	_sync_initial_values()
@@ -113,6 +115,10 @@ func _exit_tree() -> void:
 		_event_bus.wave_timer_changed.disconnect(_on_wave_timer_changed)
 	if _event_bus.player_died.is_connected(_on_player_died):
 		_event_bus.player_died.disconnect(_on_player_died)
+	if _event_bus.enemy_spawned.is_connected(_on_enemy_spawned):
+		_event_bus.enemy_spawned.disconnect(_on_enemy_spawned)
+	if _event_bus.enemy_died.is_connected(_on_enemy_died):
+		_event_bus.enemy_died.disconnect(_on_enemy_died)
 
 
 func _on_phase_changed(_previous_phase: StringName, current_phase: StringName, wave_index: int) -> void:
@@ -263,6 +269,14 @@ func _on_player_died(reason: StringName) -> void:
 	death_label.visible = true
 
 
+func _on_enemy_spawned(enemy_id: StringName, _instance_id: int, wave_index: int) -> void:
+	_on_debug_test_notice("Spawned %s in wave %d" % [String(enemy_id), wave_index], &"enemy")
+
+
+func _on_enemy_died(enemy_id: StringName, _instance_id: int, wave_index: int) -> void:
+	_on_debug_test_notice("Defeated %s in wave %d" % [String(enemy_id), wave_index], &"enemy")
+
+
 func _update_skill_panel() -> void:
 	if perk_label != null:
 		perk_label.text = "PERK %s" % _perk_display_name.to_upper()
@@ -402,5 +416,7 @@ func _format_statuses(statuses: Array[Dictionary]) -> String:
 	for status: Dictionary in statuses:
 		var remaining: float = float(status.get("remaining_seconds", -1.0))
 		var duration_text: String = "PERM" if remaining < 0.0 else "%.1fs" % remaining
-		lines.append("%s  %s" % [String(status.get("display_name", "Status")).to_upper(), duration_text])
+		var stack_count: int = int(status.get("stack_count", 1))
+		var stack_text: String = " x%d" % stack_count if stack_count > 1 else ""
+		lines.append("%s%s  %s" % [String(status.get("display_name", "Status")).to_upper(), stack_text, duration_text])
 	return "\n".join(lines)

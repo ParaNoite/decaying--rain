@@ -12,4 +12,5 @@ max_health = 150.0
 move_speed = 3.2
 attack_damage = 22.0
 attack_range = 1.55
+attack_cooldown_seconds = 1.8
 can_attack_base = true

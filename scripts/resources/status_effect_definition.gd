@@ -9,6 +9,12 @@ enum StatusCategory {
 	PROFESSION,
 }
 
+enum StackPolicy {
+	REFRESH_DURATION,
+	REPLACE,
+	ADD_STACK,
+}
+
 @export_group("Identity")
 @export var status_id: StringName = &"status"
 @export var display_name: String = "Status"
@@ -18,6 +24,8 @@ enum StatusCategory {
 @export_group("Timing")
 @export_range(0.0, 3600.0, 0.1) var duration_seconds: float = 0.0
 @export var is_permanent_until_removed: bool = false
+@export var stack_policy: StackPolicy = StackPolicy.REFRESH_DURATION
+@export_range(1, 99, 1) var max_stacks: int = 1
 
 @export_group("Modifiers")
 @export_range(0.0, 10.0, 0.05) var stamina_recovery_multiplier: float = 1.0
@@ -34,3 +42,4 @@ enum StatusCategory {
 @export var health_delta_per_tick: float = 0.0
 @export var stamina_delta_per_tick: float = 0.0
 @export var hunger_delta_per_tick: float = 0.0
+@export var tick_damage_type: StringName = &"status"

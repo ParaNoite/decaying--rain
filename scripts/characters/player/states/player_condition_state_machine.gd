@@ -28,16 +28,8 @@ func _ready() -> void:
 		health.died.connect(_on_died)
 
 
-func update() -> Dictionary:
-	var constraints: Dictionary = {
-		"movement_disabled": false,
-		"combat_blocked": false,
-		"interaction_blocked": false,
-		"mobility_blocked": false,
-		"outgoing_damage_multiplier": 1.0,
-	}
-	if status_container != null:
-		constraints.merge(status_container.get_constraints(), true)
+func update(base_constraints: Dictionary = {}) -> Dictionary:
+	var constraints: Dictionary = base_constraints.duplicate(true)
 
 	if health != null and not health.is_alive():
 		_transition_to(STATE_DEAD)
@@ -56,7 +48,6 @@ func update() -> Dictionary:
 		constraints["mobility_blocked"] = true
 	elif hunger != null and hunger.is_hungry:
 		_transition_to(STATE_HUNGRY)
-		constraints["outgoing_damage_multiplier"] *= 0.75
 	else:
 		_transition_to(STATE_NORMAL)
 

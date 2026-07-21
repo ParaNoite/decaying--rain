@@ -4,89 +4,90 @@ extends Node
 signal status_applied(status_id: StringName)
 signal status_removed(status_id: StringName)
 signal status_changed(status_id: StringName, remaining_seconds: float)
-signal status_tick(status_id: StringName, health_delta: float, stamina_delta: float, hunger_delta: float)
+signal status_tick(
+	status_id: StringName,
+	source_id: int,
+	damage_type: StringName,
+	health_delta: float,
+	stamina_delta: float,
+	hunger_delta: float
+)
+signal status_list_changed(statuses: Array[Dictionary])
 
-@export_group("Definitions")
-@export var status_definitions: Array[StatusEffectDefinition] = []
+const STATUS_LIST_UPDATE_INTERVAL: float = 0.1
+
 @export var initial_statuses: Array[StatusEffectDefinition] = []
 
-var active_statuses: Dictionary[StringName, Dictionary] = {}
-var _event_bus: Node
-
-
-func _ready() -> void:
-	_event_bus = get_node_or_null("/root/EventBus")
-	for status: StatusEffectDefinition in initial_statuses:
-		apply_status(status)
+var active_statuses: Dictionary[StringName, ActiveStatusData] = {}
+var _status_list_update_elapsed: float = 0.0
 
 
 func _process(delta: float) -> void:
 	var expired_statuses: Array[StringName] = []
+	var has_timed_status: bool = false
 
 	for status_id: StringName in active_statuses.keys():
-		var active: Dictionary = active_statuses[status_id]
-		var definition: StatusEffectDefinition = active["definition"] as StatusEffectDefinition
-		var remaining: float = float(active["remaining_seconds"])
-		if remaining < 0.0:
-			_tick_status(active, definition, status_id, delta)
+		var active: ActiveStatusData = active_statuses[status_id]
+		if active.remaining_seconds < 0.0:
+			_tick_status(active, status_id, delta)
 			continue
 
-		remaining = maxf(0.0, remaining - delta)
-		active["remaining_seconds"] = remaining
-		_tick_status(active, definition, status_id, delta)
-		status_changed.emit(status_id, remaining)
-		_emit_status_list_event()
-		if remaining <= 0.0:
+		has_timed_status = true
+		var active_delta: float = minf(delta, active.remaining_seconds)
+		active.remaining_seconds = maxf(0.0, active.remaining_seconds - delta)
+		_tick_status(active, status_id, active_delta)
+		status_changed.emit(status_id, active.remaining_seconds)
+		if active.remaining_seconds <= 0.0:
 			expired_statuses.append(status_id)
 
 	for status_id: StringName in expired_statuses:
-		remove_status(status_id)
+		remove_resolved_status(status_id)
+
+	if has_timed_status and expired_statuses.is_empty():
+		_status_list_update_elapsed += delta
+		if _status_list_update_elapsed >= STATUS_LIST_UPDATE_INTERVAL:
+			_status_list_update_elapsed = 0.0
+			_emit_status_list_changed()
 
 
-func apply_status(status: StatusEffectDefinition, duration_override: float = -1.0) -> bool:
+func apply_resolved_status(
+	status: StatusEffectDefinition,
+	duration_seconds: float,
+	source_id: int = 0,
+) -> bool:
 	if status == null or status.status_id == &"":
 		return false
 
-	var duration: float = duration_override if duration_override >= 0.0 else status.duration_seconds
+	var duration: float = duration_seconds
 	if status.is_permanent_until_removed:
 		duration = -1.0
 
 	if active_statuses.has(status.status_id):
-		return _refresh_existing_status(status, duration)
+		return _update_existing_status(status, duration, source_id)
 
-	active_statuses[status.status_id] = {
-		"definition": status,
-		"remaining_seconds": duration,
-		"tick_elapsed": 0.0,
-	}
+	active_statuses[status.status_id] = ActiveStatusData.new(status, duration, source_id)
 	status_applied.emit(status.status_id)
 	status_changed.emit(status.status_id, duration)
-	_emit_status_event(status.status_id, true)
+	_emit_status_list_changed()
 	return true
 
 
-func apply_status_by_id(status_id: StringName, duration_override: float = -1.0) -> bool:
-	for definition: StatusEffectDefinition in status_definitions:
-		if definition != null and definition.status_id == status_id:
-			return apply_status(definition, duration_override)
-	return false
-
-
-func remove_status(status_id: StringName) -> void:
+func remove_resolved_status(status_id: StringName) -> bool:
 	if not active_statuses.has(status_id):
-		return
+		return false
 
 	active_statuses.erase(status_id)
 	status_removed.emit(status_id)
-	_emit_status_event(status_id, false)
+	_emit_status_list_changed()
+	return true
 
 
-func clear_statuses() -> void:
+func clear_resolved_statuses() -> void:
 	var status_ids: Array[StringName] = []
 	for status_id: StringName in active_statuses.keys():
 		status_ids.append(status_id)
 	for status_id: StringName in status_ids:
-		remove_status(status_id)
+		remove_resolved_status(status_id)
 
 
 func has_status(status_id: StringName) -> bool:
@@ -96,26 +97,32 @@ func has_status(status_id: StringName) -> bool:
 func get_status_definition(status_id: StringName) -> StatusEffectDefinition:
 	if not active_statuses.has(status_id):
 		return null
-	return active_statuses[status_id]["definition"] as StatusEffectDefinition
+	return active_statuses[status_id].definition
 
 
 func get_status_remaining(status_id: StringName) -> float:
 	if not active_statuses.has(status_id):
 		return 0.0
-	return float(active_statuses[status_id]["remaining_seconds"])
+	return active_statuses[status_id].remaining_seconds
+
+
+func get_status_stack_count(status_id: StringName) -> int:
+	if not active_statuses.has(status_id):
+		return 0
+	return active_statuses[status_id].stack_count
 
 
 func get_active_statuses() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for status_id: StringName in active_statuses.keys():
-		var active: Dictionary = active_statuses[status_id]
-		var definition: StatusEffectDefinition = active["definition"] as StatusEffectDefinition
+		var active: ActiveStatusData = active_statuses[status_id]
 		result.append({
 			"status_id": status_id,
-			"display_name": definition.display_name,
-			"description": definition.description,
-			"category": definition.category,
-			"remaining_seconds": float(active["remaining_seconds"]),
+			"display_name": active.definition.display_name,
+			"description": active.definition.description,
+			"category": active.definition.category,
+			"remaining_seconds": active.remaining_seconds,
+			"stack_count": active.stack_count,
 		})
 	return result
 
@@ -132,72 +139,67 @@ func get_constraints() -> Dictionary:
 		"movement_speed_multiplier": 1.0,
 	}
 
-	for active: Dictionary in active_statuses.values():
-		var definition: StatusEffectDefinition = active["definition"] as StatusEffectDefinition
+	for active: ActiveStatusData in active_statuses.values():
+		var definition: StatusEffectDefinition = active.definition
+		var stacks: int = active.stack_count
 		constraints["movement_disabled"] = constraints["movement_disabled"] or definition.movement_disabled
 		constraints["combat_blocked"] = constraints["combat_blocked"] or definition.combat_blocked
 		constraints["interaction_blocked"] = constraints["interaction_blocked"] or definition.interaction_blocked
 		constraints["mobility_blocked"] = constraints["mobility_blocked"] or definition.mobility_blocked
-		constraints["outgoing_damage_multiplier"] *= definition.outgoing_damage_multiplier
-		constraints["incoming_damage_multiplier"] *= definition.incoming_damage_multiplier
-		constraints["stamina_recovery_multiplier"] *= definition.stamina_recovery_multiplier
-		constraints["movement_speed_multiplier"] *= definition.movement_speed_multiplier
+		constraints["outgoing_damage_multiplier"] *= pow(definition.outgoing_damage_multiplier, stacks)
+		constraints["incoming_damage_multiplier"] *= pow(definition.incoming_damage_multiplier, stacks)
+		constraints["stamina_recovery_multiplier"] *= pow(definition.stamina_recovery_multiplier, stacks)
+		constraints["movement_speed_multiplier"] *= pow(definition.movement_speed_multiplier, stacks)
 
 	return constraints
 
 
-func _refresh_existing_status(status: StatusEffectDefinition, duration: float) -> bool:
-	var active: Dictionary = active_statuses[status.status_id]
-	active["definition"] = status
-	active["remaining_seconds"] = duration
-	active["tick_elapsed"] = 0.0
-	active_statuses[status.status_id] = active
-	status_changed.emit(status.status_id, duration)
-	_emit_status_list_event()
+func _update_existing_status(
+	status: StatusEffectDefinition,
+	duration_seconds: float,
+	source_id: int,
+) -> bool:
+	var active: ActiveStatusData = active_statuses[status.status_id]
+	match status.stack_policy:
+		StatusEffectDefinition.StackPolicy.REFRESH_DURATION:
+			active.definition = status
+			active.remaining_seconds = duration_seconds
+			active.source_id = source_id
+		StatusEffectDefinition.StackPolicy.REPLACE:
+			active = ActiveStatusData.new(status, duration_seconds, source_id)
+			active_statuses[status.status_id] = active
+		StatusEffectDefinition.StackPolicy.ADD_STACK:
+			active.definition = status
+			active.remaining_seconds = duration_seconds
+			active.source_id = source_id
+			active.stack_count = mini(active.stack_count + 1, maxi(1, status.max_stacks))
+		_:
+			return false
+
+	status_changed.emit(status.status_id, duration_seconds)
+	_emit_status_list_changed()
 	return true
 
 
-func _tick_status(
-	active: Dictionary,
-	definition: StatusEffectDefinition,
-	status_id: StringName,
-	delta: float,
-) -> void:
-	if definition.tick_interval_seconds <= 0.0:
+func _tick_status(active: ActiveStatusData, status_id: StringName, delta: float) -> void:
+	var definition: StatusEffectDefinition = active.definition
+	if definition.tick_interval_seconds <= 0.0 or delta <= 0.0:
 		return
 
-	var tick_elapsed: float = float(active["tick_elapsed"]) + delta
-	while tick_elapsed >= definition.tick_interval_seconds:
-		tick_elapsed -= definition.tick_interval_seconds
+	active.tick_elapsed += delta
+	while active.tick_elapsed >= definition.tick_interval_seconds:
+		active.tick_elapsed -= definition.tick_interval_seconds
+		var stacks: float = float(active.stack_count)
 		status_tick.emit(
 			status_id,
-			definition.health_delta_per_tick,
-			definition.stamina_delta_per_tick,
-			definition.hunger_delta_per_tick
+			active.source_id,
+			definition.tick_damage_type,
+			definition.health_delta_per_tick * stacks,
+			definition.stamina_delta_per_tick * stacks,
+			definition.hunger_delta_per_tick * stacks
 		)
-	active["tick_elapsed"] = tick_elapsed
 
 
-func _emit_status_event(status_id: StringName, applied: bool) -> void:
-	if _event_bus == null:
-		return
-	var target_id: int = _get_target_id()
-	if applied:
-		_event_bus.status_applied.emit(target_id, status_id)
-	else:
-		_event_bus.status_removed.emit(target_id, status_id)
-	_emit_status_list_event()
-
-
-func _emit_status_list_event() -> void:
-	if _event_bus == null:
-		return
-	var target_id: int = _get_target_id()
-	_event_bus.status_list_changed.emit(target_id, get_active_statuses())
-
-
-func _get_target_id() -> int:
-	if owner != null:
-		return owner.get_instance_id()
-	var target: Node = get_parent()
-	return target.get_instance_id() if target != null else get_instance_id()
+func _emit_status_list_changed() -> void:
+	_status_list_update_elapsed = 0.0
+	status_list_changed.emit(get_active_statuses())

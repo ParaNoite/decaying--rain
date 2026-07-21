@@ -39,7 +39,6 @@ func update(body: Node3D, input_reader: PlayerInputReader, constraints: Dictiona
 	if current_state == STATE_DISABLED:
 		_transition_to(STATE_READY)
 
-	combat_driver.outgoing_damage_multiplier = float(constraints.get("outgoing_damage_multiplier", 1.0))
 	combat_driver.firearm_spread_multiplier = float(constraints.get("firearm_spread_multiplier", 1.0))
 	_tick_state_timer(delta)
 

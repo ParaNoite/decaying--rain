@@ -26,6 +26,8 @@ extends CharacterBody3D
 
 var _event_bus = null
 var _game_manager = null
+var _buff_resolver: Node
+var _damage_resolver: Node
 var inventory_open: bool = false
 
 
@@ -33,17 +35,20 @@ func _ready() -> void:
 	add_to_group("player")
 	_event_bus = get_node_or_null("/root/EventBus")
 	_game_manager = get_node_or_null("/root/GameManager")
+	_buff_resolver = get_node_or_null("/root/BuffResolver")
+	_damage_resolver = get_node_or_null("/root/DamageResolver")
 	if _event_bus != null:
 		_event_bus.phase_changed.connect(_on_phase_changed)
 		_event_bus.inventory_item_use_requested.connect(_on_inventory_item_use_requested)
 
 	_apply_definitions()
 	_initialize_runtime_components()
+	if _buff_resolver != null:
+		_buff_resolver.call("bind_container", self, status_container)
 	_apply_profession_statuses()
 	# Mouse is not captured by default — player clicks to capture
 
 	health.died.connect(_on_died)
-	status_container.status_tick.connect(_on_status_tick)
 	locomotion_state_machine.state_changed.connect(_on_locomotion_state_changed)
 	combat_state_machine.state_changed.connect(_on_combat_state_changed)
 	interaction_state_machine.state_changed.connect(_on_interaction_state_changed)
@@ -93,8 +98,8 @@ func _physics_process(delta: float) -> void:
 	movement_motor.tick_timers(delta, is_on_floor())
 	movement_motor.apply_gravity(self, delta)
 
-	var constraints: Dictionary = condition_state_machine.update()
-	_apply_profession_constraints(constraints)
+	var constraints: Dictionary = _buff_resolver.call("get_constraints", self) if _buff_resolver != null else {}
+	constraints = condition_state_machine.update(constraints)
 	if inventory_open:
 		_merge_constraints(constraints, {
 			"movement_disabled": true,
@@ -119,31 +124,27 @@ func _physics_process(delta: float) -> void:
 
 
 func apply_damage(amount: float) -> void:
-	health.take_damage(amount)
+	if amount <= 0.0:
+		return
+	var damage: DamageEventData = DamageEventData.new()
+	damage.target_id = get_instance_id()
+	damage.amount = amount
+	damage.damage_type = &"environmental"
+	damage.source_tags = [&"legacy_apply_damage"]
+	damage.bypass_outgoing_modifiers = true
+	receive_damage(damage)
 
 
 func apply_status(status: StatusEffectDefinition, duration_override: float = -1.0) -> bool:
-	if status == null or status_container == null:
-		return false
-	if profession_component != null and profession_component.is_status_immune(status.status_id):
-		_emit_action_blocked(&"status", &"status_immune")
-		return false
-	var final_duration: float = duration_override
-	if not status.is_permanent_until_removed:
-		var base_duration: float = duration_override if duration_override >= 0.0 else status.duration_seconds
-		if profession_component != null:
-			base_duration *= profession_component.get_status_duration_multiplier(status.status_id)
-		final_duration = base_duration
-	return status_container.apply_status(status, final_duration)
+	return _buff_resolver != null and bool(
+		_buff_resolver.call("apply_status", self, status, duration_override, get_instance_id())
+	)
 
 
 func apply_status_by_id(status_id: StringName, duration_override: float = -1.0) -> bool:
-	if status_container == null:
-		return false
-	for definition: StatusEffectDefinition in status_container.status_definitions:
-		if definition != null and definition.status_id == status_id:
-			return apply_status(definition, duration_override)
-	return false
+	return _buff_resolver != null and bool(
+		_buff_resolver.call("apply_status_by_id", self, status_id, duration_override, get_instance_id())
+	)
 
 
 func receive_loot(payload: Dictionary) -> void:
@@ -152,38 +153,82 @@ func receive_loot(payload: Dictionary) -> void:
 
 
 func remove_status(status_id: StringName) -> void:
-	if status_container != null:
-		status_container.remove_status(status_id)
+	if _buff_resolver != null:
+		_buff_resolver.call("remove_status", self, status_id)
 
 
 func has_status(status_id: StringName) -> bool:
-	return status_container != null and status_container.has_status(status_id)
+	return _buff_resolver != null and bool(_buff_resolver.call("has_status", self, status_id))
 
 
 func receive_damage(data: DamageEventData) -> void:
-	if data == null or not data.is_valid_hit():
+	if _damage_resolver != null:
+		_damage_resolver.call("resolve_damage", data, self)
+
+
+func try_block_damage(data: DamageEventData) -> bool:
+	if not combat_state_machine.parry_active or not data.source_tags.has(&"melee"):
+		return false
+	_apply_parry_counter(data)
+	if _event_bus != null:
+		_event_bus.debug_test_notice.emit("Parry success: blocked %.0f damage" % data.amount, &"combat")
+		_event_bus.combat_feedback.emit("PARRY SUCCESS", &"success")
+	return true
+
+
+func on_damage_resolved(result: DamageResolutionData) -> void:
+	if result.blocked or not result.applied:
 		return
-	if combat_state_machine.parry_active and data.source_tags.has(&"melee"):
-		_apply_parry_counter(data)
-		if _event_bus != null:
-			_event_bus.combat_hit.emit(data)
-			_event_bus.debug_test_notice.emit("Parry success: blocked %.0f damage" % data.amount, &"combat")
-			_event_bus.combat_feedback.emit("PARRY SUCCESS", &"success")
+	var is_periodic: bool = result.event.source_tags.has(&"periodic")
+	if is_periodic:
 		return
 	combat_state_machine.interrupt()
-	var incoming_multiplier: float = 1.0
-	if status_container != null:
-		incoming_multiplier = float(status_container.get_constraints().get("incoming_damage_multiplier", 1.0))
-	var final_amount: float = data.amount * incoming_multiplier
-	_emit_debug_notice("Player hit: -%.0f HP" % final_amount, &"combat")
-	if _event_bus != null:
-		_event_bus.combat_feedback.emit("HIT -%.0f" % final_amount, &"danger")
-	_call_hands(&"play_hurt")
-	apply_damage(final_amount)
-	if data.stagger >= combat_definition.stagger_threshold:
+	if result.final_amount > 0.0:
+		_emit_debug_notice("Player hit: -%.0f HP" % result.final_amount, &"combat")
+		if _event_bus != null:
+			_event_bus.combat_feedback.emit("HIT -%.0f" % result.final_amount, &"danger")
+		_call_hands(&"play_hurt")
+	if result.event.stagger >= combat_definition.stagger_threshold:
 		apply_status_by_id(&"staggered")
-	if data.amount >= combat_definition.bleeding_damage_threshold:
+	if result.final_amount >= combat_definition.bleeding_damage_threshold:
 		apply_status_by_id(&"bleeding")
+
+
+func get_health_component() -> HealthComponent:
+	return health
+
+
+func get_stamina_component() -> StaminaComponent:
+	return stamina
+
+
+func get_hunger_component() -> HungerComponent:
+	return hunger
+
+
+func get_status_container() -> StatusContainer:
+	return status_container
+
+
+func is_status_immune(status_id: StringName) -> bool:
+	var immune: bool = profession_component != null and profession_component.is_status_immune(status_id)
+	if immune:
+		_emit_action_blocked(&"status", &"status_immune")
+	return immune
+
+
+func get_status_duration_multiplier(status_id: StringName) -> float:
+	if profession_component == null:
+		return 1.0
+	return profession_component.get_status_duration_multiplier(status_id)
+
+
+func amend_buff_constraints(constraints: Dictionary) -> void:
+	_apply_profession_constraints(constraints)
+	if hunger != null and hunger.is_hungry:
+		constraints["outgoing_damage_multiplier"] = float(
+			constraints.get("outgoing_damage_multiplier", 1.0)
+		) * 0.75
 
 
 func heal(amount: float) -> void:
@@ -233,30 +278,7 @@ func _apply_profession_statuses() -> void:
 	if profession_component.profession_definition == null:
 		return
 	for status_id: StringName in profession_component.profession_definition.status_ids_on_spawn:
-		status_container.apply_status_by_id(status_id)
-
-
-func _on_status_tick(
-	_status_id: StringName,
-	health_delta: float,
-	stamina_delta: float,
-	hunger_delta: float,
-) -> void:
-	if health != null:
-		if health_delta >= 0.0:
-			health.heal(health_delta)
-		else:
-			health.take_damage(-health_delta)
-	if stamina != null:
-		if stamina_delta >= 0.0:
-			stamina.recover(stamina_delta)
-		else:
-			stamina.consume(-stamina_delta)
-	if hunger != null:
-		if hunger_delta >= 0.0:
-			hunger.restore_hunger(hunger_delta)
-		else:
-			hunger.consume_hunger(-hunger_delta)
+		apply_status_by_id(status_id)
 
 
 func use_item(item_id: StringName) -> bool:

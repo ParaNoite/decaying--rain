@@ -7,10 +7,23 @@ const PHASE_RAIN: StringName = &"rain"
 const PHASE_SETTLEMENT: StringName = &"settlement"
 
 @export var run_config: RunConfig
+@export var rain_requires_wave_clear: bool = true
 
 var phase_time_remaining: float = 0.0
 var phase_duration_seconds: float = 0.0
 var _timer_broadcast_remaining: float = 0.0
+var _event_bus: Node
+
+
+func _ready() -> void:
+	_event_bus = get_node_or_null("/root/EventBus")
+	if _event_bus != null and not _event_bus.phase_changed.is_connected(_on_phase_changed):
+		_event_bus.phase_changed.connect(_on_phase_changed)
+
+
+func _exit_tree() -> void:
+	if _event_bus != null and _event_bus.phase_changed.is_connected(_on_phase_changed):
+		_event_bus.phase_changed.disconnect(_on_phase_changed)
 
 
 func begin_run(config: RunConfig = null) -> void:
@@ -19,9 +32,6 @@ func begin_run(config: RunConfig = null) -> void:
 	if game_manager == null:
 		return
 	game_manager.start_mvp_run(run_config)
-	phase_duration_seconds = _duration_for_phase(game_manager.current_phase)
-	phase_time_remaining = phase_duration_seconds
-	_broadcast_wave_timer()
 
 
 func _process(delta: float) -> void:
@@ -42,6 +52,10 @@ func _advance_phase() -> void:
 	if game_manager == null:
 		return
 
+	if rain_requires_wave_clear and game_manager.current_phase == PHASE_RAIN:
+		_broadcast_wave_timer()
+		return
+
 	match game_manager.current_phase:
 		PHASE_DAYLIGHT:
 			game_manager.change_phase(PHASE_PREPARATION)
@@ -53,10 +67,6 @@ func _advance_phase() -> void:
 			_advance_wave_or_complete()
 		_:
 			return
-
-	phase_duration_seconds = _duration_for_phase(game_manager.current_phase)
-	phase_time_remaining = phase_duration_seconds
-	_broadcast_wave_timer()
 
 
 func _advance_wave_or_complete() -> void:
@@ -109,3 +119,9 @@ func _broadcast_wave_timer() -> void:
 	if event_bus == null or game_manager == null:
 		return
 	event_bus.wave_timer_changed.emit(maxf(0.0, phase_time_remaining), phase_duration_seconds, game_manager.current_wave_index)
+
+
+func _on_phase_changed(_previous_phase: StringName, current_phase: StringName, _wave_index: int) -> void:
+	phase_duration_seconds = _duration_for_phase(current_phase)
+	phase_time_remaining = phase_duration_seconds
+	_broadcast_wave_timer()

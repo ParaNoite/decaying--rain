@@ -1,6 +1,20 @@
-[gd_resource type="Resource" script_class="WaveDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="WaveDefinition" format=3 uid="uid://cgxpskrns6emu"]
 
-[ext_resource type="Script" path="res://scripts/resources/wave_definition.gd" id="1_wave"]
+[ext_resource type="Script" uid="uid://b21sdw6pkqs8k" path="res://scripts/resources/wave_definition.gd" id="1_wave"]
+[ext_resource type="Script" uid="uid://v5r8w6q1x2ya" path="res://scripts/resources/wave_enemy_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="WaveEnemyEntry_ruptured_3"]
+script = ExtResource("2_entry")
+enemy_id = &"ruptured"
+count = 4
+
+[sub_resource type="Resource" id="WaveEnemyEntry_doorbreaker_3"]
+script = ExtResource("2_entry")
+enemy_id = &"doorbreaker"
+
+[sub_resource type="Resource" id="WaveEnemyEntry_armored_3"]
+script = ExtResource("2_entry")
+enemy_id = &"armored_scavenger"
 
 [resource]
 script = ExtResource("1_wave")
@@ -8,4 +22,5 @@ wave_index = 3
 wave_id = &"wave_3"
 pressure_theme = &"elite_melee"
 enemy_ids = Array[StringName]([&"ruptured", &"doorbreaker", &"armored_scavenger"])
+spawn_entries = Array[ExtResource("2_entry")]([SubResource("WaveEnemyEntry_ruptured_3"), SubResource("WaveEnemyEntry_doorbreaker_3"), SubResource("WaveEnemyEntry_armored_3")])
 spawn_budget_multiplier = 1.45

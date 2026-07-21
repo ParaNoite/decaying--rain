@@ -13,7 +13,7 @@ This repo uses a split Godot layout so content, scenes, and runtime code can evo
 
 ## Runtime Scripts
 
-- `scripts/autoloads/`: global orchestration singletons.
+- `scripts/autoloads/`: global orchestration singletons, including the mandatory `DamageResolver` and `BuffResolver` gameplay gateways.
 - `scripts/components/`: reusable node components such as health, stamina, hunger, and statuses.
 - `scripts/resources/`: custom Resource classes for data-driven content.
 - `scripts/systems/`: pure gameplay systems that coordinate one domain.
@@ -30,6 +30,8 @@ This repo uses a split Godot layout so content, scenes, and runtime code can evo
 - Parents call methods downward.
 - Unrelated systems communicate through `EventBus`.
 - Data definitions are Resources, not hard-coded dictionaries in scene scripts.
+- Damage producers create `DamageEventData`; only `DamageResolver` may commit damage to `HealthComponent`.
+- Buff callers use `BuffResolver`; `StatusContainer` stores resolved runtime state and is not a public gameplay gateway.
 
 ## UI Layers
 

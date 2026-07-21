@@ -1,6 +1,21 @@
-[gd_resource type="Resource" script_class="WaveDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="WaveDefinition" format=3 uid="uid://pukimjjccvlr"]
 
-[ext_resource type="Script" path="res://scripts/resources/wave_definition.gd" id="1_wave"]
+[ext_resource type="Script" uid="uid://b21sdw6pkqs8k" path="res://scripts/resources/wave_definition.gd" id="1_wave"]
+[ext_resource type="Script" uid="uid://v5r8w6q1x2ya" path="res://scripts/resources/wave_enemy_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="WaveEnemyEntry_ruptured_4"]
+script = ExtResource("2_entry")
+enemy_id = &"ruptured"
+count = 4
+
+[sub_resource type="Resource" id="WaveEnemyEntry_armored_4a"]
+script = ExtResource("2_entry")
+enemy_id = &"armored_scavenger"
+count = 2
+
+[sub_resource type="Resource" id="WaveEnemyEntry_wet_gunner_4"]
+script = ExtResource("2_entry")
+enemy_id = &"wet_gunner"
 
 [resource]
 script = ExtResource("1_wave")
@@ -8,5 +23,6 @@ wave_index = 4
 wave_id = &"wave_4"
 pressure_theme = &"ranged_pressure"
 enemy_ids = Array[StringName]([&"ruptured", &"armored_scavenger", &"wet_gunner"])
-allowed_event_ids = Array[StringName]([&"faction_war"])
+spawn_entries = Array[ExtResource("2_entry")]([SubResource("WaveEnemyEntry_ruptured_4"), SubResource("WaveEnemyEntry_armored_4a"), SubResource("WaveEnemyEntry_wet_gunner_4")])
 spawn_budget_multiplier = 1.65
+allowed_event_ids = Array[StringName]([&"faction_war"])

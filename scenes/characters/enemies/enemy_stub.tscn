@@ -1,7 +1,8 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/characters/enemies/enemy_base.gd" id="1_enemy"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/components/status_container.gd" id="3_status"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_enemy"]
 radius = 0.35
@@ -25,18 +26,22 @@ emission_energy_multiplier = 0.5
 size = Vector3(0.35, 0.1, 0.08)
 
 [node name="EnemyStub" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 3
 floor_snap_length = 0.2
 script = ExtResource("1_enemy")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
 shape = SubResource("CapsuleShape3D_enemy")
 
 [node name="BodyMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
 material_override = SubResource("StandardMaterial3D_enemy")
 mesh = SubResource("CapsuleMesh_enemy")
 
 [node name="EyeMarker" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -0.34)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, -0.34)
 material_override = SubResource("StandardMaterial3D_eye")
 mesh = SubResource("BoxMesh_eye")
 
@@ -45,3 +50,7 @@ mesh = SubResource("BoxMesh_eye")
 [node name="HealthComponent" type="Node" parent="Components"]
 unique_name_in_owner = true
 script = ExtResource("2_health")
+
+[node name="StatusContainer" type="Node" parent="Components"]
+unique_name_in_owner = true
+script = ExtResource("3_status")

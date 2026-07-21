@@ -5,6 +5,8 @@ These contracts define extension points for MVP feature branches.
 ## Autoloads
 
 - `EventBus`: typed global signals for unrelated systems.
+- `BuffResolver`: the only gateway for status lookup, immunity, duration rules, application/removal, aggregated constraints, and periodic effects.
+- `DamageResolver`: the only gateway for outgoing, critical, type, and incoming damage modifiers before health mutation.
 - `GameManager`: current run phase, wave index, run fail/complete transitions, default input bootstrap.
 - `AudioManager`: named music and SFX entry points.
 - `SaveManager`: JSON save/settings API with schema versioning.
@@ -61,7 +63,23 @@ Each Perk has exactly one `PlayerActiveSkillDefinition` in MVP. Skill cooldowns,
 
 ## Combat
 
-Combat payloads use `DamageEventData` so future systems can attach source tags, damage types, critical hits, stagger, and weak-point information without changing signal signatures.
+Combat payloads use `DamageEventData`. Producers provide raw damage and context; they must not pre-apply outgoing or incoming multipliers.
+
+All direct, skill, environmental, and periodic damage resolves through `DamageResolver.resolve_damage(data, target)`. Only `DamageResolver` calls `HealthComponent.take_damage()`. Damageable targets expose `get_health_component()` and may implement `try_block_damage(data)`, `get_damage_type_multiplier(type)`, and `on_damage_resolved(result)` hooks.
+
+`DamageResolutionData` records raw and final damage, every multiplier, blocking, application, and rejection state. `EventBus.damage_resolved` is the canonical cross-system result event; `combat_hit` remains the raw request compatibility event.
+
+Pure control events are valid when `DamageEventData.stagger > 0`, even if damage is zero. Player parry and enemy stagger therefore use the same resolver path as damaging hits.
+
+## Buffs And Statuses
+
+`StatusEffectDefinition` and `StatusCatalog` are read-only content data. `ActiveStatusData` is per-entity runtime state owned by `StatusContainer`.
+
+All status application and removal resolves through `BuffResolver`. Callers must not invoke `StatusContainer.apply_resolved_status()` or `remove_resolved_status()` directly. Targets expose `get_status_container()` and may implement `is_status_immune(id)`, `get_status_duration_multiplier(id)`, and `amend_buff_constraints(constraints)`.
+
+`StatusContainer` owns duration, stack count, refresh policy, periodic scheduling, and status snapshots. It does not mutate health, stamina, or hunger. `BuffResolver` consumes its tick signal; negative health ticks are converted into `DamageEventData` and sent through `DamageResolver`.
+
+Player and enemy entities use the same status contract. Enemy stagger is the `staggered` status, not a separate enemy-only timer state.
 
 ## Save Data
 

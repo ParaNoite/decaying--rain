@@ -12,5 +12,6 @@ max_health = 95.0
 move_speed = 2.9
 attack_damage = 18.0
 attack_range = 1.4
+attack_cooldown_seconds = 2.2
 preferred_target_tags = Array[StringName]([&"barrier", &"base_core", &"player"])
 can_attack_base = true

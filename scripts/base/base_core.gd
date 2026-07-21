@@ -10,7 +10,25 @@ func _ready() -> void:
 
 
 func apply_damage(amount: float) -> void:
-	health.take_damage(amount)
+	if amount <= 0.0:
+		return
+	var damage: DamageEventData = DamageEventData.new()
+	damage.target_id = get_instance_id()
+	damage.amount = amount
+	damage.damage_type = &"structural"
+	damage.source_tags = [&"legacy_apply_damage"]
+	damage.bypass_outgoing_modifiers = true
+	receive_damage(damage)
+
+
+func receive_damage(data: DamageEventData) -> void:
+	var resolver: Node = get_node_or_null("/root/DamageResolver")
+	if resolver != null:
+		resolver.call("resolve_damage", data, self)
+
+
+func get_health_component() -> HealthComponent:
+	return health
 
 
 func repair(amount: float) -> void:

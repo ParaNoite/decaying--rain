@@ -1,15 +1,12 @@
-[gd_resource type="Resource" script_class="RunConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="RunConfig" format=3 uid="uid://c823iahk0etks"]
 
-[ext_resource type="Script" path="res://scripts/resources/run_config.gd" id="1_run"]
+[ext_resource type="Script" uid="uid://vmdlhuvum8bm" path="res://scripts/resources/run_config.gd" id="1_run"]
+[ext_resource type="Script" uid="uid://b21sdw6pkqs8k" path="res://scripts/resources/wave_definition.gd" id="2_j7my4"]
 
 [resource]
 script = ExtResource("1_run")
-run_id = &"mvp"
-content_spec_version = "mvp-docs-v0.1"
-max_waves = 5
-daylight_seconds = 180.0
-preparation_seconds = 30.0
-default_rain_seconds = 120.0
-starting_profession_id = &"deserter"
+daylight_seconds = 2.0
+preparation_seconds = 3.0
+default_rain_seconds = 5.0
 starting_weapon_ids = Array[StringName]([&"empty_hands", &"crowbar", &"pistol"])
 starting_item_ids = Array[StringName]([&"bandage", &"food_ration"])

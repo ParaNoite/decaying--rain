@@ -164,24 +164,23 @@ func _fire_charged_beam(body: Node3D, skill: Resource) -> void:
 		return
 
 	var target: Node = collider as Node
-	var hit_position: Vector3 = _hit_position_from_result(result, target, end)
+	var receiver: Node = _find_damage_receiver(target)
+	var hit_position: Vector3 = _hit_position_from_result(result, receiver if receiver != null else target, end)
 	_show_beam_visual(visual_origin, hit_position, skill)
 	_show_beam_impact(hit_position, skill)
+	if receiver == null:
+		_emit_skill_feedback("CHARGED BEAM HIT NOTHING", &"neutral")
+		return
 
 	var hit_data: DamageEventData = DamageEventData.new()
 	hit_data.attacker_id = body.get_instance_id()
-	hit_data.target_id = target.get_instance_id()
+	hit_data.target_id = receiver.get_instance_id()
 	hit_data.amount = skill.beam_damage
 	hit_data.damage_type = &"energy"
 	hit_data.source_tags = skill.beam_tags.duplicate()
 	hit_data.hit_position = hit_position
 
-	if target.has_method("receive_damage"):
-		target.receive_damage(hit_data)
-	elif target.has_method("apply_damage"):
-		target.apply_damage(skill.beam_damage)
-	elif _event_bus != null:
-		_event_bus.combat_hit.emit(hit_data)
+	receiver.call("receive_damage", hit_data)
 
 	_emit_skill_feedback("%s -%.0f" % [skill.fired_message.to_upper(), skill.beam_damage], &"success")
 
@@ -203,6 +202,15 @@ func _hit_position_from_result(result: Dictionary, target: Node, fallback: Vecto
 		var target_3d: Node3D = target as Node3D
 		return target_3d.global_position
 	return fallback
+
+
+func _find_damage_receiver(node: Node) -> Node:
+	var current: Node = node
+	while current != null:
+		if current.has_method("receive_damage"):
+			return current
+		current = current.get_parent()
+	return null
 
 
 func _beam_visual_origin(fallback_origin: Vector3, skill: Resource) -> Vector3:
