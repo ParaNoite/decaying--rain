@@ -15,6 +15,8 @@ func _ready() -> void:
 
 
 func refresh_focus() -> void:
+	if focused_interactable != null and not is_instance_valid(focused_interactable):
+		focused_interactable = null
 	var next_focus: InteractableComponent = _find_focus()
 	if next_focus == focused_interactable:
 		return
@@ -25,26 +27,36 @@ func refresh_focus() -> void:
 
 func interact(actor: Node) -> void:
 	refresh_focus()
-	if focused_interactable == null:
+	if not has_valid_focus():
 		return
 
 	focused_interactable.interact(actor)
 
 
+func interact_target(target: InteractableComponent, actor: Node) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	target.interact(actor)
+
+
+func has_valid_focus() -> bool:
+	return focused_interactable != null and is_instance_valid(focused_interactable) and focused_interactable.enabled
+
+
 func get_focus_action_id() -> StringName:
-	if focused_interactable == null:
+	if not has_valid_focus():
 		return &"interact"
 	return focused_interactable.get_action_id()
 
 
 func get_focus_hold_duration() -> float:
-	if focused_interactable == null:
+	if not has_valid_focus():
 		return 0.0
 	return focused_interactable.hold_duration
 
 
 func update_hold_prompt(elapsed: float) -> void:
-	if focused_interactable == null:
+	if not has_valid_focus():
 		return
 	var duration: float = maxf(0.01, focused_interactable.hold_duration)
 	var progress: int = clampi(roundi(elapsed / duration * 100.0), 0, 100)
@@ -78,7 +90,7 @@ func _find_focus() -> InteractableComponent:
 
 
 func _prompt_for_focus() -> String:
-	if focused_interactable == null or not focused_interactable.enabled:
+	if not has_valid_focus():
 		return ""
 	return focused_interactable.prompt
 

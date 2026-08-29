@@ -1,0 +1,175 @@
+[gd_scene format=3 uid="uid://ccm4cxqevxun6"]
+
+[ext_resource type="Script" uid="uid://c65y60qskpsjd" path="res://scripts/characters/player/player_first_person_arms.gd" id="1_arms"]
+
+[sub_resource type="StandardMaterial3D" id="Material_joint"]
+albedo_color = Color(0.11, 0.13, 0.14, 1)
+metallic = 0.08
+roughness = 0.48
+
+[sub_resource type="SphereMesh" id="Mesh_shoulder_joint"]
+radius = 0.078
+height = 0.156
+radial_segments = 16
+rings = 8
+
+[sub_resource type="StandardMaterial3D" id="Material_sleeve"]
+albedo_color = Color(0.24, 0.31, 0.27, 1)
+roughness = 0.76
+
+[sub_resource type="CapsuleMesh" id="Mesh_upper_arm"]
+radius = 0.072
+height = 0.32
+radial_segments = 16
+rings = 6
+
+[sub_resource type="StandardMaterial3D" id="Material_guard"]
+albedo_color = Color(0.38, 0.42, 0.4, 1)
+metallic = 0.42
+roughness = 0.38
+
+[sub_resource type="BoxMesh" id="Mesh_bracer"]
+size = Vector3(0.145, 0.105, 0.19)
+
+[sub_resource type="SphereMesh" id="Mesh_elbow_joint"]
+radius = 0.068
+height = 0.136
+radial_segments = 16
+rings = 8
+
+[sub_resource type="CapsuleMesh" id="Mesh_forearm"]
+radius = 0.064
+height = 0.3
+radial_segments = 16
+rings = 6
+
+[sub_resource type="StandardMaterial3D" id="Material_glove"]
+albedo_color = Color(0.22, 0.16, 0.11, 1)
+roughness = 0.88
+
+[sub_resource type="SphereMesh" id="Mesh_hand"]
+radius = 0.084
+height = 0.135
+radial_segments = 16
+rings = 8
+
+[sub_resource type="StandardMaterial3D" id="Material_tool"]
+albedo_color = Color(0.13, 0.15, 0.16, 1)
+metallic = 0.32
+roughness = 0.46
+
+[sub_resource type="BoxMesh" id="Mesh_tool"]
+size = Vector3(0.055, 0.055, 0.34)
+
+[node name="FirstPersonArms" type="Node3D" unique_id=156183311]
+script = ExtResource("1_arms")
+
+[node name="RightShoulder" type="Node3D" parent="." unique_id=1942654647]
+unique_name_in_owner = true
+transform = Transform3D(0.9880283, 0.09497492, -0.12157249, -0.08694343, 0.9937681, 0.06975647, 0.12743996, -0.058351435, 0.9901284, 0.29, 0.035, 0.1)
+
+[node name="ShoulderJoint" type="MeshInstance3D" parent="RightShoulder" unique_id=1894103046]
+material_override = SubResource("Material_joint")
+cast_shadow = 0
+mesh = SubResource("Mesh_shoulder_joint")
+
+[node name="UpperArm" type="MeshInstance3D" parent="RightShoulder" unique_id=2073769931]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, -0.012, -0.14)
+material_override = SubResource("Material_sleeve")
+cast_shadow = 0
+mesh = SubResource("Mesh_upper_arm")
+
+[node name="UpperGuard" type="MeshInstance3D" parent="RightShoulder" unique_id=216857207]
+transform = Transform3D(0.8168797, 0.0592659, 0, -0.071467705, 0.6774124, 0, 0, 0, 0.88, 0.01, 0.012, -0.12)
+material_override = SubResource("Material_guard")
+cast_shadow = 0
+mesh = SubResource("Mesh_bracer")
+
+[node name="RightElbow" type="Node3D" parent="RightShoulder" unique_id=1689647897]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 0.9848077, -0.17364818, 0, 0.17364818, 0.9848077, 0, -0.024, -0.28)
+
+[node name="ElbowJoint" type="MeshInstance3D" parent="RightShoulder/RightElbow" unique_id=181245693]
+material_override = SubResource("Material_joint")
+cast_shadow = 0
+mesh = SubResource("Mesh_elbow_joint")
+
+[node name="Forearm" type="MeshInstance3D" parent="RightShoulder/RightElbow" unique_id=662935690]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, -0.135)
+material_override = SubResource("Material_sleeve")
+cast_shadow = 0
+mesh = SubResource("Mesh_forearm")
+
+[node name="Bracer" type="MeshInstance3D" parent="RightShoulder/RightElbow" unique_id=1601836646]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.01, -0.14)
+material_override = SubResource("Material_guard")
+cast_shadow = 0
+mesh = SubResource("Mesh_bracer")
+
+[node name="RightHandSocket" type="Marker3D" parent="RightShoulder/RightElbow" unique_id=292005832]
+transform = Transform3D(0.9945219, 0.104528464, 0, -0.10395585, 0.9890738, -0.104528464, -0.0109262, 0.10395585, 0.9945219, 0, 0, -0.285)
+
+[node name="Hand" type="MeshInstance3D" parent="RightShoulder/RightElbow/RightHandSocket" unique_id=161764820]
+material_override = SubResource("Material_glove")
+cast_shadow = 0
+mesh = SubResource("Mesh_hand")
+
+[node name="FirstPersonWeaponSocket" type="Marker3D" parent="RightShoulder/RightElbow/RightHandSocket" unique_id=1204658117]
+unique_name_in_owner = true
+
+[node name="ToolProxy" type="MeshInstance3D" parent="RightShoulder/RightElbow/RightHandSocket/FirstPersonWeaponSocket" unique_id=2085070932]
+unique_name_in_owner = true
+transform = Transform3D(0.9642222, 0.26060367, 0.04859572, -0.017993685, 0.2472301, -0.9687896, -0.2644845, 0.93325424, 0.24307407, -0.013954401, 0.12779887, -0.075466216)
+material_override = SubResource("Material_tool")
+cast_shadow = 0
+mesh = SubResource("Mesh_tool")
+
+[node name="LeftShoulder" type="Node3D" parent="." unique_id=36614912]
+unique_name_in_owner = true
+transform = Transform3D(0.9880283, -0.09497492, 0.12157249, 0.08694343, 0.9937681, 0.06975647, -0.12743996, -0.058351435, 0.9901284, -0.29, 0.035, 0.1)
+
+[node name="ShoulderJoint" type="MeshInstance3D" parent="LeftShoulder" unique_id=1397608782]
+material_override = SubResource("Material_joint")
+cast_shadow = 0
+mesh = SubResource("Mesh_shoulder_joint")
+
+[node name="UpperArm" type="MeshInstance3D" parent="LeftShoulder" unique_id=51857905]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, -0.012, -0.14)
+material_override = SubResource("Material_sleeve")
+cast_shadow = 0
+mesh = SubResource("Mesh_upper_arm")
+
+[node name="UpperGuard" type="MeshInstance3D" parent="LeftShoulder" unique_id=1385382489]
+transform = Transform3D(0.8168797, -0.0592659, 0, 0.071467705, 0.6774124, 0, 0, 0, 0.88, -0.01, 0.012, -0.12)
+material_override = SubResource("Material_guard")
+cast_shadow = 0
+mesh = SubResource("Mesh_bracer")
+
+[node name="LeftElbow" type="Node3D" parent="LeftShoulder" unique_id=2025987337]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 0.95105654, -0.309017, 0, 0.309017, 0.95105654, 0, -0.024, -0.28)
+
+[node name="ElbowJoint" type="MeshInstance3D" parent="LeftShoulder/LeftElbow" unique_id=59132918]
+material_override = SubResource("Material_joint")
+cast_shadow = 0
+mesh = SubResource("Mesh_elbow_joint")
+
+[node name="Forearm" type="MeshInstance3D" parent="LeftShoulder/LeftElbow" unique_id=1110800839]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, -0.135)
+material_override = SubResource("Material_sleeve")
+cast_shadow = 0
+mesh = SubResource("Mesh_forearm")
+
+[node name="Bracer" type="MeshInstance3D" parent="LeftShoulder/LeftElbow" unique_id=1112557925]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.01, -0.14)
+material_override = SubResource("Material_guard")
+cast_shadow = 0
+mesh = SubResource("Mesh_bracer")
+
+[node name="LeftHandSocket" type="Marker3D" parent="LeftShoulder/LeftElbow" unique_id=2028132975]
+transform = Transform3D(0.9945219, -0.104528464, 0, 0.10395585, 0.9890738, -0.104528464, 0.0109262, 0.10395585, 0.9945219, 0, 0, -0.285)
+
+[node name="Hand" type="MeshInstance3D" parent="LeftShoulder/LeftElbow/LeftHandSocket" unique_id=1931952404]
+material_override = SubResource("Material_glove")
+cast_shadow = 0
+mesh = SubResource("Mesh_hand")

@@ -59,6 +59,7 @@ func resolve_damage(data: DamageEventData, target: Node) -> DamageResolutionData
 		)
 		if result.final_amount > 0.0:
 			health.take_damage(result.final_amount)
+			_apply_hit_statuses(data, target)
 
 	result.applied = true
 	_finish_resolution(result)
@@ -94,6 +95,13 @@ func _get_health_component(target: Node) -> HealthComponent:
 		if resolved is HealthComponent:
 			return resolved as HealthComponent
 	return null
+
+
+func _apply_hit_statuses(data: DamageEventData, target: Node) -> void:
+	if _buff_resolver == null:
+		return
+	for status_id: StringName in data.status_ids_to_apply:
+		_buff_resolver.call("apply_status_by_id", target, status_id, -1.0, data.attacker_id)
 
 
 func _finish_resolution(result: DamageResolutionData) -> void:

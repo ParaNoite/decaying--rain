@@ -35,8 +35,7 @@ MVP 可先从当前场景逐步演进到以下结构：
 Player (CharacterBody3D)
 ├── CollisionShape3D
 ├── Visuals (Node3D)
-│   ├── BodyMesh
-│   ├── ForwardMarker
+│   ├── PlayerBodyVisual（分层逃兵模型，肩肘与髋膝关节）
 │   └── WeaponVisualRoot (Node3D)
 ├── Head (Node3D)
 │   ├── Camera3D
@@ -80,8 +79,9 @@ Player (CharacterBody3D)
 ```text
 Player (CharacterBody3D)
 ├── CollisionShape3D
-├── BodyMesh
-├── ForwardMarker
+├── Visuals
+│   ├── PlayerBodyVisual
+│   └── WeaponVisualRoot
 ├── Head
 │   ├── Camera3D
 │   └── InteractionRayCast3D
@@ -148,7 +148,7 @@ InputMap 统一使用 gameplay 命名，避免依赖 `ui_*`：
 | 交互 | `interact` | 聚焦物品、采集、开门、修理、拾取 |
 | 普攻 | `attack_primary` | 近战挥击或枪械开火 |
 | 拦挡 | `parry` | 近战核心机制，不消耗 stamina，开启判定窗口 |
-| 副动作 | `attack_secondary` | 武器副功能预留，MVP 可空置 |
+| 重击 | `attack_secondary` | 右键触发近战重击；使用独立前摇、出手、命中、后摇合同 |
 | 推搡 | `shove` | 消耗 stamina，短距离击退 |
 | 主动技能 | `active_skill` | 触发当前 Perk 赋予的唯一主动技能；是否可用由冷却、资源、阶段和行动限制裁决 |
 | 装填 | `reload` | 枪械装填 |
@@ -467,11 +467,48 @@ resources/gameplay/player_skills/
 MVP 可以先用占位 Mesh 和音效，但接口应提前留好：
 
 - Locomotion 状态进入时播放脚步节奏、呼吸、滑步音效。
-- Combat 状态进入时播放前摇、命中、格挡、装填音效。
+- Combat 状态进入时启动统一动作时间合同，并按前摇、出手、命中、后摇阶段播放动画和音效。
 - Interaction 状态进入时播放采集、修理、拾取反馈。
 - Condition 状态变化时播放受击、濒死、死亡反馈。
-- 动画不要反向驱动 gameplay 裁决；动画事件只用于打开命中窗口、播放效果等时间点。
+- 动画不得反向驱动 gameplay 裁决；命中窗口由状态机按共享时间合同推进，动画事件只允许播放纯表现效果。
 - HUD 需要显示当前全部 active 状态的文本与持续时间 bar。
+
+### 动作时间合同
+
+所有一次性动作使用 `res://scripts/resources/action_timing_definition.gd` 定义的 `ActionTimingDefinition`。合同只有以下四个连续阶段：
+
+| 阶段 | 字段 | 玩法语义 | 动画语义 |
+|---|---|---|---|
+| 前摇 | `windup_seconds` | 动作已经锁定，但尚未生效 | 从常态进入蓄力、举起或准备姿态 |
+| 出手 | `release_seconds` | 动作正在释放，仍未结算命中 | 从准备姿态快速运动到接触姿态 |
+| 命中 | `impact_seconds` | 阶段起点结算伤害、射线、弹药、装填或交互 | 保持动作峰值并播放命中、后坐力等反馈 |
+| 后摇 | `recovery_seconds` | 判定关闭，动作仍锁定 | 从峰值姿态恢复到待机或循环姿态 |
+
+时间边界统一为：
+
+```text
+0
+├─ 前摇结束 / 出手开始: windup
+├─ 出手结束 / 命中开始: windup + release   <- gameplay 生效点
+├─ 命中结束 / 后摇开始: windup + release + impact
+└─ 动作结束: windup + release + impact + recovery
+```
+
+状态机和表现层必须持有来自同一 `.tres` 的同一个 Resource 实例，禁止把四个浮点值复制到动画参数、状态机常量或另一份动画资源。动画控制器可以定义不同姿态和 Tween 曲线，但 Tween 每段时长只能读取合同字段。某阶段无意义时设为 `0.0`，不得删除阶段或改用另一套字段。
+
+数值权威入口：
+
+| 动作 | 权威 `.tres` |
+|---|---|
+| 武器近战、枪械射击、装填 | `res://resources/gameplay/weapons/*.tres` |
+| 轻击回退、重击、格挡、推搡、交互、玩家受击 | `res://resources/gameplay/player/mvp_player_combat.tres` |
+| 跳跃起步、滑铲、冲刺起步 | `res://resources/gameplay/player/mvp_player_movement.tres` |
+| Perk 主动技能 | `res://resources/gameplay/player_skills/*.tres` |
+| 敌人攻击、受击、死亡 | `res://resources/gameplay/enemies/*.tres` |
+
+`cooldown`、连击输入窗口、跳跃输入缓存、持续状态时间属于动作之外的规则，继续使用独立字段。循环待机、持续行走和持续冲刺没有有限动作结束点，不使用四阶段合同；它们切入时的一次性动作仍需使用合同。
+
+近战武器可在各自的 `WeaponDefinition` `.tres` 中额外配置 `held_combo_timing`，用于长按轻击时第 2、3 段的较快连段节奏。它仍是完整的四阶段 `ActionTimingDefinition`，状态机与手臂动画必须共享该 Resource 实例；第 1 段继续使用 `primary_timing`。第三段结束后的额外锁定使用 `PlayerCombatDefinition.combo_finisher_cooldown_seconds`，它是独立冷却，不得塞进动作后摇或连击输入窗口。
 
 ## 实现拆分建议
 

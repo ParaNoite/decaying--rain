@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="LootEntryDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LootEntryDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/loot_entry_definition.gd" id="1_entry"]
+[ext_resource type="Resource" path="res://resources/items/light_ammo.tres" id="2_item"]
 
 [resource]
 script = ExtResource("1_entry")
-item_id = &"light_ammo"
+item = ExtResource("2_item")
 drop_chance = 1.0
 min_quantity = 4
 max_quantity = 8

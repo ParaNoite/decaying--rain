@@ -12,8 +12,9 @@ func resolve_loot(table: LootTableDefinition, random: RandomNumberGenerator = nu
 		rng = RandomNumberGenerator.new()
 		rng.randomize()
 
-	for item_id: StringName in table.guaranteed_item_ids:
-		result[item_id] = result.get(item_id, 0) + 1
+	for item: ItemDefinition in table.guaranteed_items:
+		if item != null and item.item_id != &"":
+			result[item.item_id] = result.get(item.item_id, 0) + 1
 
 	for entry: LootEntryDefinition in table.entries:
 		if entry == null:
@@ -21,9 +22,10 @@ func resolve_loot(table: LootTableDefinition, random: RandomNumberGenerator = nu
 		if rng.randf() > entry.drop_chance:
 			continue
 
+		var item_id: StringName = entry.get_item_id()
 		var quantity: int = entry.get_quantity(rng)
-		if quantity <= 0:
+		if item_id == &"" or quantity <= 0:
 			continue
-		result[entry.item_id] = result.get(entry.item_id, 0) + quantity
+		result[item_id] = result.get(item_id, 0) + quantity
 
 	return result

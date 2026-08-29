@@ -27,7 +27,8 @@ func _exit_tree() -> void:
 
 
 func begin_run(config: RunConfig = null) -> void:
-	run_config = config
+	if config != null:
+		run_config = config
 	var game_manager = _game_manager()
 	if game_manager == null:
 		return

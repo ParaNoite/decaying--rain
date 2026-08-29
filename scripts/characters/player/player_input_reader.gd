@@ -19,6 +19,9 @@ var reload_buffered: bool = false
 var weapon_next_buffered: bool = false
 var weapon_previous_buffered: bool = false
 var inventory_buffered: bool = false
+var inventory_slot_buffered: int = -1
+var inventory_drop_buffered: bool = false
+var inventory_clear_selection_buffered: bool = false
 var pause_buffered: bool = false
 
 
@@ -55,6 +58,13 @@ func handle_input(event: InputEvent) -> void:
 		weapon_previous_buffered = true
 	if event.is_action_pressed("inventory"):
 		inventory_buffered = true
+	for slot_index: int in 4:
+		if event.is_action_pressed("inventory_slot_%d" % (slot_index + 1)):
+			inventory_slot_buffered = slot_index
+	if event.is_action_pressed("inventory_drop"):
+		inventory_drop_buffered = true
+	if event.is_action_pressed("inventory_clear_selection"):
+		inventory_clear_selection_buffered = true
 	if event.is_action_pressed("pause"):
 		pause_buffered = true
 
@@ -107,6 +117,20 @@ func consume_inventory() -> bool:
 	return _consume("inventory_buffered")
 
 
+func consume_inventory_slot() -> int:
+	var slot_index: int = inventory_slot_buffered
+	inventory_slot_buffered = -1
+	return slot_index
+
+
+func consume_inventory_drop() -> bool:
+	return _consume("inventory_drop_buffered")
+
+
+func consume_inventory_clear_selection() -> bool:
+	return _consume("inventory_clear_selection_buffered")
+
+
 func consume_pause() -> bool:
 	return _consume("pause_buffered")
 
@@ -124,6 +148,9 @@ func clear_action_buffers() -> void:
 	weapon_next_buffered = false
 	weapon_previous_buffered = false
 	inventory_buffered = false
+	inventory_slot_buffered = -1
+	inventory_drop_buffered = false
+	inventory_clear_selection_buffered = false
 	pause_buffered = false
 
 

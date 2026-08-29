@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/base/low_cover.gd" id="1_cover"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health"]
+
+[sub_resource type="BoxShape3D" id="Shape_cover"]
+size = Vector3(6, 1.25, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="Material_cover"]
+albedo_color = Color(0.34, 0.28, 0.2, 1)
+roughness = 0.96
+
+[sub_resource type="BoxMesh" id="Mesh_cover"]
+size = Vector3(6, 1.25, 0.8)
+
+[node name="LowCover" type="StaticBody3D"]
+script = ExtResource("1_cover")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+unique_name_in_owner = true
+shape = SubResource("Shape_cover")
+
+[node name="CoverMesh" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+material_override = SubResource("Material_cover")
+mesh = SubResource("Mesh_cover")
+
+[node name="HealthComponent" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_health")
+max_health = 90.0

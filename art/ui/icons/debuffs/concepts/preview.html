@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Debuff Icon Concepts</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 40px; background: #171717; color: #f2f2f2; font-family: "Microsoft YaHei", sans-serif; }
+    h1 { margin: 0 0 8px; font-size: 28px; font-weight: 700; }
+    p { margin: 0 0 28px; color: #b8b8b8; font-size: 15px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; max-width: 1160px; }
+    .group { border-top: 2px solid #ff0000; padding-top: 10px; }
+    .group-name { margin: 0 0 10px; color: #ff4d4d; font-size: 18px; font-weight: 700; }
+    .options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .option { min-height: 166px; padding: 10px; background: #252525; text-align: center; }
+    img { width: 112px; height: 112px; display: block; margin: 0 auto 9px; }
+    .label { color: #dddddd; font-size: 13px; line-height: 1.3; }
+  </style>
+</head>
+<body>
+  <h1>Debuff 图标意象候选</h1>
+  <p>图标本体均为透明背景、仅使用纯红 #ff0000。每行比较的是不同意象，不是不同画风。</p>
+  <main class="grid">
+    <section class="group">
+      <h2 class="group-name">流血</h2>
+      <div class="options">
+        <div class="option"><img src="../bleeding.svg"><div class="label">裂纹血滴</div></div>
+        <div class="option"><img src="bleeding/open-wound.svg"><div class="label">开放伤口</div></div>
+        <div class="option"><img src="bleeding/soaked-bandage.svg"><div class="label">浸血绷带</div></div>
+        <div class="option"><img src="bleeding/blood-trail.svg"><div class="label">血迹</div></div>
+      </div>
+    </section>
+    <section class="group">
+      <h2 class="group-name">骨折</h2>
+      <div class="options">
+        <div class="option"><img src="../fracture.svg"><div class="label">断裂骨头</div></div>
+        <div class="option"><img src="fracture/split-joint.svg"><div class="label">关节分离</div></div>
+        <div class="option"><img src="fracture/snapped-limb.svg"><div class="label">肢段断裂</div></div>
+        <div class="option"><img src="fracture/cracked-bone.svg"><div class="label">裂骨</div></div>
+      </div>
+    </section>
+    <section class="group">
+      <h2 class="group-name">断腿</h2>
+      <div class="options">
+        <div class="option"><img src="../broken-leg.svg"><div class="label">双腿受损</div></div>
+        <div class="option"><img src="broken-leg/knee-impact.svg"><div class="label">膝盖受创</div></div>
+        <div class="option"><img src="broken-leg/cracked-boot.svg"><div class="label">裂靴</div></div>
+        <div class="option"><img src="broken-leg/limp-footsteps.svg"><div class="label">受阻脚步</div></div>
+      </div>
+    </section>
+    <section class="group">
+      <h2 class="group-name">饥肠辘辘</h2>
+      <div class="options">
+        <div class="option"><img src="../hungry.svg"><div class="label">空碗</div></div>
+        <div class="option"><img src="hungry/empty-stomach.svg"><div class="label">空胃</div></div>
+        <div class="option"><img src="hungry/crossed-ration.svg"><div class="label">断粮</div></div>
+        <div class="option"><img src="hungry/empty-plate.svg"><div class="label">空盘餐具</div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

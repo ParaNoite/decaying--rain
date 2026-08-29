@@ -5,11 +5,13 @@ signal stamina_changed(old_value: float, new_value: float)
 
 @export_range(1.0, 1000.0, 1.0) var max_stamina: float = 100.0
 @export_range(0.0, 1000.0, 1.0) var recovery_per_second: float = 25.0
+@export_range(0.0, 10.0, 0.05) var recovery_delay_seconds: float = 0.9
 @export var auto_recover: bool = true
 @export var broadcast_player_events: bool = false
 
 var current_stamina: float = 100.0
 var recovery_multiplier: float = 1.0
+var recovery_delay_remaining: float = 0.0
 
 
 func _ready() -> void:
@@ -18,6 +20,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if recovery_delay_remaining > 0.0:
+		recovery_delay_remaining = maxf(0.0, recovery_delay_remaining - delta)
+		return
 	if auto_recover:
 		recover(recovery_per_second * recovery_multiplier * delta)
 
@@ -34,6 +39,7 @@ func consume(amount: float) -> bool:
 
 	var old_stamina: float = current_stamina
 	current_stamina = maxf(0.0, current_stamina - amount)
+	recovery_delay_remaining = recovery_delay_seconds
 	stamina_changed.emit(old_stamina, current_stamina)
 	_broadcast()
 	return true

@@ -3,12 +3,10 @@
 [ext_resource type="Script" uid="uid://clgfm8ko3q20x" path="res://scripts/levels/mvp_skeleton.gd" id="1_level"]
 [ext_resource type="Script" uid="uid://dt2ctdpw0sx48" path="res://scripts/systems/run/phase_controller.gd" id="2_phase"]
 [ext_resource type="PackedScene" uid="uid://bo15ug8lepyjl" path="res://scenes/characters/player/player.tscn" id="3_player"]
-[ext_resource type="PackedScene" path="res://scenes/base/base_core.tscn" id="4_core"]
-[ext_resource type="PackedScene" path="res://scenes/base/repairable_barrier.tscn" id="5_barrier"]
-[ext_resource type="PackedScene" path="res://scenes/interactables/resource_node.tscn" id="6_resource"]
+[ext_resource type="PackedScene" path="res://scenes/base/mvp_base_compound.tscn" id="4_base"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/loot_container.tscn" id="6_resource"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="7_hud"]
-[ext_resource type="Resource" path="res://resources/gameplay/mvp_run_config.tres" id="8_run"]
-[ext_resource type="PackedScene" path="res://scenes/debug/temporary_wooden_dummy.tscn" id="9_dummy"]
+[ext_resource type="Resource" uid="uid://c823iahk0etks" path="res://resources/gameplay/mvp_run_config.tres" id="8_run"]
 [ext_resource type="Script" uid="uid://b21sdw6pkqs8k" path="res://scripts/resources/wave_definition.gd" id="10_wave_script"]
 [ext_resource type="Script" uid="uid://dcoffbioobbqk" path="res://scripts/resources/enemy_definition.gd" id="11_enemy_script"]
 [ext_resource type="Script" uid="uid://5wi87h42u7i3" path="res://scripts/systems/run/wave_director.gd" id="12_wave_director"]
@@ -24,31 +22,63 @@
 [ext_resource type="Resource" path="res://resources/gameplay/enemies/wet_gunner.tres" id="22_wet_gunner"]
 
 [sub_resource type="Environment" id="Environment_mvp"]
+resource_local_to_scene = true
 background_mode = 1
 background_color = Color(0.18, 0.22, 0.25, 1)
 ambient_light_source = 2
 ambient_light_color = Color(0.42, 0.48, 0.55, 1)
 ambient_light_energy = 0.65
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_rain_north"]
+emission_shape = 3
+emission_box_extents = Vector3(24, 3, 20)
+direction = Vector3(0, -1, 0)
+spread = 2.0
+initial_velocity_min = 20.0
+initial_velocity_max = 24.0
+gravity = Vector3(0, -4, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rain"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.66, 0.82, 0.92, 0.72)
+billboard_mode = 1
+
+[sub_resource type="QuadMesh" id="QuadMesh_rain"]
+material = SubResource("StandardMaterial3D_rain")
+size = Vector2(0.035, 1.15)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_rain_south"]
+emission_shape = 3
+emission_box_extents = Vector3(21, 3, 9.5)
+direction = Vector3(0, -1, 0)
+spread = 2.0
+initial_velocity_min = 20.0
+initial_velocity_max = 24.0
+gravity = Vector3(0, -4, 0)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_rain_side"]
+emission_shape = 3
+emission_box_extents = Vector3(7, 3, 4.5)
+direction = Vector3(0, -1, 0)
+spread = 2.0
+initial_velocity_min = 20.0
+initial_velocity_max = 24.0
+gravity = Vector3(0, -4, 0)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_base_rain_shelter"]
+size = Vector3(48, 6, 64)
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
 albedo_color = Color(0.21, 0.24, 0.23, 1)
 roughness = 0.9
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
-size = Vector3(42, 0.2, 42)
+size = Vector3(68, 0.2, 120)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
-size = Vector3(42, 0.2, 42)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
-albedo_color = Color(0.28, 0.3, 0.33, 1)
-roughness = 0.92
-
-[sub_resource type="BoxMesh" id="BoxMesh_wall"]
-size = Vector3(12, 2.5, 0.4)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
-size = Vector3(12, 2.5, 0.4)
+size = Vector3(68, 0.2, 120)
 
 [node name="MvpSkeleton" type="Node3D" unique_id=574335612]
 script = ExtResource("1_level")
@@ -66,66 +96,114 @@ transform = Transform3D(0.819152, -0.40558, 0.40558, 0, 0.707107, 0.707107, -0.5
 light_energy = 1.8
 shadow_enabled = true
 
+[node name="RainOutsideBase" type="Node3D" parent="." unique_id=2015129831]
+
+[node name="RainNorth" type="GPUParticles3D" parent="RainOutsideBase" unique_id=1655410849]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13, -51)
+emitting = false
+amount = 960
+lifetime = 1.15
+visibility_aabb = AABB(-26, -27, -22, 52, 32, 44)
+process_material = SubResource("ParticleProcessMaterial_rain_north")
+draw_pass_1 = SubResource("QuadMesh_rain")
+
+[node name="RainSouth" type="GPUParticles3D" parent="RainOutsideBase" unique_id=1672189170]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13, 11.5)
+emitting = false
+amount = 633
+lifetime = 1.15
+visibility_aabb = AABB(-22, -27, -10.5, 44, 32, 21)
+process_material = SubResource("ParticleProcessMaterial_rain_south")
+draw_pass_1 = SubResource("QuadMesh_rain")
+
+[node name="RainWest" type="GPUParticles3D" parent="RainOutsideBase" unique_id=1654175234]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 13, -2.5)
+emitting = false
+amount = 150
+lifetime = 1.15
+visibility_aabb = AABB(-8, -27, -5.5, 16, 32, 11)
+process_material = SubResource("ParticleProcessMaterial_rain_side")
+draw_pass_1 = SubResource("QuadMesh_rain")
+
+[node name="RainEast" type="GPUParticles3D" parent="RainOutsideBase" unique_id=1410901511]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 13, -2.5)
+emitting = false
+amount = 150
+lifetime = 1.15
+visibility_aabb = AABB(-8, -27, -5.5, 16, 32, 11)
+process_material = SubResource("ParticleProcessMaterial_rain_side")
+draw_pass_1 = SubResource("QuadMesh_rain")
+
+[node name="BaseRainShelter" type="Area3D" parent="." unique_id=1640576615]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BaseRainShelter" unique_id=1865839275]
+shape = SubResource("BoxShape3D_base_rain_shelter")
+
 [node name="Blockout" type="Node3D" parent="." unique_id=396803114]
 
 [node name="Floor" type="StaticBody3D" parent="Blockout" unique_id=1938054715]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, -14)
 
 [node name="FloorMesh" type="MeshInstance3D" parent="Blockout/Floor" unique_id=1234974364]
-transform = Transform3D(7.895, 0, 0, 0, 7.895, 0, 0, 0, 7.895, 0, 0, 0)
 material_override = SubResource("StandardMaterial3D_floor")
 mesh = SubResource("BoxMesh_floor")
 
 [node name="FloorCollision" type="CollisionShape3D" parent="Blockout/Floor" unique_id=2000586530]
 shape = SubResource("BoxShape3D_floor")
 
-[node name="NorthWall" type="StaticBody3D" parent="Blockout" unique_id=1392334900]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, -8)
-
-[node name="WallMesh" type="MeshInstance3D" parent="Blockout/NorthWall" unique_id=923855440]
-material_override = SubResource("StandardMaterial3D_wall")
-mesh = SubResource("BoxMesh_wall")
-
-[node name="WallCollision" type="CollisionShape3D" parent="Blockout/NorthWall" unique_id=103230791]
-shape = SubResource("BoxShape3D_wall")
-
-[node name="Base" type="Node3D" parent="." unique_id=1730945476]
-
-[node name="BaseCore" parent="Base" unique_id=1100476935 instance=ExtResource("4_core")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -2)
-
-[node name="NorthBarrier" parent="Base" unique_id=1897202163 instance=ExtResource("5_barrier")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -5.6)
+[node name="Base" parent="." unique_id=1923742226 instance=ExtResource("4_base")]
 
 [node name="ScavengeArea" type="Node3D" parent="." unique_id=150326954]
 
 [node name="NearResource" parent="ScavengeArea" unique_id=961127877 instance=ExtResource("6_resource")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.4, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.4, -42)
 resource_id = &"near_resource"
 
 [node name="MidResource" parent="ScavengeArea" unique_id=1445181692 instance=ExtResource("6_resource")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.4, 8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.4, -51)
 resource_id = &"mid_resource"
 
 [node name="FarResource" parent="ScavengeArea" unique_id=1912367092 instance=ExtResource("6_resource")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.4, 13)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0.4, -61)
 resource_id = &"far_resource"
-
-[node name="TemporaryTestingTargets_DELETE_LATER" type="Node3D" parent="." unique_id=583458419]
-
-[node name="TemporaryWoodenDummy_DELETE_LATER_DO_NOT_USE_AS_ENEMY_TEMPLATE" parent="TemporaryTestingTargets_DELETE_LATER" unique_id=1323935885 instance=ExtResource("9_dummy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.2)
 
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=470361610]
 
 [node name="EnemyEntranceA" type="Marker3D" parent="SpawnPoints" unique_id=1980677264]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0, -6.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, -70)
 
 [node name="EnemyEntranceB" type="Marker3D" parent="SpawnPoints" unique_id=969450376]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, -6.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -70)
 
 [node name="EnemyEntranceC" type="Marker3D" parent="SpawnPoints" unique_id=1418608333]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -70)
+
+[node name="EnemyEntranceD" type="Marker3D" parent="SpawnPoints" unique_id=1270114754]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, -68)
+
+[node name="EnemyEntranceE" type="Marker3D" parent="SpawnPoints" unique_id=2141952786]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -68)
+
+[node name="EnemyEntranceF" type="Marker3D" parent="SpawnPoints" unique_id=1003600162]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -68)
+
+[node name="EnemyEntranceG" type="Marker3D" parent="SpawnPoints" unique_id=549860996]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -68)
+
+[node name="EnemyEntranceH" type="Marker3D" parent="SpawnPoints" unique_id=1638411600]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -68)
+
+[node name="EnemyEntranceI" type="Marker3D" parent="SpawnPoints" unique_id=1609912933]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -65)
+
+[node name="EnemyEntranceJ" type="Marker3D" parent="SpawnPoints" unique_id=932848098]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -65)
+
+[node name="EnemyEntranceK" type="Marker3D" parent="SpawnPoints" unique_id=1065668365]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -65)
 
 [node name="Enemies" type="Node3D" parent="." unique_id=1503611110]
 
@@ -137,6 +215,9 @@ wave_definitions = Array[ExtResource("10_wave_script")]([ExtResource("14_wave_1"
 enemy_definitions = Array[ExtResource("11_enemy_script")]([ExtResource("19_ruptured"), ExtResource("20_doorbreaker"), ExtResource("21_armored_scavenger"), ExtResource("22_wet_gunner")])
 
 [node name="Player" parent="." unique_id=758451577 instance=ExtResource("3_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 15)
+
+[node name="SupplyContainer" parent="." instance=ExtResource("6_resource")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 10.5)
 
 [node name="HUD" parent="." unique_id=1537201166 instance=ExtResource("7_hud")]

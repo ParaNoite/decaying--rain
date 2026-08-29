@@ -1,6 +1,21 @@
-[gd_resource type="Resource" script_class="WeaponDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://b0pgblqxaa27i"]
 
-[ext_resource type="Script" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+[ext_resource type="Script" uid="uid://bu7pigdfx0oay" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+[ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+
+[sub_resource type="Resource" id="ActionTiming_primary"]
+script = ExtResource("2_timing")
+windup_seconds = 0.015
+release_seconds = 0.015
+impact_seconds = 0.01
+recovery_seconds = 0.04
+
+[sub_resource type="Resource" id="ActionTiming_reload"]
+script = ExtResource("2_timing")
+windup_seconds = 0.3
+release_seconds = 0.86
+impact_seconds = 0.14
+recovery_seconds = 0.5
 
 [resource]
 script = ExtResource("1_weapon")
@@ -9,12 +24,12 @@ display_name = "SMG"
 weapon_kind = 2
 base_damage = 14.0
 stamina_cost = 0.0
+primary_timing = SubResource("ActionTiming_primary")
 supports_block = false
 ammo_type = &"light_ammo"
 magazine_size = 24
-reload_seconds = 1.8
+reload_timing = SubResource("ActionTiming_reload")
 noise_radius = 38.0
 effective_range = 14.0
-fire_interval_seconds = 0.08
 automatic = true
 spread_degrees = 1.8

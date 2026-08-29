@@ -91,11 +91,6 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "AMMO -- / --"
 
-[node name="StatusLabel" type="Label" parent="Root/TopLeft"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "STATUS CLEAR"
-
 [node name="PromptLabel" type="Label" parent="Root"]
 unique_name_in_owner = true
 visible = false
@@ -114,6 +109,41 @@ grow_vertical = 0
 horizontal_alignment = 1
 text = ""
 
+[node name="StatusDock" type="VBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -156.0
+offset_right = 620.0
+offset_bottom = -16.0
+grow_vertical = 0
+theme_override_constants/separation = 5
+mouse_filter = 2
+
+[node name="StatusTitle" type="Label" parent="Root/StatusDock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.8, 0.86, 1)
+theme_override_font_sizes/font_size = 13
+text = "CONDITIONS"
+
+[node name="StatusEmptyLabel" type="Label" parent="Root/StatusDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.66, 0.7, 1)
+text = "CLEAR"
+vertical_alignment = 1
+
+[node name="StatusRow" type="HFlowContainer" parent="Root/StatusDock"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 7
+theme_override_constants/v_separation = 7
+mouse_filter = 2
+
 [node name="DebugNoticeStack" type="VBoxContainer" parent="Root"]
 unique_name_in_owner = true
 layout_mode = 1
@@ -129,6 +159,54 @@ offset_bottom = 176.0
 grow_horizontal = 0
 alignment = 2
 mouse_filter = 2
+
+[node name="QuickSlots" type="VBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -120.0
+offset_right = -16.0
+offset_bottom = 120.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_constants/separation = 6
+mouse_filter = 2
+
+[node name="QuickSlotTitle" type="Label" parent="Root/QuickSlots"]
+layout_mode = 2
+text = "BACKPACK  [Z DROP]"
+
+[node name="QuickSlot1" type="Label" parent="Root/QuickSlots"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(244, 38)
+layout_mode = 2
+text = "> 1  Empty"
+vertical_alignment = 1
+
+[node name="QuickSlot2" type="Label" parent="Root/QuickSlots"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(244, 38)
+layout_mode = 2
+text = "  2  Empty"
+vertical_alignment = 1
+
+[node name="QuickSlot3" type="Label" parent="Root/QuickSlots"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(244, 38)
+layout_mode = 2
+text = "  3  Empty"
+vertical_alignment = 1
+
+[node name="QuickSlot4" type="Label" parent="Root/QuickSlots"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(244, 38)
+layout_mode = 2
+text = "  4  Empty"
+vertical_alignment = 1
 
 [node name="CombatBannerLabel" type="Label" parent="Root"]
 unique_name_in_owner = true
@@ -263,6 +341,42 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "+"
 horizontal_alignment = 1
+
+[node name="ItemUseLabel" type="Label" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -138.0
+offset_right = 150.0
+offset_bottom = -114.0
+grow_horizontal = 2
+grow_vertical = 0
+horizontal_alignment = 1
+text = "USING ITEM"
+
+[node name="ItemUseProgress" type="ProgressBar" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -112.0
+offset_right = 150.0
+offset_bottom = -98.0
+grow_horizontal = 2
+grow_vertical = 0
+max_value = 100.0
+show_percentage = false
 
 [node name="DeathLabel" type="Label" parent="Root"]
 unique_name_in_owner = true

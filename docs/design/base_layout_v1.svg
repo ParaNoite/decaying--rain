@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120">
+  <defs>
+    <style>
+      .bg { fill:#111a1d; }
+      .ground { fill:#314245; stroke:#a5bbc0; stroke-width:4; }
+      .approach { fill:#273a3e; stroke:#64848b; stroke-width:3; stroke-dasharray:12 8; }
+      .zone { fill:#3e514f; stroke:#abc1bd; stroke-width:3; }
+      .inner { fill:#52605a; stroke:#dae3c8; stroke-width:4; }
+      .wall { fill:#202b2e; stroke:#91a5a7; stroke-width:3; }
+      .barrier { fill:#755d42; stroke:#d0ae6c; stroke-width:3; }
+      .cover { fill:#5b4c40; stroke:#c4a987; stroke-width:2; }
+      .core { fill:#83d7d0; stroke:#e4ffff; stroke-width:5; }
+      .route { fill:none; stroke:#f4c660; stroke-width:7; stroke-linecap:round; stroke-linejoin:round; marker-end:url(#arrow); }
+      .side-route { fill:none; stroke:#e97763; stroke-width:5; stroke-dasharray:10 8; marker-end:url(#arrowRed); }
+      .dim { fill:none; stroke:#b7cbd0; stroke-width:2; marker-start:url(#arrowSmall); marker-end:url(#arrowSmall); }
+      .label { fill:#edf5f4; font-family:Arial, 'Microsoft YaHei', sans-serif; font-size:24px; font-weight:700; text-anchor:middle; }
+      .small { fill:#c4d5d5; font-family:Arial, 'Microsoft YaHei', sans-serif; font-size:18px; text-anchor:middle; }
+      .note { fill:#d9e7e5; font-family:Arial, 'Microsoft YaHei', sans-serif; font-size:19px; }
+      .title { fill:#f3f5e8; font-family:Arial, 'Microsoft YaHei', sans-serif; font-size:38px; font-weight:700; }
+      .legend { fill:#182629; stroke:#6c8585; stroke-width:2; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z" fill="#f4c660"/></marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z" fill="#e97763"/></marker>
+    <marker id="arrowSmall" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,4 L8,0 L8,8 Z" fill="#b7cbd0"/></marker>
+  </defs>
+
+  <rect class="bg" width="1600" height="1120"/>
+  <text class="title" x="70" y="62">衰朽之雨 MVP：北门单入口矩形基地</text>
+  <text class="note" x="70" y="95">灰盒地编 v1 | 据点主体 64m × 44m | 北向上方 | 日间出征与雨夜主敌潮共享北门</text>
+
+  <!-- North approach and base extent -->
+  <rect class="approach" x="265" y="145" width="970" height="190" rx="2"/>
+  <text class="label" x="750" y="185">北侧荒地接近区（约 16m 深）</text>
+  <text class="small" x="750" y="215">日间：通向固定搜刮区　|　雨夜：敌潮集结、预警与首轮火力判断</text>
+  <rect class="cover" x="390" y="262" width="85" height="32"/><rect class="cover" x="1015" y="236" width="90" height="36"/>
+  <text class="small" x="432" y="320">废车</text><text class="small" x="1060" y="305">塌墙</text>
+
+  <rect class="ground" x="265" y="335" width="970" height="668"/>
+  <path class="wall" d="M265 335 H585 M915 335 H1235 V1003 H265 V335"/>
+
+  <!-- Outer refusal -->
+  <rect class="barrier" x="292" y="365" width="916" height="28"/>
+  <text class="small" x="750" y="420">外围拒止带：浅壕、铁丝网、废料路障（减速/聚怪，不作为独立建造玩法）</text>
+
+  <!-- Only North gate -->
+  <rect x="585" y="328" width="330" height="25" fill="#d0ae6c" stroke="#fff0b0" stroke-width="4"/>
+  <rect class="barrier" x="615" y="356" width="270" height="48"/>
+  <text class="label" x="750" y="378">北门：唯一入口</text>
+  <text class="small" x="750" y="448">工业闸门 + 可修复障碍 | 破门者的首要目标</text>
+
+  <!-- Courtyard -->
+  <rect class="zone" x="325" y="460" width="850" height="270"/>
+  <text class="label" x="750" y="500">前庭主战场（约 56m × 18m）</text>
+  <text class="small" x="750" y="530">第一轮近战、格挡、推搡与短距离火力的主舞台</text>
+  <rect class="cover" x="400" y="565" width="145" height="48"/><rect class="cover" x="955" y="565" width="145" height="48"/>
+  <rect class="cover" x="470" y="655" width="110" height="42"/><rect class="cover" x="920" y="655" width="110" height="42"/>
+  <rect x="650" y="590" width="200" height="50" fill="#244a52" stroke="#8bc0c8" stroke-width="3"/>
+  <text class="small" x="750" y="622">排水沟 / 推搡陷落点</text>
+  <text class="small" x="472" y="555">西掩体</text><text class="small" x="1028" y="555">东掩体</text>
+
+  <!-- Inner ring -->
+  <path class="inner" d="M350 770 H1150 V925 H350 Z"/>
+  <rect x="420" y="785" width="180" height="110" class="wall"/>
+  <rect x="900" y="785" width="180" height="110" class="wall"/>
+  <text class="label" x="750" y="765">内环退守区</text>
+  <text class="small" x="750" y="950">前庭失守后，玩家以横向通道绕核心换位；敌人必须绕过棚屋与隔断</text>
+  <text class="small" x="510" y="842">维修棚</text><text class="small" x="990" y="842">医疗 / 补给棚</text>
+
+  <!-- Core & rear -->
+  <circle class="core" cx="750" cy="846" r="62"/>
+  <path d="M750 798 V894 M702 846 H798" stroke="#e4ffff" stroke-width="5"/>
+  <text class="label" x="750" y="855">信标核心</text>
+  <text class="small" x="750" y="884">后撤而非直冲目标</text>
+  <rect class="wall" x="360" y="965" width="780" height="20"/>
+  <text class="small" x="750" y="1038">南侧永久封闭：设备墙、储罐与封死处理建筑。无门、无逃生出口。</text>
+
+  <!-- Routes -->
+  <path class="route" d="M750 170 V330 M750 408 V560 C750 590 750 645 750 730 C750 760 750 780 750 785"/>
+  <text class="note" x="780" y="260">主敌潮 / 日间玩家路线</text>
+  <path class="side-route" d="M300 520 C355 560 390 650 430 750"/>
+  <path class="side-route" d="M1200 520 C1145 560 1110 650 1070 750"/>
+  <text class="note" x="285" y="510">高波次西侧渗入</text>
+  <text class="note" x="1090" y="510">高波次东侧渗入</text>
+
+  <!-- Dimension lines -->
+  <path class="dim" d="M265 1080 H1235"/><text class="small" x="750" y="1105">64m</text>
+  <path class="dim" d="M190 335 V1003"/><text class="small" x="158" y="675" transform="rotate(-90 158 675)">44m</text>
+
+  <!-- Legend -->
+  <rect class="legend" x="1270" y="150" width="275" height="360" rx="4"/>
+  <text class="label" x="1407" y="190">图例与玩法锚点</text>
+  <line x1="1300" y1="225" x2="1370" y2="225" class="route"/><text class="note" x="1390" y="232">主路线</text>
+  <line x1="1300" y1="265" x2="1370" y2="265" class="side-route"/><text class="note" x="1390" y="272">事件渗入</text>
+  <rect class="barrier" x="1300" y="300" width="70" height="18"/><text class="note" x="1390" y="316">可修复防线</text>
+  <rect class="cover" x="1300" y="345" width="70" height="18"/><text class="note" x="1390" y="361">掩体 / 棚屋</text>
+  <circle class="core" cx="1335" cy="405" r="20"/><text class="note" x="1390" y="412">失败目标</text>
+  <text class="note" x="1300" y="455">波次意图：</text>
+  <text class="note" x="1300" y="480">W1 认识北门与前庭</text>
+  <text class="note" x="1300" y="505">W2 破门制造缺口</text>
+  <text class="note" x="1300" y="530">W3 内环退守</text>
+  <text class="note" x="1300" y="555">W4 枪手迫使换掩体</text>
+  <text class="note" x="1300" y="580">W5 双侧渗入保核心</text>
+</svg>

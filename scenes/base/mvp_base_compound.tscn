@@ -1,0 +1,136 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/base/base_core.tscn" id="1_core"]
+[ext_resource type="PackedScene" path="res://scenes/base/low_cover.tscn" id="3_low_cover"]
+[ext_resource type="PackedScene" path="res://scenes/base/rear_room_row.tscn" id="4_rear_rooms"]
+
+[sub_resource type="StandardMaterial3D" id="Material_wall"]
+albedo_color = Color(0.17, 0.22, 0.23, 1)
+roughness = 0.9
+[sub_resource type="StandardMaterial3D" id="Material_gate"]
+albedo_color = Color(0.27, 0.31, 0.29, 1)
+metallic = 0.18
+roughness = 0.72
+[sub_resource type="StandardMaterial3D" id="Material_drain"]
+albedo_color = Color(0.08, 0.24, 0.27, 1)
+metallic = 0.15
+roughness = 0.55
+
+[sub_resource type="BoxMesh" id="Mesh_north_wall"]
+size = Vector3(6, 8, 1.2)
+[sub_resource type="BoxShape3D" id="Shape_north_wall"]
+size = Vector3(6, 8, 1.2)
+[sub_resource type="BoxMesh" id="Mesh_side_wall"]
+size = Vector3(0.8, 3.6, 64)
+[sub_resource type="BoxShape3D" id="Shape_side_wall"]
+size = Vector3(0.8, 3.6, 64)
+[sub_resource type="BoxMesh" id="Mesh_south_wall"]
+size = Vector3(48, 5.2, 1.2)
+[sub_resource type="BoxShape3D" id="Shape_south_wall"]
+size = Vector3(48, 5.2, 1.2)
+[sub_resource type="BoxMesh" id="Mesh_gate_post"]
+size = Vector3(1.6, 8, 1.6)
+[sub_resource type="BoxShape3D" id="Shape_gate_post"]
+size = Vector3(1.6, 8, 1.6)
+[sub_resource type="BoxMesh" id="Mesh_gate_lintel"]
+size = Vector3(36, 1.2, 1.6)
+[sub_resource type="BoxShape3D" id="Shape_gate_lintel"]
+size = Vector3(36, 1.2, 1.6)
+[sub_resource type="BoxMesh" id="Mesh_drain"]
+size = Vector3(12, 0.16, 3)
+
+[node name="MvpBaseCompound" type="Node3D"]
+[node name="Perimeter" type="Node3D" parent="."]
+
+[node name="NorthWallWest" type="StaticBody3D" parent="Perimeter"]
+position = Vector3(-21, 4, -31.6)
+[node name="Mesh" type="MeshInstance3D" parent="Perimeter/NorthWallWest"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_north_wall")
+[node name="Collision" type="CollisionShape3D" parent="Perimeter/NorthWallWest"]
+shape = SubResource("Shape_north_wall")
+[node name="NorthWallEast" type="StaticBody3D" parent="Perimeter"]
+position = Vector3(21, 4, -31.6)
+[node name="Mesh" type="MeshInstance3D" parent="Perimeter/NorthWallEast"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_north_wall")
+[node name="Collision" type="CollisionShape3D" parent="Perimeter/NorthWallEast"]
+shape = SubResource("Shape_north_wall")
+[node name="WestWall" type="StaticBody3D" parent="Perimeter"]
+position = Vector3(-23.6, 1.8, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Perimeter/WestWall"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_side_wall")
+[node name="Collision" type="CollisionShape3D" parent="Perimeter/WestWall"]
+shape = SubResource("Shape_side_wall")
+[node name="EastWall" type="StaticBody3D" parent="Perimeter"]
+position = Vector3(23.6, 1.8, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Perimeter/EastWall"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_side_wall")
+[node name="Collision" type="CollisionShape3D" parent="Perimeter/EastWall"]
+shape = SubResource("Shape_side_wall")
+[node name="SouthEquipmentWall" type="StaticBody3D" parent="Perimeter"]
+position = Vector3(0, 2.6, 31.4)
+[node name="Mesh" type="MeshInstance3D" parent="Perimeter/SouthEquipmentWall"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_south_wall")
+[node name="Collision" type="CollisionShape3D" parent="Perimeter/SouthEquipmentWall"]
+shape = SubResource("Shape_south_wall")
+
+[node name="NorthEntranceFrame" type="Node3D" parent="."]
+[node name="WestColumn" type="StaticBody3D" parent="NorthEntranceFrame"]
+position = Vector3(-18.8, 4, -31.5)
+[node name="Mesh" type="MeshInstance3D" parent="NorthEntranceFrame/WestColumn"]
+material_override = SubResource("Material_gate")
+mesh = SubResource("Mesh_gate_post")
+[node name="Collision" type="CollisionShape3D" parent="NorthEntranceFrame/WestColumn"]
+shape = SubResource("Shape_gate_post")
+[node name="EastColumn" type="StaticBody3D" parent="NorthEntranceFrame"]
+position = Vector3(18.8, 4, -31.5)
+[node name="Mesh" type="MeshInstance3D" parent="NorthEntranceFrame/EastColumn"]
+material_override = SubResource("Material_gate")
+mesh = SubResource("Mesh_gate_post")
+[node name="Collision" type="CollisionShape3D" parent="NorthEntranceFrame/EastColumn"]
+shape = SubResource("Shape_gate_post")
+[node name="OverheadBeam" type="StaticBody3D" parent="NorthEntranceFrame"]
+position = Vector3(0, 8.6, -31.5)
+[node name="Mesh" type="MeshInstance3D" parent="NorthEntranceFrame/OverheadBeam"]
+material_override = SubResource("Material_gate")
+mesh = SubResource("Mesh_gate_lintel")
+[node name="Collision" type="CollisionShape3D" parent="NorthEntranceFrame/OverheadBeam"]
+shape = SubResource("Shape_gate_lintel")
+
+[node name="Courtyard" type="Node3D" parent="."]
+[node name="WestForwardCover" parent="Courtyard" instance=ExtResource("3_low_cover")]
+position = Vector3(-11, 0.625, -18)
+cover_id = &"west_forward_cover"
+[node name="EastForwardCover" parent="Courtyard" instance=ExtResource("3_low_cover")]
+position = Vector3(11, 0.625, -18)
+cover_id = &"east_forward_cover"
+[node name="WestRearCover" parent="Courtyard" instance=ExtResource("3_low_cover")]
+position = Vector3(-8, 0.625, -7)
+rotation = Vector3(0, 0.3, 0)
+cover_id = &"west_rear_cover"
+[node name="EastRearCover" parent="Courtyard" instance=ExtResource("3_low_cover")]
+position = Vector3(8, 0.625, -7)
+rotation = Vector3(0, -0.3, 0)
+cover_id = &"east_rear_cover"
+[node name="DrainChannel" type="MeshInstance3D" parent="Courtyard"]
+position = Vector3(0, 0.02, -12)
+material_override = SubResource("Material_drain")
+mesh = SubResource("Mesh_drain")
+
+[node name="InnerRing" type="Node3D" parent="."]
+[node name="RearRoomRow" parent="InnerRing" instance=ExtResource("4_rear_rooms")]
+position = Vector3(0, 0, 23.5)
+[node name="WestInnerCover" parent="InnerRing" instance=ExtResource("3_low_cover")]
+position = Vector3(-7, 0.625, 17)
+rotation = Vector3(0, -0.24, 0)
+cover_id = &"west_inner_cover"
+[node name="EastInnerCover" parent="InnerRing" instance=ExtResource("3_low_cover")]
+position = Vector3(9, 0.625, 21)
+rotation = Vector3(0, 0.24, 0)
+cover_id = &"east_inner_cover"
+[node name="BaseCore" parent="." instance=ExtResource("1_core")]
+position = Vector3(0, 1.2, 24)

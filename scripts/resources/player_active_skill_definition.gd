@@ -9,7 +9,7 @@ extends Resource
 @export_group("Activation")
 @export var effect_id: StringName = &"none"
 @export_range(0.0, 60.0, 0.05) var cooldown_seconds: float = 1.0
-@export_range(0.0, 5.0, 0.01) var windup_seconds: float = 0.12
+@export var action_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.12, 0.10, 0.04, 0.18)
 @export_range(0.0, 100.0, 1.0) var stamina_cost: float = 0.0
 @export var allowed_phases: Array[StringName] = []
 

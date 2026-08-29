@@ -211,6 +211,7 @@ func _default_constraints() -> Dictionary:
 		"incoming_damage_multiplier": 1.0,
 		"stamina_recovery_multiplier": 1.0,
 		"movement_speed_multiplier": 1.0,
+		"sprint_speed_multiplier": 1.0,
 		"firearm_spread_multiplier": 1.0,
 		"blocked_action_ids": [],
 	}

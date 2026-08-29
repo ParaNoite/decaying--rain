@@ -12,6 +12,7 @@ enum StatusCategory {
 enum StackPolicy {
 	REFRESH_DURATION,
 	REPLACE,
+	## Legacy value retained for already-authored resources. Runtime statuses never stack.
 	ADD_STACK,
 }
 
@@ -32,6 +33,7 @@ enum StackPolicy {
 @export_range(0.0, 10.0, 0.05) var incoming_damage_multiplier: float = 1.0
 @export_range(0.0, 10.0, 0.05) var outgoing_damage_multiplier: float = 1.0
 @export_range(0.0, 10.0, 0.05) var movement_speed_multiplier: float = 1.0
+@export_range(0.0, 10.0, 0.05) var sprint_speed_multiplier: float = 1.0
 @export var movement_disabled: bool = false
 @export var mobility_blocked: bool = false
 @export var combat_blocked: bool = false

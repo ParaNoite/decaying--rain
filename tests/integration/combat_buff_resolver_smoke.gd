@@ -50,18 +50,16 @@ func _ready() -> void:
 	_check(is_equal_approx(guarded_result.final_amount, 10.0), "incoming buff was not resolved centrally")
 	_check(is_equal_approx(player.health.current_health, 90.0), "guarded damage did not reach health")
 
-	var stacking: StatusEffectDefinition = StatusEffectDefinition.new()
-	stacking.status_id = &"resolver_test_stacking"
-	stacking.display_name = "Resolver Test Stacking"
-	stacking.duration_seconds = 1.0
-	stacking.stack_policy = StatusEffectDefinition.StackPolicy.ADD_STACK
-	stacking.max_stacks = 3
-	stacking.outgoing_damage_multiplier = 1.2
-	_check(bool(buff_resolver.call("apply_status", enemy, stacking)), "first buff stack could not be applied")
-	_check(bool(buff_resolver.call("apply_status", enemy, stacking)), "second buff stack could not be applied")
-	_check(enemy.status_container.get_status_stack_count(stacking.status_id) == 2, "buff stack count was not resolved")
-	var stacked_constraints: Dictionary = buff_resolver.call("get_constraints", enemy)
-	_check(is_equal_approx(float(stacked_constraints["outgoing_damage_multiplier"]), 1.44), "stacked buff multiplier was not aggregated")
+	var refreshed: StatusEffectDefinition = StatusEffectDefinition.new()
+	refreshed.status_id = &"resolver_test_refresh"
+	refreshed.display_name = "Resolver Test Refresh"
+	refreshed.duration_seconds = 1.0
+	refreshed.outgoing_damage_multiplier = 1.2
+	_check(bool(buff_resolver.call("apply_status", enemy, refreshed)), "first unique status could not be applied")
+	_check(bool(buff_resolver.call("apply_status", enemy, refreshed)), "repeated status could not be refreshed")
+	_check(enemy.status_container.get_status_stack_count(refreshed.status_id) == 1, "repeated status incorrectly stacked")
+	var refreshed_constraints: Dictionary = buff_resolver.call("get_constraints", enemy)
+	_check(is_equal_approx(float(refreshed_constraints["outgoing_damage_multiplier"]), 1.2), "refreshed status multiplier was applied more than once")
 
 	var periodic: StatusEffectDefinition = StatusEffectDefinition.new()
 	periodic.status_id = &"resolver_test_periodic"

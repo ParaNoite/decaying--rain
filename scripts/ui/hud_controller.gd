@@ -13,7 +13,8 @@ extends CanvasLayer
 @onready var skill_label: Label = %SkillLabel
 @onready var weapon_label: Label = %WeaponLabel
 @onready var ammo_label: Label = %AmmoLabel
-@onready var status_label: Label = %StatusLabel
+@onready var status_row: HFlowContainer = %StatusRow
+@onready var status_empty_label: Label = %StatusEmptyLabel
 @onready var prompt_label: Label = %PromptLabel
 @onready var debug_notice_stack: VBoxContainer = %DebugNoticeStack
 @onready var combat_banner_label: Label = %CombatBannerLabel
@@ -24,9 +25,12 @@ extends CanvasLayer
 @onready var watch_inventory_label: Label = %WatchInventoryLabel
 @onready var inventory_panel: Control = %InventoryPanel
 @onready var inventory_contents_label: Label = %InventoryContentsLabel
+@onready var quick_slot_labels: Array[Label] = [%QuickSlot1, %QuickSlot2, %QuickSlot3, %QuickSlot4]
 @onready var use_bandage_button: Button = %UseBandageButton
 @onready var use_food_button: Button = %UseFoodButton
 @onready var death_label: Label = %DeathLabel
+@onready var item_use_progress: ProgressBar = %ItemUseProgress
+@onready var item_use_label: Label = %ItemUseLabel
 
 const MAX_DEBUG_NOTICE_COUNT: int = 5
 
@@ -37,7 +41,9 @@ var _skill_display_name: String = "--"
 var _skill_id: StringName = &"none"
 var _skill_cooldown_remaining: float = 0.0
 var _inventory_items: Dictionary = {}
+var _special_inventory_items: Dictionary = {}
 var _active_statuses: Array[Dictionary] = []
+var _selected_inventory_slot: int = 0
 
 
 func _ready() -> void:
@@ -51,8 +57,14 @@ func _ready() -> void:
 	_event_bus.hunger_changed.connect(_on_hunger_changed)
 	_event_bus.base_core_health_changed.connect(_on_base_core_health_changed)
 	_event_bus.resource_looted.connect(_on_resource_looted)
+	_event_bus.loot_container_opened.connect(_on_loot_container_opened)
+	_event_bus.world_item_picked_up.connect(_on_world_item_picked_up)
+	_event_bus.item_used.connect(_on_item_used)
 	_event_bus.inventory_changed.connect(_on_inventory_changed)
+	_event_bus.special_inventory_changed.connect(_on_special_inventory_changed)
+	_event_bus.inventory_selection_changed.connect(_on_inventory_selection_changed)
 	_event_bus.inventory_visibility_changed.connect(_on_inventory_visibility_changed)
+	_event_bus.item_use_progress.connect(_on_item_use_progress)
 	_event_bus.interaction_prompt_changed.connect(_on_interaction_prompt_changed)
 	_event_bus.player_perk_selected.connect(_on_player_perk_selected)
 	_event_bus.player_active_skill_changed.connect(_on_player_active_skill_changed)
@@ -87,10 +99,22 @@ func _exit_tree() -> void:
 		_event_bus.base_core_health_changed.disconnect(_on_base_core_health_changed)
 	if _event_bus.resource_looted.is_connected(_on_resource_looted):
 		_event_bus.resource_looted.disconnect(_on_resource_looted)
+	if _event_bus.loot_container_opened.is_connected(_on_loot_container_opened):
+		_event_bus.loot_container_opened.disconnect(_on_loot_container_opened)
+	if _event_bus.world_item_picked_up.is_connected(_on_world_item_picked_up):
+		_event_bus.world_item_picked_up.disconnect(_on_world_item_picked_up)
+	if _event_bus.item_used.is_connected(_on_item_used):
+		_event_bus.item_used.disconnect(_on_item_used)
 	if _event_bus.inventory_changed.is_connected(_on_inventory_changed):
 		_event_bus.inventory_changed.disconnect(_on_inventory_changed)
+	if _event_bus.special_inventory_changed.is_connected(_on_special_inventory_changed):
+		_event_bus.special_inventory_changed.disconnect(_on_special_inventory_changed)
+	if _event_bus.inventory_selection_changed.is_connected(_on_inventory_selection_changed):
+		_event_bus.inventory_selection_changed.disconnect(_on_inventory_selection_changed)
 	if _event_bus.inventory_visibility_changed.is_connected(_on_inventory_visibility_changed):
 		_event_bus.inventory_visibility_changed.disconnect(_on_inventory_visibility_changed)
+	if _event_bus.item_use_progress.is_connected(_on_item_use_progress):
+		_event_bus.item_use_progress.disconnect(_on_item_use_progress)
 	if _event_bus.interaction_prompt_changed.is_connected(_on_interaction_prompt_changed):
 		_event_bus.interaction_prompt_changed.disconnect(_on_interaction_prompt_changed)
 	if _event_bus.player_perk_selected.is_connected(_on_player_perk_selected):
@@ -151,6 +175,18 @@ func _on_resource_looted(resource_id: StringName, payload: Dictionary) -> void:
 	_on_debug_test_notice("Picked up %s: %s" % [String(resource_id), str(payload)], &"loot")
 
 
+func _on_loot_container_opened(container_id: StringName, payload: Dictionary) -> void:
+	_on_debug_test_notice("Opened %s: %s" % [String(container_id), str(payload)], &"loot")
+
+
+func _on_world_item_picked_up(item_id: StringName, quantity: int) -> void:
+	_on_debug_test_notice("Picked up %s x%d" % [_item_display_name(item_id), quantity], &"loot")
+
+
+func _on_item_used(item_id: StringName, _quantity: int) -> void:
+	_on_debug_test_notice("Used %s" % _item_display_name(item_id), &"inventory")
+
+
 func _on_interaction_prompt_changed(prompt: String) -> void:
 	prompt_label.text = prompt
 	prompt_label.visible = not prompt.is_empty()
@@ -187,13 +223,34 @@ func _on_inventory_changed(items: Dictionary) -> void:
 	_inventory_items = items.duplicate(true)
 	var text: String = _format_inventory(_inventory_items)
 	inventory_contents_label.text = text
-	watch_inventory_label.text = "SUPPLIES\n%s" % text
-	use_bandage_button.disabled = int(_inventory_items.get(&"bandage", 0)) <= 0
-	use_food_button.disabled = int(_inventory_items.get(&"food_ration", 0)) <= 0
+	_configure_use_button(use_bandage_button, &"bandage")
+	_configure_use_button(use_food_button, &"food_ration")
+	_refresh_quick_slots()
+
+
+func _on_special_inventory_changed(items: Dictionary) -> void:
+	_special_inventory_items = items.duplicate(true)
+	watch_inventory_label.text = "SUPPLIES\n%s" % _format_inventory(_special_inventory_items)
+	_configure_use_button(use_food_button, &"food_ration")
+
+
+func _on_inventory_selection_changed(slot_index: int) -> void:
+	_selected_inventory_slot = slot_index
+	_refresh_quick_slots()
 
 
 func _on_inventory_visibility_changed(active: bool) -> void:
 	inventory_panel.visible = active
+
+
+func _on_item_use_progress(item_id: StringName, progress: float, active: bool) -> void:
+	item_use_progress.visible = active
+	item_use_label.visible = active
+	if not active:
+		item_use_progress.value = 0.0
+		return
+	item_use_label.text = "USING %s" % _item_display_name(item_id).to_upper()
+	item_use_progress.value = clampf(progress, 0.0, 1.0) * 100.0
 
 
 func _request_item_use(item_id: StringName) -> void:
@@ -207,7 +264,7 @@ func _on_status_list_changed(target_id: int, statuses: Array[Dictionary]) -> voi
 		return
 	_active_statuses = statuses.duplicate(true)
 	var text: String = _format_statuses(_active_statuses)
-	status_label.text = text
+	_render_status_dock(_active_statuses)
 	watch_status_label.text = "CONDITIONS\n%s" % text
 
 
@@ -345,6 +402,7 @@ func _sync_initial_values() -> void:
 		var inventory: PlayerInventoryComponent = player.get_node_or_null("Components/PlayerInventoryComponent") as PlayerInventoryComponent
 		if inventory != null:
 			_on_inventory_changed(inventory.get_items())
+			_on_special_inventory_changed(inventory.get_special_items())
 
 		var statuses: StatusContainer = player.get_node_or_null("Components/StatusContainer") as StatusContainer
 		if statuses != null:
@@ -405,8 +463,57 @@ func _format_inventory(items: Dictionary) -> String:
 	var keys: Array = items.keys()
 	keys.sort()
 	for item_value: Variant in keys:
-		lines.append("%s  x%d" % [_display_name_from_id(StringName(item_value)), int(items[item_value])])
+		lines.append("%s  x%d" % [_item_display_name(StringName(item_value)), int(items[item_value])])
 	return "\n".join(lines)
+
+
+func _configure_use_button(button: Button, item_id: StringName) -> void:
+	if button == null:
+		return
+	var item: ItemDefinition = _get_item_definition(item_id)
+	var display_name: String = item.display_name if item != null else _display_name_from_id(item_id)
+	button.text = "Use %s" % display_name
+	var inventory: PlayerInventoryComponent = _get_player_inventory()
+	button.disabled = item == null or not item.has_use_effect() or inventory == null or inventory.get_quantity(item_id) <= 0
+
+
+func _item_display_name(item_id: StringName) -> String:
+	var item: ItemDefinition = _get_item_definition(item_id)
+	return item.display_name if item != null else _display_name_from_id(item_id)
+
+
+func _get_item_definition(item_id: StringName) -> ItemDefinition:
+	var inventory: PlayerInventoryComponent = _get_player_inventory()
+	return inventory.get_item_definition(item_id) if inventory != null else null
+
+
+func _get_player_inventory() -> PlayerInventoryComponent:
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player == null:
+		return null
+	return player.get_node_or_null("Components/PlayerInventoryComponent") as PlayerInventoryComponent
+
+
+func _refresh_quick_slots() -> void:
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player == null:
+		return
+	var inventory: PlayerInventoryComponent = player.get_node_or_null("Components/PlayerInventoryComponent") as PlayerInventoryComponent
+	if inventory == null:
+		return
+	var slots: Array[Dictionary] = inventory.get_slot_snapshots()
+	for index: int in quick_slot_labels.size():
+		var label: Label = quick_slot_labels[index]
+		if label == null:
+			continue
+		var snapshot: Dictionary = slots[index] if index < slots.size() else {}
+		var item_id: StringName = StringName(snapshot.get("item_id", &""))
+		var quantity: int = int(snapshot.get("quantity", 0))
+		var prefix: String = ">" if index == _selected_inventory_slot else " "
+		var contents: String = "Empty"
+		if item_id != &"" and quantity > 0:
+			contents = "%s x%d" % [_item_display_name(item_id), quantity]
+		label.text = "%s %d  %s" % [prefix, index + 1, contents]
 
 
 func _format_statuses(statuses: Array[Dictionary]) -> String:
@@ -420,3 +527,60 @@ func _format_statuses(statuses: Array[Dictionary]) -> String:
 		var stack_text: String = " x%d" % stack_count if stack_count > 1 else ""
 		lines.append("%s%s  %s" % [String(status.get("display_name", "Status")).to_upper(), stack_text, duration_text])
 	return "\n".join(lines)
+
+
+func _render_status_dock(statuses: Array[Dictionary]) -> void:
+	if status_row == null or status_empty_label == null:
+		return
+	for child: Node in status_row.get_children():
+		status_row.remove_child(child)
+		child.queue_free()
+	status_empty_label.visible = statuses.is_empty()
+	for status: Dictionary in statuses:
+		var panel: PanelContainer = PanelContainer.new()
+		panel.custom_minimum_size = Vector2(154.0, 42.0)
+		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		panel.add_theme_stylebox_override("panel", _make_status_style(status))
+		var label: Label = Label.new()
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.text = _format_status_dock_entry(status)
+		label.add_theme_color_override("font_color", _status_color(status))
+		label.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.04, 0.95))
+		label.add_theme_constant_override("outline_size", 2)
+		panel.add_child(label)
+		status_row.add_child(panel)
+
+
+func _format_status_dock_entry(status: Dictionary) -> String:
+	var remaining: float = float(status.get("remaining_seconds", -1.0))
+	var duration_text: String = "持续" if remaining < 0.0 else "%.0f 秒" % ceilf(remaining)
+	return "%s\n%s" % [String(status.get("display_name", "状态")).to_upper(), duration_text]
+
+
+func _status_color(status: Dictionary) -> Color:
+	var category: int = int(status.get("category", StatusEffectDefinition.StatusCategory.BUFF))
+	match category:
+		StatusEffectDefinition.StatusCategory.BUFF, StatusEffectDefinition.StatusCategory.PROFESSION:
+			return Color(0.56, 0.94, 0.75, 1.0)
+		_:
+			return Color(1.0, 0.58, 0.48, 1.0)
+
+
+func _make_status_style(status: Dictionary) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	var accent: Color = _status_color(status)
+	style.bg_color = Color(0.03, 0.05, 0.07, 0.88)
+	style.border_color = Color(accent, 0.68)
+	style.set_border_width_all(1)
+	style.corner_radius_top_left = 3
+	style.corner_radius_top_right = 3
+	style.corner_radius_bottom_right = 3
+	style.corner_radius_bottom_left = 3
+	style.content_margin_left = 8.0
+	style.content_margin_top = 4.0
+	style.content_margin_right = 8.0
+	style.content_margin_bottom = 4.0
+	return style

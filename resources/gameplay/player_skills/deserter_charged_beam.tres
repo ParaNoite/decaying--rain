@@ -1,6 +1,14 @@
-[gd_resource type="Resource" script_class="PlayerActiveSkillDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlayerActiveSkillDefinition" format=3 uid="uid://fti1w4631d8j"]
 
-[ext_resource type="Script" path="res://scripts/resources/player_active_skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" uid="uid://cbk4qij206acq" path="res://scripts/resources/player_active_skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+
+[sub_resource type="Resource" id="ActionTiming_skill"]
+script = ExtResource("2_timing")
+windup_seconds = 0.18
+release_seconds = 0.08
+impact_seconds = 0.04
+recovery_seconds = 0.18
 
 [resource]
 script = ExtResource("1_skill")
@@ -9,9 +17,8 @@ display_name = "Charged Beam"
 description = "Temporary MVP active skill for the Deserter perk. This is a standalone skill effect, not a firearm, inventory item, or weapon slot."
 effect_id = &"charged_beam"
 cooldown_seconds = 1.25
-windup_seconds = 0.18
+action_timing = SubResource("ActionTiming_skill")
 stamina_cost = 8.0
-allowed_phases = Array[StringName]([])
 beam_damage = 42.0
 beam_range = 36.0
 beam_tags = Array[StringName]([&"active_skill", &"charged_beam", &"deserter"])

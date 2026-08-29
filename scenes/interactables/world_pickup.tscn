@@ -1,0 +1,33 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/interactables/world_pickup.gd" id="1_pickup"]
+[ext_resource type="Script" path="res://scripts/components/interactable_component.gd" id="2_interactable"]
+
+[sub_resource type="StandardMaterial3D" id="1_material"]
+albedo_color = Color(0.95, 0.8, 0.26, 1)
+emission_enabled = true
+emission = Color(0.38, 0.26, 0.04, 1)
+
+[sub_resource type="SphereMesh" id="2_mesh"]
+radius = 0.16
+height = 0.32
+material = SubResource("1_material")
+
+[sub_resource type="SphereShape3D" id="3_shape"]
+radius = 0.35
+
+[node name="WorldPickup" type="Node3D"]
+script = ExtResource("1_pickup")
+
+[node name="Visual" type="MeshInstance3D" parent="."]
+mesh = SubResource("2_mesh")
+
+[node name="InteractableComponent" type="Area3D" parent="."]
+unique_name_in_owner = true
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("2_interactable")
+prompt = "Pick up item"
+
+[node name="InteractionShape" type="CollisionShape3D" parent="InteractableComponent"]
+shape = SubResource("3_shape")

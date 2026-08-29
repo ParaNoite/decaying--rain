@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="LootTableDefinition" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="LootTableDefinition" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/loot_table_definition.gd" id="1_table"]
 [ext_resource type="Resource" path="res://resources/loot/entries/light_ammo.tres" id="2_ammo"]
 [ext_resource type="Resource" path="res://resources/loot/entries/food_ration.tres" id="3_food"]
 [ext_resource type="Resource" path="res://resources/loot/entries/bandage.tres" id="4_bandage"]
 [ext_resource type="Script" path="res://scripts/resources/loot_entry_definition.gd" id="5_entry_script"]
+[ext_resource type="Resource" path="res://resources/loot/entries/medkit.tres" id="6_medkit"]
 
 [resource]
 script = ExtResource("1_table")
 table_id = &"mvp_scavenge"
-entries = Array[ExtResource("5_entry_script")]([ExtResource("2_ammo"), ExtResource("3_food"), ExtResource("4_bandage")])
+entries = Array[ExtResource("5_entry_script")]([ExtResource("2_ammo"), ExtResource("3_food"), ExtResource("4_bandage"), ExtResource("6_medkit")])

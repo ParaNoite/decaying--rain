@@ -73,7 +73,7 @@ func start_slide(body: CharacterBody3D, input_vector: Vector2) -> bool:
 	if slide_direction == Vector3.ZERO:
 		slide_direction = -body.global_transform.basis.z.normalized()
 
-	slide_time_remaining = _movement().slide_duration
+	slide_time_remaining = _movement().slide_timing.total_seconds()
 	slide_cooldown_remaining = _movement().slide_cooldown
 	return true
 

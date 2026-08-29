@@ -1,17 +1,40 @@
-[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3 uid="uid://bckn0xrtxenuk"]
 
-[ext_resource type="Script" path="res://scripts/resources/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="Script" uid="uid://dcoffbioobbqk" path="res://scripts/resources/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+
+[sub_resource type="Resource" id="ActionTiming_attack"]
+script = ExtResource("2_timing")
+windup_seconds = 0.8
+release_seconds = 0.14
+impact_seconds = 0.06
+recovery_seconds = 0.2
+
+[sub_resource type="Resource" id="ActionTiming_death"]
+script = ExtResource("2_timing")
+release_seconds = 0.18
+impact_seconds = 0.12
+recovery_seconds = 0.35
+
+[sub_resource type="Resource" id="ActionTiming_hurt"]
+script = ExtResource("2_timing")
+release_seconds = 0.08
+impact_seconds = 0.04
+recovery_seconds = 0.26
 
 [resource]
 script = ExtResource("1_enemy")
 enemy_id = &"doorbreaker"
 display_name = "Doorbreaker"
-faction_id = &"wet_dead"
 pressure_role = 1
 max_health = 95.0
 move_speed = 2.9
 attack_damage = 18.0
 attack_range = 1.4
 attack_cooldown_seconds = 2.2
+attack_timing = SubResource("ActionTiming_attack")
+hurt_timing = SubResource("ActionTiming_hurt")
+death_timing = SubResource("ActionTiming_death")
+body_color = Color(0.78, 0.24, 0.12, 1)
 preferred_target_tags = Array[StringName]([&"barrier", &"base_core", &"player"])
 can_attack_base = true

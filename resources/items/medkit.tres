@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+item_id = &"medkit"
+display_name = "Medkit"
+description = "Restores health."
+item_kind = 0
+visual_kind = 2
+usable = true
+health_restore = 60.0

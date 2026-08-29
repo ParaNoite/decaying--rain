@@ -1,6 +1,28 @@
 [gd_resource type="Resource" script_class="PlayerMovementDefinition" format=3 uid="uid://c41ghnwldabs7"]
 
 [ext_resource type="Script" uid="uid://qv5cjaiyb6dn" path="res://scripts/resources/player_movement_definition.gd" id="1_movement"]
+[ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+
+[sub_resource type="Resource" id="ActionTiming_jump"]
+script = ExtResource("2_timing")
+windup_seconds = 0.09
+release_seconds = 0.05
+impact_seconds = 0.03
+recovery_seconds = 0.11
+
+[sub_resource type="Resource" id="ActionTiming_slide"]
+script = ExtResource("2_timing")
+windup_seconds = 0.1
+release_seconds = 0.1
+impact_seconds = 0.05
+recovery_seconds = 0.1
+
+[sub_resource type="Resource" id="ActionTiming_sprint_start"]
+script = ExtResource("2_timing")
+windup_seconds = 0.08
+release_seconds = 0.04
+impact_seconds = 0.02
+recovery_seconds = 0.08
 
 [resource]
 script = ExtResource("1_movement")
@@ -9,4 +31,11 @@ sprint_speed = 10.5
 slide_speed = 23.3
 acceleration = 44.0
 deceleration = 25.0
-coyote_time = 1.0
+jump_timing = SubResource("ActionTiming_jump")
+coyote_time = 0.21
+sprint_reserve_max = 100.0
+sprint_reserve_drain_per_second = 19.0
+sprint_reserve_recovery_per_second = 35.0
+sprint_reserve_recovery_delay_seconds = 0.7
+slide_timing = SubResource("ActionTiming_slide")
+sprint_start_timing = SubResource("ActionTiming_sprint_start")

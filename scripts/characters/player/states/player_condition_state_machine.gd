@@ -43,10 +43,9 @@ func update(base_constraints: Dictionary = {}) -> Dictionary:
 		_transition_to(STATE_STAGGERED)
 	elif status_container != null and status_container.has_status(&"bleeding"):
 		_transition_to(STATE_BLEEDING)
-	elif stamina != null and stamina.current_stamina <= 0.0:
+	elif status_container != null and status_container.has_status(&"exhausted"):
 		_transition_to(STATE_EXHAUSTED)
-		constraints["mobility_blocked"] = true
-	elif hunger != null and hunger.is_hungry:
+	elif status_container != null and status_container.has_status(&"hungry"):
 		_transition_to(STATE_HUNGRY)
 	else:
 		_transition_to(STATE_NORMAL)

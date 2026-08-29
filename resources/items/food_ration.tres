@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+item_id = &"food_ration"
+display_name = "Food Ration"
+description = "Restores hunger."
+item_kind = 0
+stackable = true
+slotless = true
+visual_kind = 3
+usable = true
+hunger_restore = 35.0

@@ -2,7 +2,7 @@ class_name PlayerSkillComponent
 extends Node
 
 signal active_skill_changed(skill_id: StringName, cooldown_remaining: float)
-signal active_skill_charge_started(skill_id: StringName, windup_seconds: float)
+signal active_skill_charge_started(skill_id: StringName, timing: ActionTimingDefinition)
 signal active_skill_triggered(skill_id: StringName)
 signal action_blocked(action_id: StringName, reason_id: StringName)
 
@@ -23,7 +23,8 @@ var cooldown_remaining: float = 0.0
 
 var _event_bus = null
 var _pending_skill: Resource
-var _pending_fire_time: float = 0.0
+var _pending_action_elapsed: float = 0.0
+var _pending_effect_resolved: bool = false
 
 
 func _ready() -> void:
@@ -45,11 +46,15 @@ func update(body: Node3D, input_reader: PlayerInputReader, constraints: Dictiona
 	_tick_cooldown(delta)
 
 	if _pending_skill != null:
-		_pending_fire_time = maxf(0.0, _pending_fire_time - delta)
+		_pending_action_elapsed += maxf(0.0, delta)
 		skill_constraints["combat_blocked"] = true
 		skill_constraints["mobility_blocked"] = true
-		if _pending_fire_time <= 0.0:
-			_fire_pending_skill(body)
+		_resolve_pending_skill_if_due(body)
+		if _pending_action_elapsed >= _pending_skill.action_timing.total_seconds():
+			_pending_skill = null
+			_pending_action_elapsed = 0.0
+			_pending_effect_resolved = false
+			_broadcast_skill_changed()
 
 	if input_reader.consume_active_skill():
 		try_trigger(body, constraints)
@@ -86,14 +91,14 @@ func try_trigger(body: Node3D, constraints: Dictionary) -> bool:
 		stamina.consume(active_skill.stamina_cost)
 
 	_pending_skill = active_skill
-	_pending_fire_time = active_skill.windup_seconds
-	active_skill_charge_started.emit(active_skill.skill_id, active_skill.windup_seconds)
+	_pending_action_elapsed = 0.0
+	_pending_effect_resolved = false
+	active_skill_charge_started.emit(active_skill.skill_id, active_skill.action_timing)
 	if _event_bus != null:
 		_event_bus.debug_test_notice.emit(active_skill.activation_message, &"skill")
 	_broadcast_skill_changed()
 
-	if _pending_fire_time <= 0.0:
-		_fire_pending_skill(body)
+	_resolve_pending_skill_if_due(body)
 	return true
 
 
@@ -113,11 +118,13 @@ func _tick_cooldown(delta: float) -> void:
 	_broadcast_skill_changed()
 
 
-func _fire_pending_skill(body: Node3D) -> void:
-	var skill: Resource = _pending_skill
-	_pending_skill = null
-	if skill == null:
+func _resolve_pending_skill_if_due(body: Node3D) -> void:
+	if _pending_skill == null or _pending_effect_resolved:
 		return
+	if _pending_action_elapsed < _pending_skill.action_timing.impact_start_seconds():
+		return
+	_pending_effect_resolved = true
+	var skill: Resource = _pending_skill
 
 	match skill.effect_id:
 		EFFECT_CHARGED_BEAM:

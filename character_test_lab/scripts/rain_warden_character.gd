@@ -20,6 +20,8 @@ const UPPER_ARM_LENGTH: float = 0.41
 const LOWER_ARM_LENGTH: float = 0.42
 const IDLE_WEAPON_POSITION := Vector3(0.10, 0.12, -0.30)
 const IDLE_WEAPON_ROTATION_DEGREES := Vector3(-5, 0, 42)
+const LEFT_ELBOW_HINT_IDLE := Vector3(-0.84, 0.46, -0.34)
+const RIGHT_ELBOW_HINT_IDLE := Vector3(0.84, 0.46, -0.34)
 
 var animation_player: AnimationPlayer
 var _materials: Dictionary[String, StandardMaterial3D] = {}
@@ -31,6 +33,8 @@ var _left_arm: Node3D
 var _right_arm: Node3D
 var _left_forearm: Node3D
 var _right_forearm: Node3D
+var _left_elbow_hint: Node3D
+var _right_elbow_hint: Node3D
 var _left_leg: Node3D
 var _right_leg: Node3D
 var _left_knee: Node3D
@@ -158,12 +162,12 @@ func _build_head() -> void:
 
 
 func _build_arms_and_weapon() -> void:
-	_left_arm = _pivot(_spine, "LeftArm", Vector3(-0.49, 0.61, 0.0))
-	_right_arm = _pivot(_spine, "RightArm", Vector3(0.49, 0.61, 0.0))
-	Factory.sphere(_spine, "LShoulderArmor", 0.19, 0.26, Vector3(-0.52, 0.58, 0), Vector3(0, 0, -8), _materials.armor, 16)
-	Factory.sphere(_spine, "RShoulderArmor", 0.19, 0.26, Vector3(0.52, 0.58, 0), Vector3(0, 0, 8), _materials.armor, 16)
+	_left_arm = _pivot(_spine, "LeftShoulder", Vector3(-0.49, 0.61, 0.0))
+	_right_arm = _pivot(_spine, "RightShoulder", Vector3(0.49, 0.61, 0.0))
 	_build_arm(_left_arm, "L")
 	_build_arm(_right_arm, "R")
+	_left_elbow_hint = _pivot(_spine, "LeftElbowHint", LEFT_ELBOW_HINT_IDLE)
+	_right_elbow_hint = _pivot(_spine, "RightElbowHint", RIGHT_ELBOW_HINT_IDLE)
 
 	_weapon_rig = _pivot(_spine, "WeaponRig", IDLE_WEAPON_POSITION)
 	_weapon_rig.rotation_degrees = IDLE_WEAPON_ROTATION_DEGREES
@@ -176,13 +180,18 @@ func _build_arms_and_weapon() -> void:
 
 
 func _build_arm(arm: Node3D, prefix: String) -> void:
+	var side: float = -1.0 if prefix == "L" else 1.0
+	Factory.sphere(arm, prefix + "ShoulderJoint", 0.145, 0.20, Vector3.ZERO, Vector3.ZERO, _materials.rubber, 16)
+	Factory.sphere(arm, prefix + "ShoulderArmor", 0.19, 0.26, Vector3(side * 0.03, 0.025, 0), Vector3(0, 0, side * 8), _materials.armor, 16)
 	Factory.capsule(arm, prefix + "UpperArm", 0.13, 0.44, Vector3(0, -0.22, 0), Vector3.ZERO, _materials.coat, 16)
 	Factory.box(arm, prefix + "UpperPlate", Vector3(0.18, 0.26, 0.10), Vector3(0, -0.18, -0.12), Vector3(2, 0, 0), _materials.armor_edge)
-	var forearm := _pivot(arm, prefix + "Forearm", Vector3(0, -0.41, 0))
+	var forearm := _pivot(arm, prefix + "Elbow", Vector3(0, -0.41, 0))
 	if prefix == "L":
 		_left_forearm = forearm
 	else:
 		_right_forearm = forearm
+	Factory.sphere(forearm, prefix + "ElbowJoint", 0.125, 0.17, Vector3.ZERO, Vector3.ZERO, _materials.rubber, 14)
+	Factory.box(forearm, prefix + "ElbowGuard", Vector3(0.17, 0.14, 0.13), Vector3(0, -0.02, -0.105), Vector3(-10, 0, side * 4), _materials.armor_edge)
 	Factory.capsule(forearm, prefix + "LowerArm", 0.115, 0.40, Vector3(0, -0.19, 0), Vector3.ZERO, _materials.coat_dark, 16)
 	Factory.box(forearm, prefix + "Bracer", Vector3(0.18, 0.26, 0.12), Vector3(0, -0.20, -0.10), Vector3(-3, 0, 0), _materials.armor)
 	Factory.sphere(forearm, prefix + "Glove", 0.12, 0.19, Vector3(0, -0.42, -0.01), Vector3.ZERO, _materials.rubber, 14)
@@ -226,6 +235,7 @@ func _reset_animation() -> Animation:
 	_rotation_track(animation, "MotionRoot/Hips/RightLeg/RKnee", [0.0], [Vector3.ZERO])
 	_position_track(animation, "MotionRoot/Hips/Spine/WeaponRig:position", [0.0], [IDLE_WEAPON_POSITION])
 	_rotation_track(animation, "MotionRoot/Hips/Spine/WeaponRig", [0.0], [IDLE_WEAPON_ROTATION_DEGREES])
+	_elbow_hint_tracks(animation, [0.0], [LEFT_ELBOW_HINT_IDLE], [RIGHT_ELBOW_HINT_IDLE])
 	_rotation_track(animation, "MotionRoot/Hips/CoatLeft", [0.0], [Vector3(0, 0, 2)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatRight", [0.0], [Vector3(0, 0, -2)])
 	return animation
@@ -244,6 +254,7 @@ func _idle_animation() -> Animation:
 	_rotation_track(animation, "MotionRoot/Hips/RightLeg/RKnee", times, [Vector3(-1, 0, 0), Vector3(-3, 0, 0), Vector3(-1, 0, 0)])
 	_position_track(animation, "MotionRoot/Hips/Spine/WeaponRig:position", times, [IDLE_WEAPON_POSITION, Vector3(0.10, 0.135, -0.305), IDLE_WEAPON_POSITION])
 	_rotation_track(animation, "MotionRoot/Hips/Spine/WeaponRig", times, [IDLE_WEAPON_ROTATION_DEGREES, Vector3(-4, 1, 43), IDLE_WEAPON_ROTATION_DEGREES])
+	_elbow_hint_tracks(animation, times, [Vector3(-0.82, 0.44, -0.32), Vector3(-0.88, 0.49, -0.37), Vector3(-0.82, 0.44, -0.32)], [Vector3(0.86, 0.49, -0.36), Vector3(0.80, 0.43, -0.32), Vector3(0.86, 0.49, -0.36)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatLeft", times, [Vector3(0, 0, 2), Vector3(-2, 1, 4), Vector3(0, 0, 2)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatRight", times, [Vector3(0, 0, -2), Vector3(1, -1, -4), Vector3(0, 0, -2)])
 	return animation
@@ -262,6 +273,7 @@ func _ready_animation() -> Animation:
 	_rotation_track(animation, "MotionRoot/Hips/RightLeg/RKnee", times, [Vector3(-20, 0, 0), Vector3(-17, 0, 0), Vector3(-20, 0, 0)])
 	_position_track(animation, "MotionRoot/Hips/Spine/WeaponRig:position", times, [Vector3(0.08, 0.46, -0.40), Vector3(0.08, 0.475, -0.41), Vector3(0.08, 0.46, -0.40)])
 	_rotation_track(animation, "MotionRoot/Hips/Spine/WeaponRig", times, [Vector3(-18, -8, 64), Vector3(-16, -6, 62), Vector3(-18, -8, 64)])
+	_elbow_hint_tracks(animation, times, [Vector3(-0.70, 0.60, -0.50), Vector3(-0.74, 0.56, -0.54), Vector3(-0.70, 0.60, -0.50)], [Vector3(0.94, 0.36, -0.43), Vector3(0.90, 0.42, -0.47), Vector3(0.94, 0.36, -0.43)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatLeft", times, [Vector3(-2, 2, 5), Vector3(0, 0, 3), Vector3(-2, 2, 5)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatRight", times, [Vector3(1, -1, -4), Vector3(-1, 1, -2), Vector3(1, -1, -4)])
 	return animation
@@ -280,6 +292,7 @@ func _inspect_animation() -> Animation:
 	_rotation_track(animation, "MotionRoot/Hips/RightLeg/RKnee", times, [Vector3.ZERO, Vector3(-12, 0, 0), Vector3(-12, 0, 0), Vector3(-7, 0, 0), Vector3.ZERO, Vector3.ZERO])
 	_position_track(animation, "MotionRoot/Hips/Spine/WeaponRig:position", times, [IDLE_WEAPON_POSITION, Vector3(0.03, 0.50, -0.43), Vector3(-0.03, 0.56, -0.46), Vector3(0.02, 0.54, -0.45), Vector3(0.05, 0.46, -0.40), IDLE_WEAPON_POSITION])
 	_rotation_track(animation, "MotionRoot/Hips/Spine/WeaponRig", times, [IDLE_WEAPON_ROTATION_DEGREES, Vector3(-8, 8, 86), Vector3(-5, 14, 96), Vector3(-8, -12, 88), Vector3(-10, 4, 76), IDLE_WEAPON_ROTATION_DEGREES])
+	_elbow_hint_tracks(animation, times, [LEFT_ELBOW_HINT_IDLE, Vector3(-0.62, 0.66, -0.50), Vector3(-0.54, 0.73, -0.46), Vector3(-0.76, 0.59, -0.54), Vector3(-0.72, 0.54, -0.44), LEFT_ELBOW_HINT_IDLE], [RIGHT_ELBOW_HINT_IDLE, Vector3(0.88, 0.57, -0.42), Vector3(0.97, 0.48, -0.34), Vector3(0.68, 0.67, -0.55), Vector3(0.78, 0.53, -0.43), RIGHT_ELBOW_HINT_IDLE])
 	_rotation_track(animation, "MotionRoot/Hips/CoatLeft", times, [Vector3(0, 0, 2), Vector3(-3, 2, 5), Vector3(-2, 3, 6), Vector3(2, -2, -1), Vector3(0, 0, 2), Vector3(0, 0, 2)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatRight", times, [Vector3(0, 0, -2), Vector3(2, -2, -5), Vector3(1, -3, -6), Vector3(-2, 2, 1), Vector3(0, 0, -2), Vector3(0, 0, -2)])
 	return animation
@@ -298,6 +311,7 @@ func _attack_animation() -> Animation:
 	_rotation_track(animation, "MotionRoot/Hips/RightLeg/RKnee", times, [Vector3.ZERO, Vector3(-22, 0, 0), Vector3(-26, 0, 0), Vector3(-17, 0, 0), Vector3(-9, 0, 0), Vector3.ZERO])
 	_position_track(animation, "MotionRoot/Hips/Spine/WeaponRig:position", times, [IDLE_WEAPON_POSITION, Vector3(0.02, 0.48, -0.28), Vector3(0.02, 0.50, -0.30), Vector3(-0.02, 0.28, -0.52), Vector3(-0.04, 0.16, -0.46), IDLE_WEAPON_POSITION], Animation.INTERPOLATION_LINEAR)
 	_rotation_track(animation, "MotionRoot/Hips/Spine/WeaponRig", times, [IDLE_WEAPON_ROTATION_DEGREES, Vector3(-8, 0, -42), Vector3(-10, 0, -38), Vector3(-5, 0, 82), Vector3(-5, 0, 104), IDLE_WEAPON_ROTATION_DEGREES])
+	_elbow_hint_tracks(animation, times, [LEFT_ELBOW_HINT_IDLE, Vector3(-0.70, 0.55, -0.43), Vector3(-0.66, 0.59, -0.40), Vector3(-0.98, 0.37, -0.44), Vector3(-0.87, 0.34, -0.35), LEFT_ELBOW_HINT_IDLE], [RIGHT_ELBOW_HINT_IDLE, Vector3(0.96, 0.78, -0.23), Vector3(1.03, 0.83, -0.18), Vector3(0.70, 0.27, -0.66), Vector3(0.58, 0.22, -0.53), RIGHT_ELBOW_HINT_IDLE])
 	_rotation_track(animation, "MotionRoot/Hips/CoatLeft", times, [Vector3(0, 0, 2), Vector3(-4, 4, 8), Vector3(-8, 7, 14), Vector3(10, -8, -12), Vector3(5, -4, -6), Vector3(0, 0, 2)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatRight", times, [Vector3(0, 0, -2), Vector3(3, -3, -7), Vector3(7, -6, -13), Vector3(-9, 7, 11), Vector3(-4, 3, 5), Vector3(0, 0, -2)])
 	return animation
@@ -316,6 +330,7 @@ func _rain_pulse_animation() -> Animation:
 	_rotation_track(animation, "MotionRoot/Hips/RightLeg/RKnee", times, [Vector3.ZERO, Vector3(-22, 0, 0), Vector3(-30, 0, 0), Vector3(-18, 0, 0), Vector3(-8, 0, 0), Vector3.ZERO])
 	_position_track(animation, "MotionRoot/Hips/Spine/WeaponRig:position", times, [IDLE_WEAPON_POSITION, Vector3(0.02, 0.44, -0.42), Vector3(0.0, 0.34, -0.48), Vector3(0.0, 0.28, -0.50), Vector3(0.04, 0.38, -0.44), IDLE_WEAPON_POSITION])
 	_rotation_track(animation, "MotionRoot/Hips/Spine/WeaponRig", times, [IDLE_WEAPON_ROTATION_DEGREES, Vector3(-8, 0, 18), Vector3(-5, 0, 4), Vector3(-3, 0, 2), Vector3(-6, 0, 20), IDLE_WEAPON_ROTATION_DEGREES])
+	_elbow_hint_tracks(animation, times, [LEFT_ELBOW_HINT_IDLE, Vector3(-0.96, 0.52, -0.48), Vector3(-1.08, 0.48, -0.56), Vector3(-0.64, 0.27, -0.68), Vector3(-0.88, 0.45, -0.50), LEFT_ELBOW_HINT_IDLE], [RIGHT_ELBOW_HINT_IDLE, Vector3(0.96, 0.52, -0.48), Vector3(1.08, 0.48, -0.56), Vector3(0.64, 0.27, -0.68), Vector3(0.88, 0.45, -0.50), RIGHT_ELBOW_HINT_IDLE])
 	_rotation_track(animation, "MotionRoot/Hips/CoatLeft", times, [Vector3(0, 0, 2), Vector3(-7, 4, 9), Vector3(-12, 7, 15), Vector3(8, -6, -8), Vector3(3, -2, -1), Vector3(0, 0, 2)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatRight", times, [Vector3(0, 0, -2), Vector3(-7, -4, -9), Vector3(-12, -7, -15), Vector3(8, 6, 8), Vector3(3, 2, 1), Vector3(0, 0, -2)])
 	return animation
@@ -334,6 +349,7 @@ func _run_animation() -> Animation:
 	_rotation_track(animation, "MotionRoot/Hips/RightLeg/RKnee", times, [Vector3(-64, 0, 0), Vector3(-30, 0, 0), Vector3(-18, 0, 0), Vector3(-36, 0, 0), Vector3(-64, 0, 0)])
 	_position_track(animation, "MotionRoot/Hips/Spine/WeaponRig:position", times, [Vector3(0.08, 0.26, -0.36), Vector3(0.07, 0.28, -0.37), Vector3(0.08, 0.26, -0.36), Vector3(0.07, 0.28, -0.37), Vector3(0.08, 0.26, -0.36)])
 	_rotation_track(animation, "MotionRoot/Hips/Spine/WeaponRig", times, [Vector3(-12, -10, 60), Vector3(-10, -5, 56), Vector3(-12, 2, 58), Vector3(-10, -5, 62), Vector3(-12, -10, 60)])
+	_elbow_hint_tracks(animation, times, [Vector3(-0.74, 0.44, -0.52), Vector3(-0.90, 0.34, -0.43), Vector3(-0.78, 0.40, -0.48), Vector3(-0.66, 0.53, -0.58), Vector3(-0.74, 0.44, -0.52)], [Vector3(0.72, 0.52, -0.58), Vector3(0.62, 0.42, -0.50), Vector3(0.78, 0.34, -0.43), Vector3(0.91, 0.43, -0.51), Vector3(0.72, 0.52, -0.58)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatLeft", times, [Vector3(-10, 4, 12), Vector3(4, -2, -4), Vector3(-8, -4, 8), Vector3(5, 2, -5), Vector3(-10, 4, 12)])
 	_rotation_track(animation, "MotionRoot/Hips/CoatRight", times, [Vector3(-8, -4, -8), Vector3(5, 2, 5), Vector3(-10, 4, -12), Vector3(4, -2, 4), Vector3(-8, -4, -8)])
 	return animation
@@ -371,14 +387,24 @@ func _rotation_track(animation: Animation, node_path: String, times: Array[float
 		animation.track_insert_key(track_index, times[index], rotation_quaternion)
 
 
+func _elbow_hint_tracks(
+	animation: Animation,
+	times: Array[float],
+	left_positions: Array[Vector3],
+	right_positions: Array[Vector3]
+) -> void:
+	_position_track(animation, "MotionRoot/Hips/Spine/LeftElbowHint:position", times, left_positions)
+	_position_track(animation, "MotionRoot/Hips/Spine/RightElbowHint:position", times, right_positions)
+
+
 func _solve_arms() -> void:
 	if not _primary_grip or not _secondary_grip:
 		return
-	_solve_arm(_right_arm, _right_forearm, _primary_grip.global_position, 1.0)
-	_solve_arm(_left_arm, _left_forearm, _secondary_grip.global_position, -1.0)
+	_solve_arm(_right_arm, _right_forearm, _right_elbow_hint, _primary_grip.global_position)
+	_solve_arm(_left_arm, _left_forearm, _left_elbow_hint, _secondary_grip.global_position)
 
 
-func _solve_arm(upper_arm: Node3D, forearm: Node3D, hand_target: Vector3, side: float) -> void:
+func _solve_arm(upper_arm: Node3D, forearm: Node3D, elbow_hint: Node3D, hand_target: Vector3) -> void:
 	var shoulder := upper_arm.global_position
 	var target_delta := hand_target - shoulder
 	if target_delta.length_squared() < 0.000001:
@@ -387,7 +413,7 @@ func _solve_arm(upper_arm: Node3D, forearm: Node3D, hand_target: Vector3, side: 
 	var target_direction := target_delta.normalized()
 	var along := (UPPER_ARM_LENGTH * UPPER_ARM_LENGTH - LOWER_ARM_LENGTH * LOWER_ARM_LENGTH + target_distance * target_distance) / (2.0 * target_distance)
 	var bend_height := sqrt(maxf(UPPER_ARM_LENGTH * UPPER_ARM_LENGTH - along * along, 0.0))
-	var hint_offset := _spine.global_transform.basis * Vector3(side * 0.38, -0.12, -0.36)
+	var hint_offset := elbow_hint.global_position - shoulder
 	var hint_direction := hint_offset - target_direction * hint_offset.dot(target_direction)
 	if hint_direction.length_squared() < 0.000001:
 		hint_direction = target_direction.cross(_spine.global_transform.basis.z)

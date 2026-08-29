@@ -6,7 +6,7 @@ signal hunger_state_changed(is_hungry: bool)
 
 @export_range(1.0, 1000.0, 1.0) var max_hunger: float = 100.0
 @export_range(0.0, 100.0, 0.1) var decay_per_minute: float = 8.0
-@export_range(0.0, 1000.0, 1.0) var hungry_threshold: float = 30.0
+@export_range(0.0, 1000.0, 1.0) var hungry_threshold: float = 0.0
 @export var broadcast_player_events: bool = false
 
 var current_hunger: float = 100.0
@@ -47,7 +47,7 @@ func set_hunger(value: float) -> void:
 
 
 func _update_hungry_state() -> void:
-	var next_is_hungry: bool = current_hunger < hungry_threshold
+	var next_is_hungry: bool = current_hunger <= hungry_threshold
 	if next_is_hungry == is_hungry:
 		return
 	is_hungry = next_is_hungry

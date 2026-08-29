@@ -1,6 +1,26 @@
-[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3 uid="uid://b54vp2a2j185h"]
 
-[ext_resource type="Script" path="res://scripts/resources/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="Script" uid="uid://dcoffbioobbqk" path="res://scripts/resources/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+
+[sub_resource type="Resource" id="ActionTiming_attack"]
+script = ExtResource("2_timing")
+windup_seconds = 0.65
+release_seconds = 0.12
+impact_seconds = 0.05
+recovery_seconds = 0.18
+
+[sub_resource type="Resource" id="ActionTiming_death"]
+script = ExtResource("2_timing")
+release_seconds = 0.18
+impact_seconds = 0.12
+recovery_seconds = 0.35
+
+[sub_resource type="Resource" id="ActionTiming_hurt"]
+script = ExtResource("2_timing")
+release_seconds = 0.08
+impact_seconds = 0.04
+recovery_seconds = 0.26
 
 [resource]
 script = ExtResource("1_enemy")
@@ -13,4 +33,8 @@ move_speed = 3.2
 attack_damage = 22.0
 attack_range = 1.55
 attack_cooldown_seconds = 1.8
+attack_timing = SubResource("ActionTiming_attack")
+hurt_timing = SubResource("ActionTiming_hurt")
+death_timing = SubResource("ActionTiming_death")
+body_color = Color(0.32, 0.38, 0.46, 1)
 can_attack_base = true

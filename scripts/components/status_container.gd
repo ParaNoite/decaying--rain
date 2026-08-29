@@ -137,19 +137,20 @@ func get_constraints() -> Dictionary:
 		"incoming_damage_multiplier": 1.0,
 		"stamina_recovery_multiplier": 1.0,
 		"movement_speed_multiplier": 1.0,
+		"sprint_speed_multiplier": 1.0,
 	}
 
 	for active: ActiveStatusData in active_statuses.values():
 		var definition: StatusEffectDefinition = active.definition
-		var stacks: int = active.stack_count
 		constraints["movement_disabled"] = constraints["movement_disabled"] or definition.movement_disabled
 		constraints["combat_blocked"] = constraints["combat_blocked"] or definition.combat_blocked
 		constraints["interaction_blocked"] = constraints["interaction_blocked"] or definition.interaction_blocked
 		constraints["mobility_blocked"] = constraints["mobility_blocked"] or definition.mobility_blocked
-		constraints["outgoing_damage_multiplier"] *= pow(definition.outgoing_damage_multiplier, stacks)
-		constraints["incoming_damage_multiplier"] *= pow(definition.incoming_damage_multiplier, stacks)
-		constraints["stamina_recovery_multiplier"] *= pow(definition.stamina_recovery_multiplier, stacks)
-		constraints["movement_speed_multiplier"] *= pow(definition.movement_speed_multiplier, stacks)
+		constraints["outgoing_damage_multiplier"] *= definition.outgoing_damage_multiplier
+		constraints["incoming_damage_multiplier"] *= definition.incoming_damage_multiplier
+		constraints["stamina_recovery_multiplier"] *= definition.stamina_recovery_multiplier
+		constraints["movement_speed_multiplier"] *= definition.movement_speed_multiplier
+		constraints["sprint_speed_multiplier"] *= definition.sprint_speed_multiplier
 
 	return constraints
 
@@ -169,10 +170,11 @@ func _update_existing_status(
 			active = ActiveStatusData.new(status, duration_seconds, source_id)
 			active_statuses[status.status_id] = active
 		StatusEffectDefinition.StackPolicy.ADD_STACK:
+			# Statuses are intentionally unique. Legacy stack definitions now refresh instead.
 			active.definition = status
 			active.remaining_seconds = duration_seconds
 			active.source_id = source_id
-			active.stack_count = mini(active.stack_count + 1, maxi(1, status.max_stacks))
+			active.stack_count = 1
 		_:
 			return false
 

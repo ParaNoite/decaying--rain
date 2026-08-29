@@ -1,15 +1,27 @@
-[gd_resource type="Resource" script_class="WeaponDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://vcrm5xowb5cm"]
 
-[ext_resource type="Script" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+[ext_resource type="Script" uid="uid://bu7pigdfx0oay" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+[ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+
+[sub_resource type="Resource" id="ActionTiming_held_combo"]
+script = ExtResource("2_timing")
+windup_seconds = 0.10
+release_seconds = 0.06
+impact_seconds = 0.03
+recovery_seconds = 0.12
+
+[sub_resource type="Resource" id="ActionTiming_primary"]
+script = ExtResource("2_timing")
+windup_seconds = 0.16
+release_seconds = 0.09
+impact_seconds = 0.03
+recovery_seconds = 0.23
 
 [resource]
 script = ExtResource("1_weapon")
 weapon_id = &"crowbar"
 display_name = "Crowbar"
-weapon_kind = 1
 base_damage = 18.0
 stamina_cost = 12.0
-windup_seconds = 0.16
-recovery_seconds = 0.35
-supports_block = true
-block_efficiency = 0.75
+primary_timing = SubResource("ActionTiming_primary")
+held_combo_timing = SubResource("ActionTiming_held_combo")

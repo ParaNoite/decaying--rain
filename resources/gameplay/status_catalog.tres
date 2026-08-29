@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="StatusCatalog" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="StatusCatalog" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/status_catalog.gd" id="1_catalog"]
 [ext_resource type="Script" path="res://scripts/resources/status_effect_definition.gd" id="2_status"]
@@ -6,7 +6,9 @@
 [ext_resource type="Resource" path="res://resources/gameplay/statuses/rain_exposure.tres" id="4_rain"]
 [ext_resource type="Resource" path="res://resources/gameplay/statuses/staggered.tres" id="5_staggered"]
 [ext_resource type="Resource" path="res://resources/gameplay/statuses/bleeding.tres" id="6_bleeding"]
+[ext_resource type="Resource" path="res://resources/gameplay/statuses/exhausted.tres" id="7_exhausted"]
+[ext_resource type="Resource" path="res://resources/gameplay/statuses/hungry.tres" id="8_hungry"]
 
 [resource]
 script = ExtResource("1_catalog")
-definitions = Array[ExtResource("2_status")]([ExtResource("3_deserter"), ExtResource("4_rain"), ExtResource("5_staggered"), ExtResource("6_bleeding")])
+definitions = Array[ExtResource("2_status")]([ExtResource("3_deserter"), ExtResource("4_rain"), ExtResource("5_staggered"), ExtResource("6_bleeding"), ExtResource("7_exhausted"), ExtResource("8_hungry")])

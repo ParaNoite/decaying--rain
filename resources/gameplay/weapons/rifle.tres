@@ -1,6 +1,21 @@
-[gd_resource type="Resource" script_class="WeaponDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://ofdmygtiqfqj"]
 
-[ext_resource type="Script" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+[ext_resource type="Script" uid="uid://bu7pigdfx0oay" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+[ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+
+[sub_resource type="Resource" id="ActionTiming_primary"]
+script = ExtResource("2_timing")
+windup_seconds = 0.025
+release_seconds = 0.025
+impact_seconds = 0.015
+recovery_seconds = 0.075
+
+[sub_resource type="Resource" id="ActionTiming_reload"]
+script = ExtResource("2_timing")
+windup_seconds = 0.34
+release_seconds = 0.96
+impact_seconds = 0.15
+recovery_seconds = 0.55
 
 [resource]
 script = ExtResource("1_weapon")
@@ -9,12 +24,12 @@ display_name = "Rifle"
 weapon_kind = 2
 base_damage = 45.0
 stamina_cost = 0.0
+primary_timing = SubResource("ActionTiming_primary")
 supports_block = false
 ammo_type = &"rifle_ammo"
 magazine_size = 10
-reload_seconds = 2.0
+reload_timing = SubResource("ActionTiming_reload")
 noise_radius = 50.0
 effective_range = 35.0
-fire_interval_seconds = 0.14
 automatic = true
 spread_degrees = 0.8

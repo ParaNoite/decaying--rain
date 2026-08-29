@@ -1,15 +1,64 @@
-[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3 uid="uid://da77qp7wxnp2a"]
 
-[ext_resource type="Script" path="res://scripts/resources/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="Script" uid="uid://dcoffbioobbqk" path="res://scripts/resources/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+
+[sub_resource type="Resource" id="ActionTiming_attack"]
+script = ExtResource("2_timing")
+windup_seconds = 0.45
+release_seconds = 0.1
+impact_seconds = 0.04
+recovery_seconds = 0.14
+
+[sub_resource type="Resource" id="ActionTiming_death"]
+script = ExtResource("2_timing")
+release_seconds = 0.18
+impact_seconds = 0.12
+recovery_seconds = 0.35
+
+[sub_resource type="Resource" id="ActionTiming_heavy_pounce"]
+script = ExtResource("2_timing")
+windup_seconds = 0.4
+impact_seconds = 0.38
+
+[sub_resource type="Resource" id="ActionTiming_heavy_attack"]
+script = ExtResource("2_timing")
+windup_seconds = 0.84
+release_seconds = 0.06
+impact_seconds = 0.12
+recovery_seconds = 0.72
+
+[sub_resource type="Resource" id="ActionTiming_hurt"]
+script = ExtResource("2_timing")
+release_seconds = 0.08
+impact_seconds = 0.04
+recovery_seconds = 0.26
 
 [resource]
 script = ExtResource("1_enemy")
 enemy_id = &"ruptured"
 display_name = "Ruptured"
-faction_id = &"wet_dead"
-pressure_role = 0
 max_health = 55.0
 move_speed = 3.8
 attack_damage = 9.0
-attack_range = 1.25
+attack_range = 1.7
 attack_cooldown_seconds = 1.35
+attack_timing = SubResource("ActionTiming_attack")
+attack_status_ids = Array[StringName]([&"bleeding"])
+heavy_attack_enabled = true
+heavy_attack_range = 5.2
+heavy_attack_min_range = 2.5
+heavy_attack_decision_min_seconds = 0.55
+heavy_attack_decision_max_seconds = 1.05
+heavy_attack_damage_multiplier = 2.0
+heavy_attack_lunge_speed = 10.5
+heavy_attack_brake_distance = 2.2
+heavy_attack_brake_speed = 2.2
+heavy_attack_cooldown_seconds = 4.5
+heavy_attack_timing = SubResource("ActionTiming_heavy_attack")
+heavy_attack_pounce_timing = SubResource("ActionTiming_heavy_pounce")
+heavy_attack_pounce_range = 3.0
+heavy_attack_impact_range = 2.4
+hurt_timing = SubResource("ActionTiming_hurt")
+death_timing = SubResource("ActionTiming_death")
+body_color = Color(0.45, 0.72, 0.3, 1)

@@ -14,9 +14,11 @@ const STATE_FALL: StringName = &"fall"
 @export var movement_definition: PlayerMovementDefinition
 @export var motor_path: NodePath = ^"../../MovementMotor"
 @export var stamina_path: NodePath = ^"../../Components/StaminaComponent"
+@export var sprint_reserve_path: NodePath = ^"../../Components/SprintReserveComponent"
 
 @onready var motor: PlayerMovementMotor = get_node(motor_path)
 @onready var stamina: StaminaComponent = get_node(stamina_path)
+@onready var sprint_reserve: SprintReserveComponent = get_node_or_null(sprint_reserve_path) as SprintReserveComponent
 
 var current_state: StringName = STATE_IDLE
 
@@ -32,6 +34,7 @@ func physics_update(body: CharacterBody3D, input_reader: PlayerInputReader, cons
 	var can_use_mobility: bool = not constraints.get("mobility_blocked", false)
 	var watch_active: bool = constraints.get("watch_active", false)
 	var speed_multiplier: float = maxf(0.0, float(constraints.get("movement_speed_multiplier", 1.0)))
+	var sprint_speed_multiplier: float = maxf(0.0, float(constraints.get("sprint_speed_multiplier", 1.0)))
 	var jumped: bool = false
 
 	if input_reader.consume_jump():
@@ -64,8 +67,8 @@ func physics_update(body: CharacterBody3D, input_reader: PlayerInputReader, cons
 	var can_sprint: bool = input_reader.wants_sprint and not _action_blocked(constraints, &"sprint") and input_vector != Vector2.ZERO and body.is_on_floor() and can_use_mobility and not watch_active
 	if watch_active:
 		target_speed = _movement().watch_walk_speed * speed_multiplier
-	elif can_sprint and _consume_sprint_stamina(delta):
-		target_speed = _movement().sprint_speed * speed_multiplier
+	elif can_sprint and _consume_sprint_reserve(delta):
+		target_speed = _movement().sprint_speed * speed_multiplier * sprint_speed_multiplier
 
 	var control_multiplier: float = 1.0 if body.is_on_floor() else _movement().air_control_multiplier
 	motor.apply_ground_motion(body, input_vector, target_speed, delta, control_multiplier)
@@ -77,15 +80,15 @@ func physics_update(body: CharacterBody3D, input_reader: PlayerInputReader, cons
 			_transition_to(STATE_FALL)
 	elif input_vector == Vector2.ZERO:
 		_transition_to(STATE_IDLE)
-	elif is_equal_approx(target_speed, _movement().sprint_speed * speed_multiplier):
+	elif is_equal_approx(target_speed, _movement().sprint_speed * speed_multiplier * sprint_speed_multiplier):
 		_transition_to(STATE_SPRINT)
 	else:
 		_transition_to(STATE_WALK)
 
 
-func _consume_sprint_stamina(delta: float) -> bool:
-	var cost: float = _movement().sprint_stamina_per_second * delta
-	return stamina == null or stamina.consume(cost)
+func _consume_sprint_reserve(delta: float) -> bool:
+	var cost: float = _movement().sprint_reserve_drain_per_second * delta
+	return sprint_reserve == null or sprint_reserve.consume(cost)
 
 
 func _transition_to(next_state: StringName) -> void:

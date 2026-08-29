@@ -1,6 +1,21 @@
-[gd_resource type="Resource" script_class="WeaponDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://2si0m7vndpun"]
 
-[ext_resource type="Script" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+[ext_resource type="Script" uid="uid://bu7pigdfx0oay" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
+[ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+
+[sub_resource type="Resource" id="ActionTiming_primary"]
+script = ExtResource("2_timing")
+windup_seconds = 0.12
+release_seconds = 0.1
+impact_seconds = 0.05
+recovery_seconds = 0.63
+
+[sub_resource type="Resource" id="ActionTiming_reload"]
+script = ExtResource("2_timing")
+windup_seconds = 0.38
+release_seconds = 1.04
+impact_seconds = 0.16
+recovery_seconds = 0.62
 
 [resource]
 script = ExtResource("1_weapon")
@@ -9,12 +24,12 @@ display_name = "Shotgun"
 weapon_kind = 2
 base_damage = 70.0
 stamina_cost = 0.0
+primary_timing = SubResource("ActionTiming_primary")
 supports_block = false
 ammo_type = &"shells"
 magazine_size = 5
-reload_seconds = 2.2
+reload_timing = SubResource("ActionTiming_reload")
 noise_radius = 45.0
 effective_range = 9.0
-fire_interval_seconds = 0.9
 pellet_count = 8
 spread_degrees = 5.0

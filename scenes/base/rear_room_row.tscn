@@ -1,0 +1,119 @@
+[gd_scene load_steps=11 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Material_wall"]
+albedo_color = Color(0.2, 0.25, 0.25, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Material_door"]
+albedo_color = Color(0.3, 0.34, 0.32, 1)
+metallic = 0.22
+roughness = 0.68
+
+[sub_resource type="BoxMesh" id="Mesh_outer_side"]
+size = Vector3(0.6, 3.2, 8)
+[sub_resource type="BoxShape3D" id="Shape_outer_side"]
+size = Vector3(0.6, 3.2, 8)
+
+[sub_resource type="BoxMesh" id="Mesh_rear_wall"]
+size = Vector3(36, 3.2, 0.6)
+[sub_resource type="BoxShape3D" id="Shape_rear_wall"]
+size = Vector3(36, 3.2, 0.6)
+
+[sub_resource type="BoxMesh" id="Mesh_front_wall"]
+size = Vector3(16.4, 3.2, 0.6)
+[sub_resource type="BoxShape3D" id="Shape_front_wall"]
+size = Vector3(16.4, 3.2, 0.6)
+
+[sub_resource type="BoxMesh" id="Mesh_partition_segment"]
+size = Vector3(0.6, 3.2, 2.4)
+[sub_resource type="BoxShape3D" id="Shape_partition_segment"]
+size = Vector3(0.6, 3.2, 2.4)
+
+[sub_resource type="BoxMesh" id="Mesh_open_door"]
+size = Vector3(0.16, 2.8, 1.25)
+
+[node name="RearRoomRow" type="Node3D"]
+
+[node name="WorkshopZone" type="Node3D" parent="."]
+[node name="BeaconControlZone" type="Node3D" parent="."]
+[node name="SupplyZone" type="Node3D" parent="."]
+
+[node name="WestOuterWall" type="StaticBody3D" parent="."]
+position = Vector3(-18, 1.6, 0)
+[node name="Mesh" type="MeshInstance3D" parent="WestOuterWall"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_outer_side")
+[node name="Collision" type="CollisionShape3D" parent="WestOuterWall"]
+shape = SubResource("Shape_outer_side")
+
+[node name="EastOuterWall" type="StaticBody3D" parent="."]
+position = Vector3(18, 1.6, 0)
+[node name="Mesh" type="MeshInstance3D" parent="EastOuterWall"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_outer_side")
+[node name="Collision" type="CollisionShape3D" parent="EastOuterWall"]
+shape = SubResource("Shape_outer_side")
+
+[node name="RearWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 1.6, 4)
+[node name="Mesh" type="MeshInstance3D" parent="RearWall"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_rear_wall")
+[node name="Collision" type="CollisionShape3D" parent="RearWall"]
+shape = SubResource("Shape_rear_wall")
+
+[node name="FrontWallWest" type="StaticBody3D" parent="."]
+position = Vector3(-9.8, 1.6, -4)
+[node name="Mesh" type="MeshInstance3D" parent="FrontWallWest"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_front_wall")
+[node name="Collision" type="CollisionShape3D" parent="FrontWallWest"]
+shape = SubResource("Shape_front_wall")
+
+[node name="FrontWallEast" type="StaticBody3D" parent="."]
+position = Vector3(9.8, 1.6, -4)
+[node name="Mesh" type="MeshInstance3D" parent="FrontWallEast"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_front_wall")
+[node name="Collision" type="CollisionShape3D" parent="FrontWallEast"]
+shape = SubResource("Shape_front_wall")
+
+[node name="WorkshopBeaconPartition" type="Node3D" parent="."]
+[node name="FrontSegment" type="StaticBody3D" parent="WorkshopBeaconPartition"]
+position = Vector3(-6, 1.6, -2.8)
+[node name="Mesh" type="MeshInstance3D" parent="WorkshopBeaconPartition/FrontSegment"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_partition_segment")
+[node name="Collision" type="CollisionShape3D" parent="WorkshopBeaconPartition/FrontSegment"]
+shape = SubResource("Shape_partition_segment")
+[node name="RearSegment" type="StaticBody3D" parent="WorkshopBeaconPartition"]
+position = Vector3(-6, 1.6, 2.8)
+[node name="Mesh" type="MeshInstance3D" parent="WorkshopBeaconPartition/RearSegment"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_partition_segment")
+[node name="Collision" type="CollisionShape3D" parent="WorkshopBeaconPartition/RearSegment"]
+shape = SubResource("Shape_partition_segment")
+[node name="OpenDoor" type="MeshInstance3D" parent="WorkshopBeaconPartition"]
+position = Vector3(-5.68, 1.4, 1.55)
+material_override = SubResource("Material_door")
+mesh = SubResource("Mesh_open_door")
+
+[node name="BeaconSupplyPartition" type="Node3D" parent="."]
+[node name="FrontSegment" type="StaticBody3D" parent="BeaconSupplyPartition"]
+position = Vector3(6, 1.6, -2.8)
+[node name="Mesh" type="MeshInstance3D" parent="BeaconSupplyPartition/FrontSegment"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_partition_segment")
+[node name="Collision" type="CollisionShape3D" parent="BeaconSupplyPartition/FrontSegment"]
+shape = SubResource("Shape_partition_segment")
+[node name="RearSegment" type="StaticBody3D" parent="BeaconSupplyPartition"]
+position = Vector3(6, 1.6, 2.8)
+[node name="Mesh" type="MeshInstance3D" parent="BeaconSupplyPartition/RearSegment"]
+material_override = SubResource("Material_wall")
+mesh = SubResource("Mesh_partition_segment")
+[node name="Collision" type="CollisionShape3D" parent="BeaconSupplyPartition/RearSegment"]
+shape = SubResource("Shape_partition_segment")
+[node name="OpenDoor" type="MeshInstance3D" parent="BeaconSupplyPartition"]
+position = Vector3(6.32, 1.4, 1.55)
+material_override = SubResource("Material_door")
+mesh = SubResource("Mesh_open_door")

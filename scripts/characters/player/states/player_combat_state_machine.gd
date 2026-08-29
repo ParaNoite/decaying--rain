@@ -2,14 +2,15 @@ class_name PlayerCombatStateMachine
 extends Node
 
 signal state_changed(previous_state: StringName, current_state: StringName)
+signal action_phase_changed(state: StringName, phase: ActionTimingDefinition.Phase)
 
 const STATE_READY: StringName = &"ready"
 const STATE_LIGHT_ATTACK: StringName = &"light_attack"
+const STATE_HEAVY_ATTACK: StringName = &"heavy_attack"
 const STATE_FIRE: StringName = &"fire"
 const STATE_RELOAD: StringName = &"reload"
 const STATE_PARRY: StringName = &"parry"
 const STATE_SHOVE: StringName = &"shove"
-const STATE_RECOVER: StringName = &"recover"
 const STATE_DISABLED: StringName = &"disabled"
 
 @export var combat_definition: PlayerCombatDefinition
@@ -19,19 +20,22 @@ const STATE_DISABLED: StringName = &"disabled"
 
 var current_state: StringName = STATE_READY
 var state_time_remaining: float = 0.0
+var state_elapsed: float = 0.0
 var parry_active: bool = false
+var current_action_timing: ActionTimingDefinition
+
+var _action_resolved: bool = false
 
 
 func interrupt() -> void:
-	parry_active = false
-	state_time_remaining = 0.0
+	_clear_current_action()
 	_transition_to(STATE_READY)
 
 
 func update(body: Node3D, input_reader: PlayerInputReader, constraints: Dictionary, delta: float) -> void:
 	combat_driver.tick(delta)
 	if constraints.get("combat_blocked", false):
-		_cancel_reload()
+		_clear_current_action()
 		_transition_to(STATE_DISABLED)
 		_clear_actions(input_reader)
 		return
@@ -40,7 +44,7 @@ func update(body: Node3D, input_reader: PlayerInputReader, constraints: Dictiona
 		_transition_to(STATE_READY)
 
 	combat_driver.firearm_spread_multiplier = float(constraints.get("firearm_spread_multiplier", 1.0))
-	_tick_state_timer(delta)
+	_tick_action(body, delta)
 
 	if current_state != STATE_READY:
 		_clear_actions(input_reader)
@@ -60,52 +64,121 @@ func update(body: Node3D, input_reader: PlayerInputReader, constraints: Dictiona
 	if pressed_primary or held_primary:
 		if _action_blocked(constraints, &"attack_primary"):
 			_emit_blocked(&"attack_primary", &"perk_restriction")
-		elif combat_driver.try_primary_attack(body):
-			_transition_to(STATE_FIRE if combat_driver.is_current_firearm() else STATE_LIGHT_ATTACK)
-			state_time_remaining = combat_driver.get_primary_action_duration()
+		elif combat_driver.begin_primary_attack():
+			_start_action(
+				body,
+				STATE_FIRE if combat_driver.is_current_firearm() else STATE_LIGHT_ATTACK,
+				combat_driver.get_primary_timing(held_primary)
+			)
+			return
+
+	if input_reader.consume_secondary_attack():
+		if _action_blocked(constraints, &"attack_secondary"):
+			_emit_blocked(&"attack_secondary", &"perk_restriction")
+		elif combat_driver.begin_heavy_attack():
+			_start_action(body, STATE_HEAVY_ATTACK, combat_driver.get_heavy_timing())
 			return
 
 	if input_reader.consume_reload():
 		if _action_blocked(constraints, &"reload"):
 			_emit_blocked(&"reload", &"perk_restriction")
 		elif combat_driver.try_reload():
-			_transition_to(STATE_RELOAD)
-			state_time_remaining = combat_driver.get_reload_duration()
+			_start_action(body, STATE_RELOAD, combat_driver.get_reload_timing())
 			return
 
 	if input_reader.consume_parry():
 		if _action_blocked(constraints, &"parry"):
 			_emit_blocked(&"parry", &"perk_restriction")
 		elif combat_driver.can_start_parry():
-			_transition_to(STATE_PARRY)
-			parry_active = true
-			state_time_remaining = _combat().parry_window + _combat().parry_recovery
-		return
+			_start_action(body, STATE_PARRY, _combat().parry_timing)
+			return
 
 	if input_reader.consume_shove():
 		if _action_blocked(constraints, &"shove"):
 			_emit_blocked(&"shove", &"perk_restriction")
-		elif combat_driver.try_shove(body):
-			_transition_to(STATE_SHOVE)
-			state_time_remaining = _combat().shove_duration
+		elif combat_driver.begin_shove():
+			_start_action(body, STATE_SHOVE, _combat().shove_timing)
+			return
+
+func get_current_action_timing() -> ActionTimingDefinition:
+	return current_action_timing
+
+
+func get_current_action_phase() -> ActionTimingDefinition.Phase:
+	if current_action_timing == null:
+		return ActionTimingDefinition.Phase.COMPLETE
+	return current_action_timing.phase_at(state_elapsed)
+
+
+func _start_action(body: Node3D, next_state: StringName, timing: ActionTimingDefinition) -> void:
+	current_action_timing = timing if timing != null else ActionTimingDefinition.new()
+	state_elapsed = 0.0
+	state_time_remaining = current_action_timing.total_seconds()
+	_action_resolved = false
+	_transition_to(next_state)
+	_update_parry_active()
+	action_phase_changed.emit(current_state, get_current_action_phase())
+	_resolve_if_due(body)
+	if state_time_remaining <= 0.0:
+		_finish_action()
+
+
+func _tick_action(body: Node3D, delta: float) -> void:
+	if current_state in [STATE_READY, STATE_DISABLED] or current_action_timing == null:
 		return
 
-	input_reader.consume_secondary_attack()
-
-
-func _tick_state_timer(delta: float) -> void:
+	var previous_phase := get_current_action_phase()
+	state_elapsed = minf(current_action_timing.total_seconds(), state_elapsed + maxf(0.0, delta))
+	state_time_remaining = maxf(0.0, current_action_timing.total_seconds() - state_elapsed)
+	_resolve_if_due(body)
+	_update_parry_active()
+	var next_phase := get_current_action_phase()
+	if next_phase != previous_phase:
+		action_phase_changed.emit(current_state, next_phase)
 	if state_time_remaining <= 0.0:
+		_finish_action()
+
+
+func _resolve_if_due(body: Node3D) -> void:
+	if _action_resolved or current_action_timing == null:
 		return
-
-	state_time_remaining = maxf(0.0, state_time_remaining - delta)
-	if current_state == STATE_PARRY and state_time_remaining <= _combat().parry_recovery:
-		parry_active = false
-
-	if state_time_remaining <= 0.0:
-		if current_state == STATE_RELOAD:
+	if state_elapsed < current_action_timing.impact_start_seconds():
+		return
+	_action_resolved = true
+	match current_state:
+		STATE_LIGHT_ATTACK, STATE_FIRE:
+			combat_driver.resolve_primary_attack(body)
+		STATE_HEAVY_ATTACK:
+			combat_driver.resolve_heavy_attack(body)
+		STATE_RELOAD:
 			combat_driver.finish_reload()
+		STATE_SHOVE:
+			combat_driver.resolve_shove(body)
+
+
+func _update_parry_active() -> void:
+	if current_state != STATE_PARRY or current_action_timing == null:
 		parry_active = false
-		_transition_to(STATE_READY)
+		return
+	parry_active = (
+		state_elapsed >= current_action_timing.release_start_seconds()
+		and state_elapsed < current_action_timing.impact_end_seconds()
+	)
+
+
+func _finish_action() -> void:
+	if current_state == STATE_LIGHT_ATTACK:
+		combat_driver.finish_primary_attack()
+	_clear_current_action()
+	_transition_to(STATE_READY)
+
+
+func _clear_current_action() -> void:
+	parry_active = false
+	state_elapsed = 0.0
+	state_time_remaining = 0.0
+	current_action_timing = null
+	_action_resolved = false
 
 
 func _clear_actions(input_reader: PlayerInputReader) -> void:
@@ -116,11 +189,6 @@ func _clear_actions(input_reader: PlayerInputReader) -> void:
 	input_reader.consume_reload()
 	input_reader.consume_weapon_next()
 	input_reader.consume_weapon_previous()
-
-
-func _cancel_reload() -> void:
-	if current_state == STATE_RELOAD:
-		state_time_remaining = 0.0
 
 
 func _action_blocked(constraints: Dictionary, action_id: StringName) -> bool:
@@ -149,6 +217,6 @@ func _combat() -> PlayerCombatDefinition:
 	if combat_driver != null and combat_driver.combat_definition != null:
 		return combat_driver.combat_definition
 
-	var fallback: PlayerCombatDefinition = PlayerCombatDefinition.new()
+	var fallback := PlayerCombatDefinition.new()
 	combat_definition = fallback
 	return fallback

@@ -1,6 +1,8 @@
 class_name PlayerCombatDriver
 extends Node
 
+signal light_combo_ended
+
 @export var combat_definition: PlayerCombatDefinition
 @export var stamina_path: NodePath = ^"../Components/StaminaComponent"
 @export var loadout_path: NodePath = ^"../Components/PlayerLoadoutComponent"
@@ -15,9 +17,11 @@ extends Node
 var current_weapon: WeaponDefinition
 var combo_index: int = 0
 var combo_time_remaining: float = 0.0
+var combo_finisher_cooldown_remaining: float = 0.0
 var shove_cooldown_remaining: float = 0.0
-var fire_cooldown_remaining: float = 0.0
 var firearm_spread_multiplier: float = 1.0
+var primary_attack_exhausted: bool = false
+var heavy_attack_exhausted: bool = false
 
 var _event_bus = null
 
@@ -30,36 +34,82 @@ func _ready() -> void:
 
 
 func tick(delta: float) -> void:
+	var combo_was_active: bool = combo_time_remaining > 0.0
 	combo_time_remaining = maxf(0.0, combo_time_remaining - delta)
+	combo_finisher_cooldown_remaining = maxf(0.0, combo_finisher_cooldown_remaining - delta)
 	shove_cooldown_remaining = maxf(0.0, shove_cooldown_remaining - delta)
-	fire_cooldown_remaining = maxf(0.0, fire_cooldown_remaining - delta)
 	if combo_time_remaining <= 0.0:
+		if combo_was_active:
+			light_combo_ended.emit()
 		combo_index = 0
 
 
-func try_light_attack(attacker: Node3D) -> bool:
+func begin_primary_attack() -> bool:
+	if is_current_firearm():
+		if loadout == null or loadout.get_magazine_ammo() <= 0:
+			_emit_feedback("EMPTY - RELOAD", &"danger")
+			return false
+		return true
+
 	var combat: PlayerCombatDefinition = _combat()
+	if combo_finisher_cooldown_remaining > 0.0:
+		return false
 	var cost: float = combat.light_attack_stamina_cost
 	if current_weapon != null:
 		cost = current_weapon.stamina_cost
-	if stamina != null and not stamina.consume(cost):
-		return false
+	primary_attack_exhausted = stamina != null and not stamina.consume(cost)
 
 	combo_index = 1 if combo_time_remaining <= 0.0 else wrapi(combo_index + 1, 1, 4)
 	combo_time_remaining = combat.combo_input_window
-
-	var damage: float = _base_damage()
-	if combo_index == 3:
-		damage *= combat.final_combo_damage_multiplier
-
-	_emit_best_melee_hit(attacker, damage, combat.melee_range, combat.melee_radius, &"melee")
 	return true
 
 
-func try_primary_attack(attacker: Node3D) -> bool:
+func finish_primary_attack() -> void:
+	if combo_index != 3:
+		return
+	combo_index = 0
+	combo_time_remaining = 0.0
+	combo_finisher_cooldown_remaining = _combat().combo_finisher_cooldown_seconds
+	light_combo_ended.emit()
+
+
+func resolve_primary_attack(attacker: Node3D) -> bool:
 	if is_current_firearm():
-		return _try_firearm_attack(attacker)
-	return try_light_attack(attacker)
+		return _resolve_firearm_attack(attacker)
+	var combat: PlayerCombatDefinition = _combat()
+	var damage: float = _base_damage()
+	if primary_attack_exhausted:
+		damage *= combat.exhausted_attack_damage_multiplier
+	if combo_index == 3:
+		damage *= combat.final_combo_damage_multiplier
+
+	_emit_best_melee_hit(
+		attacker,
+		damage,
+		combat.melee_range * combat.light_attack_reach_multiplier,
+		combat.melee_radius,
+		&"melee"
+	)
+	return true
+
+
+func begin_heavy_attack() -> bool:
+	if is_current_firearm():
+		return false
+	var combat: PlayerCombatDefinition = _combat()
+	heavy_attack_exhausted = stamina != null and not stamina.consume(combat.heavy_attack_stamina_cost)
+	return true
+
+
+func resolve_heavy_attack(attacker: Node3D) -> bool:
+	if is_current_firearm():
+		return false
+	var combat: PlayerCombatDefinition = _combat()
+	var damage: float = _base_damage() * combat.heavy_attack_damage_multiplier
+	if heavy_attack_exhausted:
+		damage *= combat.exhausted_attack_damage_multiplier
+	_emit_best_melee_hit(attacker, damage, combat.melee_range, combat.melee_radius, &"melee")
+	return true
 
 
 func try_reload() -> bool:
@@ -83,20 +133,32 @@ func is_current_weapon_automatic() -> bool:
 
 
 func get_primary_action_duration() -> float:
-	if current_weapon == null:
-		return _combat().light_attack_windup + _combat().light_attack_recovery
-	if current_weapon.is_firearm():
-		return current_weapon.fire_interval_seconds
-	return current_weapon.windup_seconds + current_weapon.recovery_seconds
+	return get_primary_timing().total_seconds()
 
 
 func get_reload_duration() -> float:
-	if current_weapon == null or not current_weapon.is_firearm():
-		return 0.0
-	return current_weapon.reload_seconds
+	return get_reload_timing().total_seconds()
 
 
-func try_shove(attacker: Node3D) -> bool:
+func get_primary_timing(use_held_combo_timing: bool = false) -> ActionTimingDefinition:
+	if current_weapon != null and current_weapon.primary_timing != null:
+		if use_held_combo_timing and combo_index > 1 and current_weapon.held_combo_timing != null:
+			return current_weapon.held_combo_timing
+		return current_weapon.primary_timing
+	return _combat().light_attack_timing
+
+
+func get_heavy_timing() -> ActionTimingDefinition:
+	return _combat().heavy_attack_timing
+
+
+func get_reload_timing() -> ActionTimingDefinition:
+	if current_weapon != null and current_weapon.is_firearm() and current_weapon.reload_timing != null:
+		return current_weapon.reload_timing
+	return ActionTimingDefinition.new()
+
+
+func begin_shove() -> bool:
 	var combat: PlayerCombatDefinition = _combat()
 	if shove_cooldown_remaining > 0.0:
 		return false
@@ -104,7 +166,20 @@ func try_shove(attacker: Node3D) -> bool:
 		return false
 
 	shove_cooldown_remaining = combat.shove_cooldown
-	_emit_best_melee_hit(attacker, 0.0, combat.shove_range, combat.shove_radius, &"shove", combat.shove_stagger)
+	return true
+
+
+func resolve_shove(attacker: Node3D) -> bool:
+	var combat: PlayerCombatDefinition = _combat()
+	_emit_best_melee_hit(
+		attacker,
+		0.0,
+		combat.shove_range,
+		combat.shove_radius,
+		&"shove",
+		combat.shove_stagger,
+		combat.shove_knockback_force
+	)
 	return true
 
 
@@ -112,14 +187,13 @@ func can_start_parry() -> bool:
 	return current_weapon == null or current_weapon.supports_block
 
 
-func _try_firearm_attack(attacker: Node3D) -> bool:
-	if current_weapon == null or loadout == null or fire_cooldown_remaining > 0.0:
+func _resolve_firearm_attack(attacker: Node3D) -> bool:
+	if current_weapon == null or loadout == null:
 		return false
 	if not loadout.consume_round():
 		_emit_feedback("EMPTY - RELOAD", &"danger")
 		return false
 
-	fire_cooldown_remaining = current_weapon.fire_interval_seconds
 	var pellet_count: int = maxi(1, current_weapon.pellet_count)
 	var damage_per_pellet: float = current_weapon.base_damage / float(pellet_count)
 	for pellet_index: int in pellet_count:
@@ -189,7 +263,8 @@ func _emit_best_melee_hit(
 	reach: float,
 	radius: float,
 	source_tag: StringName,
-	stagger: float = 0.0
+	stagger: float = 0.0,
+	knockback_force: float = 0.0
 ) -> void:
 	if attacker == null:
 		return
@@ -227,6 +302,7 @@ func _emit_best_melee_hit(
 	hit_data.amount = damage
 	hit_data.source_tags = [source_tag]
 	hit_data.stagger = stagger
+	hit_data.knockback_force = knockback_force
 	hit_data.hit_position = best_target.global_position
 
 	if best_target.has_method("receive_damage"):
@@ -240,10 +316,12 @@ func _base_damage() -> float:
 
 
 func _on_weapon_changed(weapon: WeaponDefinition) -> void:
+	if combo_time_remaining > 0.0:
+		light_combo_ended.emit()
 	current_weapon = weapon if weapon != null else default_weapon
 	combo_index = 0
 	combo_time_remaining = 0.0
-	fire_cooldown_remaining = 0.0
+	combo_finisher_cooldown_remaining = 0.0
 
 
 func _emit_feedback(message: String, tone: StringName) -> void:

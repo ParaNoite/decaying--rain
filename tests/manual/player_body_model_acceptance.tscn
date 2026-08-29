@@ -1,0 +1,59 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://tests/manual/player_body_model_acceptance.gd" id="1_stage"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player/player_body_visual.tscn" id="2_body"]
+
+[sub_resource type="Environment" id="Environment_stage"]
+background_mode = 1
+background_color = Color(0.08, 0.10, 0.11, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.58, 0.64, 0.66, 1)
+ambient_light_energy = 1.05
+
+[sub_resource type="StandardMaterial3D" id="Material_floor"]
+albedo_color = Color(0.16, 0.18, 0.18, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="Mesh_floor"]
+top_radius = 2.2
+bottom_radius = 2.2
+height = 0.14
+
+[sub_resource type="CylinderShape3D" id="Shape_floor"]
+radius = 2.2
+height = 0.14
+
+[node name="PlayerBodyModelAcceptance" type="Node3D"]
+script = ExtResource("1_stage")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_stage")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-52, -34, 0)
+light_energy = 1.7
+shadow_enabled = true
+
+[node name="FillLight" type="OmniLight3D" parent="."]
+position = Vector3(-2.0, 1.8, 2.0)
+light_color = Color(0.42, 0.68, 0.78, 1)
+light_energy = 3.2
+omni_range = 6.0
+
+[node name="Floor" type="StaticBody3D" parent="."]
+
+[node name="Mesh" type="MeshInstance3D" parent="Floor"]
+material_override = SubResource("Material_floor")
+mesh = SubResource("Mesh_floor")
+
+[node name="Collision" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="PlayerBodyVisual" parent="." instance=ExtResource("2_body")]
+position = Vector3(0, 0.94, 0)
+rotation_degrees = Vector3(0, 180, 0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(3.0, 1.65, 4.2)
+current = true
+fov = 48.0

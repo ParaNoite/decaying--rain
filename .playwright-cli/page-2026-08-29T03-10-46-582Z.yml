@@ -1,0 +1,32 @@
+- generic [active] [ref=f1e1]:
+  - heading "Debuff 图标意象候选" [level=1] [ref=f1e2]
+  - paragraph [ref=f1e3]: "图标本体均为透明背景、仅使用纯红 #ff0000。每行比较的是不同意象，不是不同画风。"
+  - main [ref=f1e4]:
+    - generic [ref=f1e5]:
+      - heading "流血" [level=2] [ref=f1e6]
+      - generic [ref=f1e7]:
+        - generic [ref=f1e8]: 裂纹血滴
+        - generic [ref=f1e11]: 开放伤口
+        - generic [ref=f1e14]: 浸血绷带
+        - generic [ref=f1e17]: 血迹
+    - generic [ref=f1e20]:
+      - heading "骨折" [level=2] [ref=f1e21]
+      - generic [ref=f1e22]:
+        - generic [ref=f1e23]: 断裂骨头
+        - generic [ref=f1e26]: 关节分离
+        - generic [ref=f1e29]: 肢段断裂
+        - generic [ref=f1e32]: 裂骨
+    - generic [ref=f1e35]:
+      - heading "断腿" [level=2] [ref=f1e36]
+      - generic [ref=f1e37]:
+        - generic [ref=f1e38]: 双腿受损
+        - generic [ref=f1e41]: 膝盖受创
+        - generic [ref=f1e44]: 裂靴
+        - generic [ref=f1e47]: 受阻脚步
+    - generic [ref=f1e50]:
+      - heading "饥肠辘辘" [level=2] [ref=f1e51]
+      - generic [ref=f1e52]:
+        - generic [ref=f1e53]: 空碗
+        - generic [ref=f1e56]: 空胃
+        - generic [ref=f1e59]: 断粮
+        - generic [ref=f1e62]: 空盘餐具

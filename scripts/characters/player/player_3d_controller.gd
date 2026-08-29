@@ -1,6 +1,8 @@
 class_name Player3DController
 extends CharacterBody3D
 
+const WORLD_PICKUP_SCENE: PackedScene = preload("res://scenes/interactables/world_pickup.tscn")
+
 @export var movement_definition: PlayerMovementDefinition
 @export var combat_definition: PlayerCombatDefinition
 
@@ -11,6 +13,7 @@ extends CharacterBody3D
 @onready var interaction_driver: PlayerInteractionDriver = %InteractionDriver
 @onready var health: HealthComponent = %HealthComponent
 @onready var stamina: StaminaComponent = %StaminaComponent
+@onready var sprint_reserve: SprintReserveComponent = %SprintReserveComponent
 @onready var hunger: HungerComponent = %HungerComponent
 @onready var status_container: StatusContainer = %StatusContainer
 @onready var inventory_component: PlayerInventoryComponent = %PlayerInventoryComponent
@@ -22,13 +25,16 @@ extends CharacterBody3D
 @onready var interaction_state_machine: PlayerInteractionStateMachine = %InteractionStateMachine
 @onready var condition_state_machine: PlayerConditionStateMachine = %PlayerConditionStateMachine
 @onready var watch_state_machine: PlayerWatchStateMachine = %WatchStateMachine
-@onready var first_person_hands: Node = %FirstPersonHands_TEST_ONLY_DELETE_WITH_ANIMATION_SYSTEM
+@onready var first_person_arms: PlayerFirstPersonArms = %FirstPersonArms
+@onready var body_visual: Node3D = %PlayerBodyVisual
 
 var _event_bus = null
 var _game_manager = null
 var _buff_resolver: Node
 var _damage_resolver: Node
 var inventory_open: bool = false
+var debug_god_mode_enabled: bool = false
+var _held_item_id: StringName = &""
 
 
 func _ready() -> void:
@@ -51,6 +57,7 @@ func _ready() -> void:
 	health.died.connect(_on_died)
 	locomotion_state_machine.state_changed.connect(_on_locomotion_state_changed)
 	combat_state_machine.state_changed.connect(_on_combat_state_changed)
+	combat_driver.light_combo_ended.connect(_on_light_combo_ended)
 	interaction_state_machine.state_changed.connect(_on_interaction_state_changed)
 	watch_state_machine.state_changed.connect(_on_watch_state_changed)
 	skill_component.active_skill_charge_started.connect(_on_active_skill_charge_started)
@@ -83,8 +90,11 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("debug_god_mode"):
+		set_debug_god_mode(not debug_god_mode_enabled)
+		get_viewport().set_input_as_handled()
+		return
 	input_reader.handle_input(event)
-	_preview_action_input(event)
 
 	if event.is_action_pressed("pause"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -94,6 +104,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	input_reader.refresh()
+	_sync_survival_statuses()
+	_process_quick_slot_input()
 	_update_overlay_state()
 	movement_motor.tick_timers(delta, is_on_floor())
 	movement_motor.apply_gravity(self, delta)
@@ -112,12 +124,19 @@ func _physics_process(delta: float) -> void:
 		stamina.recovery_multiplier = maxf(0.0, float(constraints.get("stamina_recovery_multiplier", 1.0)))
 	_merge_constraints(constraints, watch_state_machine.update(input_reader))
 	_merge_constraints(constraints, skill_component.update(self, input_reader, constraints, delta))
+	_update_held_item_state(constraints, delta)
 
-	interaction_state_machine.update(self, input_reader, constraints, delta)
+	if interaction_state_machine.current_state != PlayerInteractionStateMachine.STATE_ITEM_USE:
+		interaction_state_machine.update(self, input_reader, constraints, delta)
 	combat_state_machine.update(self, input_reader, constraints, delta)
 	locomotion_state_machine.physics_update(self, input_reader, constraints, delta)
+	body_visual.update_locomotion(
+		Vector2(velocity.x, velocity.z).length(),
+		locomotion_state_machine.current_state == PlayerLocomotionStateMachine.STATE_SPRINT,
+		delta
+	)
 	camera_rig.update_motion_feedback(locomotion_state_machine.current_state == PlayerLocomotionStateMachine.STATE_SPRINT, delta)
-	_call_hands(&"set_sprinting", [locomotion_state_machine.current_state == PlayerLocomotionStateMachine.STATE_SPRINT])
+	_call_arms(&"set_sprinting", [locomotion_state_machine.current_state == PlayerLocomotionStateMachine.STATE_SPRINT])
 	_consume_deferred_inputs()
 
 	move_and_slide()
@@ -167,13 +186,21 @@ func receive_damage(data: DamageEventData) -> void:
 
 
 func try_block_damage(data: DamageEventData) -> bool:
+	if debug_god_mode_enabled:
+		return true
 	if not combat_state_machine.parry_active or not data.source_tags.has(&"melee"):
 		return false
 	_apply_parry_counter(data)
+	play_parry_success_feedback()
 	if _event_bus != null:
 		_event_bus.debug_test_notice.emit("Parry success: blocked %.0f damage" % data.amount, &"combat")
 		_event_bus.combat_feedback.emit("PARRY SUCCESS", &"success")
 	return true
+
+
+func play_parry_success_feedback() -> void:
+	var timing: ActionTimingDefinition = combat_definition.parry_success_timing
+	_call_arms(&"play_parry_success", [timing])
 
 
 func on_damage_resolved(result: DamageResolutionData) -> void:
@@ -187,7 +214,7 @@ func on_damage_resolved(result: DamageResolutionData) -> void:
 		_emit_debug_notice("Player hit: -%.0f HP" % result.final_amount, &"combat")
 		if _event_bus != null:
 			_event_bus.combat_feedback.emit("HIT -%.0f" % result.final_amount, &"danger")
-		_call_hands(&"play_hurt")
+		_call_arms(&"play_hurt", [combat_definition.hurt_timing])
 	if result.event.stagger >= combat_definition.stagger_threshold:
 		apply_status_by_id(&"staggered")
 	if result.final_amount >= combat_definition.bleeding_damage_threshold:
@@ -225,10 +252,21 @@ func get_status_duration_multiplier(status_id: StringName) -> float:
 
 func amend_buff_constraints(constraints: Dictionary) -> void:
 	_apply_profession_constraints(constraints)
-	if hunger != null and hunger.is_hungry:
+	if debug_god_mode_enabled:
 		constraints["outgoing_damage_multiplier"] = float(
 			constraints.get("outgoing_damage_multiplier", 1.0)
-		) * 0.75
+		) * 5.0
+		constraints["incoming_damage_multiplier"] = 0.0
+
+
+func set_debug_god_mode(enabled: bool) -> void:
+	if debug_god_mode_enabled == enabled:
+		return
+	debug_god_mode_enabled = enabled
+	var state_text: String = "ON - DAMAGE x5" if enabled else "OFF"
+	_emit_debug_notice("Invincible mode %s" % state_text, &"debug")
+	if _event_bus != null:
+		_event_bus.combat_feedback.emit("INVINCIBLE %s" % state_text, &"success" if enabled else &"neutral")
 
 
 func heal(amount: float) -> void:
@@ -244,10 +282,17 @@ func _apply_definitions() -> void:
 		camera_rig.movement_definition = movement_definition
 		movement_motor.movement_definition = movement_definition
 		locomotion_state_machine.movement_definition = movement_definition
+		if sprint_reserve != null:
+			sprint_reserve.max_reserve = movement_definition.sprint_reserve_max
+			sprint_reserve.current_reserve = sprint_reserve.max_reserve
+			sprint_reserve.recovery_per_second = movement_definition.sprint_reserve_recovery_per_second
+			sprint_reserve.recovery_delay_seconds = movement_definition.sprint_reserve_recovery_delay_seconds
 
 	if combat_definition != null:
 		combat_driver.combat_definition = combat_definition
 		combat_state_machine.combat_definition = combat_definition
+		if stamina != null:
+			stamina.recovery_delay_seconds = combat_definition.stamina_recovery_delay_seconds
 
 
 func _initialize_runtime_components() -> void:
@@ -281,26 +326,116 @@ func _apply_profession_statuses() -> void:
 		apply_status_by_id(status_id)
 
 
+func _sync_survival_statuses() -> void:
+	if hunger != null:
+		if hunger.current_hunger <= 0.0 and not has_status(&"hungry"):
+			apply_status_by_id(&"hungry")
+		elif hunger.current_hunger > 0.0:
+			remove_status(&"hungry")
+	if sprint_reserve != null:
+		if sprint_reserve.current_reserve <= 0.0 and not has_status(&"exhausted"):
+			apply_status_by_id(&"exhausted")
+		elif sprint_reserve.current_reserve >= sprint_reserve.max_reserve:
+			remove_status(&"exhausted")
+
+
 func use_item(item_id: StringName) -> bool:
-	if inventory_component == null or inventory_component.get_quantity(item_id) <= 0:
+	if inventory_component == null or not inventory_component.can_use_item(item_id):
 		_emit_action_blocked(&"use_item", &"item_unavailable")
 		return false
-	match item_id:
-		&"bandage":
-			heal(30.0)
-			remove_status(&"bleeding")
-		&"food_ration":
-			hunger.restore_hunger(35.0)
-		_:
-			_emit_action_blocked(&"use_item", &"unsupported_item")
-			return false
-	inventory_component.remove_item(item_id)
-	_emit_debug_notice("Used %s" % String(item_id).replace("_", " ").capitalize(), &"inventory")
+	var constraints: Dictionary = _get_item_use_constraints()
+	if not interaction_state_machine.request_item_use(self, item_id, constraints):
+		_emit_action_blocked(&"use_item", &"action_busy")
+		return false
 	return true
+
+
+func resolve_item_use(item_id: StringName) -> bool:
+	if inventory_component == null:
+		return false
+	var item: ItemDefinition = inventory_component.consume_item(item_id)
+	if item == null:
+		_emit_action_blocked(&"use_item", &"item_unavailable")
+		return false
+	if item.health_restore > 0.0:
+		heal(item.health_restore)
+	if item.hunger_restore > 0.0 and hunger != null:
+		hunger.restore_hunger(item.hunger_restore)
+	if item.clears_bleeding:
+		remove_status(&"bleeding")
+	if _event_bus != null:
+		_event_bus.item_used.emit(item.item_id, 1)
+	_emit_debug_notice("Used %s" % item.display_name, &"inventory")
+	return true
+
+
+func receive_item(item: ItemDefinition, quantity: int) -> bool:
+	return inventory_component != null and inventory_component.add_item_definition(item, quantity, true)
+
+
+func _process_quick_slot_input() -> void:
+	if inventory_component == null:
+		return
+	var slot_index: int = input_reader.consume_inventory_slot()
+	if slot_index >= 0:
+		inventory_component.select_slot(slot_index)
+	if input_reader.consume_inventory_clear_selection():
+		interaction_state_machine.cancel_held_item_use()
+		inventory_component.clear_selection()
+		_sync_held_item()
+	if input_reader.consume_inventory_drop():
+		_drop_selected_inventory_item()
+		_sync_held_item()
+
+
+func _drop_selected_inventory_item() -> void:
+	if not is_alive() or inventory_component == null:
+		return
+	var item: ItemDefinition = inventory_component.drop_selected_item()
+	if item == null:
+		_emit_action_blocked(&"drop_item", &"slot_empty")
+		return
+	var pickup: WorldPickup = WORLD_PICKUP_SCENE.instantiate() as WorldPickup
+	pickup.configure(item, 1)
+	var world_parent: Node = get_tree().current_scene if get_tree().current_scene != null else get_parent()
+	world_parent.add_child(pickup)
+	var forward: Vector3 = -global_transform.basis.z.normalized()
+	pickup.global_position = global_position + forward * 0.9 + Vector3.UP * 0.35
+	_emit_debug_notice("Dropped %s" % item.display_name, &"inventory")
 
 
 func _on_inventory_item_use_requested(item_id: StringName) -> void:
 	use_item(item_id)
+
+
+func _update_held_item_state(constraints: Dictionary, delta: float) -> void:
+	_sync_held_item()
+	var held_item: ItemDefinition = inventory_component.get_selected_item() if inventory_component != null else null
+	if held_item == null:
+		return
+	constraints["combat_blocked"] = true
+	if held_item.has_use_effect():
+		interaction_state_machine.update_held_item_use(self, held_item.item_id, input_reader, constraints, delta)
+	else:
+		input_reader.consume_primary_attack()
+
+
+func _sync_held_item() -> void:
+	var held_item: ItemDefinition = inventory_component.get_selected_item() if inventory_component != null else null
+	var next_item_id: StringName = held_item.item_id if held_item != null else &""
+	if _held_item_id == next_item_id:
+		return
+	_held_item_id = next_item_id
+	_call_arms(&"set_held_item", [held_item])
+	if _event_bus != null:
+		_event_bus.held_item_changed.emit(_held_item_id)
+
+
+func _get_item_use_constraints() -> Dictionary:
+	var constraints: Dictionary = _buff_resolver.call("get_constraints", self) if _buff_resolver != null else {}
+	constraints = condition_state_machine.update(constraints)
+	_merge_constraints(constraints, watch_state_machine.update(input_reader))
+	return constraints
 
 
 func _on_phase_changed(_previous_phase: StringName, current_phase: StringName, _wave_index: int) -> void:
@@ -322,6 +457,7 @@ func _apply_parry_counter(data: DamageEventData) -> void:
 	counter.target_id = data.attacker_id
 	counter.amount = 0.0
 	counter.stagger = combat_definition.parry_stagger
+	counter.knockback_force = combat_definition.parry_knockback_force
 	counter.source_tags = [&"parry", &"melee"]
 	counter.hit_position = global_position
 	var attacker_node: Node = attacker as Node
@@ -343,13 +479,12 @@ func _on_locomotion_state_changed(_previous_state: StringName, current_state: St
 	match current_state:
 		PlayerLocomotionStateMachine.STATE_SPRINT:
 			_emit_debug_notice("Action: sprinting", &"action")
-			_call_hands(&"play_sprint_start")
 		PlayerLocomotionStateMachine.STATE_SLIDE:
 			_emit_debug_notice("Action: sliding", &"action")
-			_call_hands(&"play_slide")
+			_call_arms(&"play_slide", [movement_definition.slide_timing])
 		PlayerLocomotionStateMachine.STATE_JUMP:
 			_emit_debug_notice("Action: jumping", &"action")
-			_call_hands(&"play_jump")
+			_call_arms(&"play_jump", [movement_definition.jump_timing])
 		PlayerLocomotionStateMachine.STATE_FALL:
 			_emit_debug_notice("Action: falling", &"action")
 		_:
@@ -357,39 +492,47 @@ func _on_locomotion_state_changed(_previous_state: StringName, current_state: St
 
 
 func _on_combat_state_changed(_previous_state: StringName, current_state: StringName) -> void:
+	var timing: ActionTimingDefinition = combat_state_machine.get_current_action_timing()
 	match current_state:
 		PlayerCombatStateMachine.STATE_LIGHT_ATTACK:
 			_emit_debug_notice("Action: primary attack", &"action")
-			_call_hands(&"play_attack", [combat_driver.combo_index])
+			_call_arms(&"play_attack", [combat_driver.combo_index, timing, true])
+		PlayerCombatStateMachine.STATE_HEAVY_ATTACK:
+			_emit_debug_notice("Action: heavy attack", &"action")
+			_call_arms(&"play_heavy_attack", [timing])
 		PlayerCombatStateMachine.STATE_FIRE:
 			_emit_debug_notice("Action: firearm fired", &"combat")
-			_call_hands(&"play_attack", [1])
+			_call_arms(&"play_attack", [1, timing])
 		PlayerCombatStateMachine.STATE_RELOAD:
 			_emit_debug_notice("Action: reloading", &"combat")
-			_call_hands(&"play_interact")
+			_call_arms(&"play_interact", [timing])
 		PlayerCombatStateMachine.STATE_PARRY:
 			_emit_debug_notice("Action: parry window", &"action")
-			_call_hands(&"play_parry", [combat_state_machine.state_time_remaining])
+			_call_arms(&"play_parry", [timing])
 		PlayerCombatStateMachine.STATE_SHOVE:
 			_emit_debug_notice("Action: shove", &"action")
-			_call_hands(&"play_shove")
+			_call_arms(&"play_shove", [timing])
 		_:
 			return
 
 
+func _on_light_combo_ended() -> void:
+	_call_arms(&"release_light_combo_guard")
+
+
 func _on_interaction_state_changed(_previous_state: StringName, current_state: StringName) -> void:
-	if current_state == PlayerInteractionStateMachine.STATE_INSTANT_USE:
+	if current_state in [PlayerInteractionStateMachine.STATE_INSTANT_USE, PlayerInteractionStateMachine.STATE_ITEM_USE]:
 		_emit_debug_notice("Action: interact", &"action")
-		_call_hands(&"play_interact")
+		_call_arms(&"play_interact", [combat_definition.interact_timing])
 
 
 func _on_watch_state_changed(active: bool) -> void:
 	_emit_debug_notice("Action: watch %s" % ("open" if active else "closed"), &"action")
 
 
-func _on_active_skill_charge_started(skill_id: StringName, windup_seconds: float) -> void:
+func _on_active_skill_charge_started(skill_id: StringName, timing: ActionTimingDefinition) -> void:
 	_emit_debug_notice("Skill charging: %s" % String(skill_id), &"skill")
-	_call_hands(&"play_charged_beam", [windup_seconds])
+	_call_arms(&"play_charged_beam", [timing])
 
 
 func _on_active_skill_triggered(skill_id: StringName) -> void:
@@ -418,46 +561,13 @@ func _capture_mouse_gameplay_action(event: InputEvent) -> bool:
 		return false
 
 	input_reader.handle_input(event)
-	_preview_action_input(event)
 	return true
 
 
-func _preview_action_input(event: InputEvent) -> void:
-	if event.is_action_pressed("attack_primary"):
-		_emit_debug_notice("Hands: attack input", &"hands")
-		_call_hands(&"play_attack", [_preview_combo_index()])
-	elif event.is_action_pressed("attack_secondary"):
-		_emit_debug_notice("Hands: secondary attack placeholder", &"hands")
-		_call_hands(&"play_heavy_attack")
-	elif event.is_action_pressed("shove"):
-		_emit_debug_notice("Hands: shove input", &"hands")
-		_call_hands(&"play_shove")
-	elif event.is_action_pressed("parry"):
-		_emit_debug_notice("Hands: parry input", &"hands")
-		_call_hands(&"play_parry", [_preview_parry_duration()])
-	elif event.is_action_pressed("interact"):
-		_emit_debug_notice("Hands: interact input", &"hands")
-		_call_hands(&"play_interact")
-	elif event.is_action_pressed("jump"):
-		_call_hands(&"play_jump")
-	elif event.is_action_pressed("slide"):
-		_call_hands(&"play_slide")
-
-
-func _preview_combo_index() -> int:
-	return maxi(1, combat_driver.combo_index + 1)
-
-
-func _preview_parry_duration() -> float:
-	if combat_definition != null:
-		return combat_definition.parry_window
-	return 0.55
-
-
-func _call_hands(method_name: StringName, args: Array = []) -> void:
-	if first_person_hands == null or not first_person_hands.has_method(method_name):
+func _call_arms(method_name: StringName, args: Array = []) -> void:
+	if first_person_arms == null or not first_person_arms.has_method(method_name):
 		return
-	first_person_hands.callv(method_name, args)
+	first_person_arms.callv(method_name, args)
 
 
 func _consume_deferred_inputs() -> void:

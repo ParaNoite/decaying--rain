@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tests/manual/enemy_system_acceptance.gd" id="1_acceptance"]
+[ext_resource type="PackedScene" path="res://scenes/levels/mvp_skeleton.tscn" id="2_level"]
+
+[node name="EnemySystemAcceptance" type="Node"]
+script = ExtResource("1_acceptance")
+
+[node name="MvpSkeleton" parent="." instance=ExtResource("2_level")]
+auto_start_run = false

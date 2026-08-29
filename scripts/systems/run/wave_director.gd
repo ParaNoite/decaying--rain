@@ -116,7 +116,7 @@ func _spawn_enemy(enemy_id: StringName, wave_index: int, spawn_point: Marker3D) 
 	if spawn_point != null:
 		enemy.global_transform = spawn_point.global_transform
 		var forward: Vector3 = -spawn_point.global_transform.basis.z
-		enemy.look_at(enemy.global_position + forward, Vector3.UP, true)
+		enemy.look_at(enemy.global_position + forward, Vector3.UP)
 	else:
 		enemy.global_position = Vector3.ZERO
 
