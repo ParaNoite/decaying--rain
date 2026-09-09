@@ -9,4 +9,4 @@ daylight_seconds = 2.0
 preparation_seconds = 3.0
 default_rain_seconds = 5.0
 starting_weapon_ids = Array[StringName]([&"empty_hands", &"crowbar", &"pistol"])
-starting_item_ids = Array[StringName]([&"bandage", &"food_ration"])
+starting_item_ids = Array[StringName]([&"food_ration"])

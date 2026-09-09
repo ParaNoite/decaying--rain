@@ -5,7 +5,7 @@
 
 [sub_resource type="Resource" id="ActionTiming_held_combo"]
 script = ExtResource("2_timing")
-windup_seconds = 0.10
+windup_seconds = 0.1
 release_seconds = 0.06
 impact_seconds = 0.03
 recovery_seconds = 0.12

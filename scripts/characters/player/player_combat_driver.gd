@@ -7,6 +7,7 @@ signal light_combo_ended
 @export var stamina_path: NodePath = ^"../Components/StaminaComponent"
 @export var loadout_path: NodePath = ^"../Components/PlayerLoadoutComponent"
 @export var ray_origin_path: NodePath = ^"../Head/Camera3D"
+@export_flags_3d_physics var melee_hit_collision_mask: int = 69
 @export_flags_3d_physics var firearm_collision_mask: int = 4
 @export var default_weapon: WeaponDefinition
 
@@ -22,6 +23,7 @@ var shove_cooldown_remaining: float = 0.0
 var firearm_spread_multiplier: float = 1.0
 var primary_attack_exhausted: bool = false
 var heavy_attack_exhausted: bool = false
+var environment_impact_effect_count: int = 0
 
 var _event_bus = null
 
@@ -83,13 +85,7 @@ func resolve_primary_attack(attacker: Node3D) -> bool:
 	if combo_index == 3:
 		damage *= combat.final_combo_damage_multiplier
 
-	_emit_best_melee_hit(
-		attacker,
-		damage,
-		combat.melee_range * combat.light_attack_reach_multiplier,
-		combat.melee_radius,
-		&"melee"
-	)
+	_resolve_melee_contact(attacker, damage, combat.melee_range * combat.light_attack_reach_multiplier, &"melee")
 	return true
 
 
@@ -108,7 +104,7 @@ func resolve_heavy_attack(attacker: Node3D) -> bool:
 	var damage: float = _base_damage() * combat.heavy_attack_damage_multiplier
 	if heavy_attack_exhausted:
 		damage *= combat.exhausted_attack_damage_multiplier
-	_emit_best_melee_hit(attacker, damage, combat.melee_range, combat.melee_radius, &"melee")
+	_resolve_melee_contact(attacker, damage, combat.melee_range, &"melee")
 	return true
 
 
@@ -171,11 +167,10 @@ func begin_shove() -> bool:
 
 func resolve_shove(attacker: Node3D) -> bool:
 	var combat: PlayerCombatDefinition = _combat()
-	_emit_best_melee_hit(
+	_resolve_melee_contact(
 		attacker,
 		0.0,
 		combat.shove_range,
-		combat.shove_radius,
 		&"shove",
 		combat.shove_stagger,
 		combat.shove_knockback_force
@@ -243,6 +238,7 @@ func _fire_ray(attacker: Node3D, damage: float, pellet_index: int) -> void:
 	hit_data.amount = damage
 	hit_data.damage_type = &"ballistic"
 	hit_data.source_tags = [&"firearm", current_weapon.weapon_id]
+	hit_data.source_tags.append_array(_get_hit_zone_tags(collider as Node))
 	hit_data.hit_position = result.get("position", receiver.global_position if receiver is Node3D else Vector3.ZERO)
 	if receiver.has_method("receive_damage"):
 		receiver.call("receive_damage", hit_data)
@@ -257,62 +253,75 @@ func _find_damage_receiver(node: Node) -> Node:
 	return null
 
 
-func _emit_best_melee_hit(
+func _resolve_melee_contact(
 	attacker: Node3D,
 	damage: float,
 	reach: float,
-	radius: float,
 	source_tag: StringName,
 	stagger: float = 0.0,
 	knockback_force: float = 0.0
 ) -> void:
-	if attacker == null:
+	var contact: Dictionary = _find_melee_contact(attacker, reach)
+	if contact.is_empty():
 		return
-
-	var best_target: Node3D
-	var best_distance: float = INF
-	var forward: Vector3 = -attacker.global_transform.basis.z
-	forward.y = 0.0
-	forward = forward.normalized()
-
-	for enemy: Node in attacker.get_tree().get_nodes_in_group("enemy"):
-		if not (enemy is Node3D):
-			continue
-
-		var target: Node3D = enemy as Node3D
-		var offset: Vector3 = target.global_position - attacker.global_position
-		offset.y = 0.0
-		var forward_distance: float = offset.dot(forward)
-		if forward_distance < 0.0 or forward_distance > reach:
-			continue
-
-		var lateral_distance: float = (offset - forward * forward_distance).length()
-		if lateral_distance > radius:
-			continue
-		if forward_distance < best_distance:
-			best_distance = forward_distance
-			best_target = target
-
-	if best_target == null:
+	var collider: Object = contact.get("collider")
+	if not (collider is Node):
+		return
+	var target: Node = _find_damage_receiver(collider as Node)
+	if target == null or not target.is_in_group("enemy"):
+		MeleeImpactEffects.spawn_environment_impact(
+			attacker.get_tree().current_scene,
+			contact.get("position", Vector3.ZERO),
+			contact.get("normal", Vector3.UP)
+		)
+		environment_impact_effect_count += 1
 		return
 
 	var hit_data: DamageEventData = DamageEventData.new()
 	hit_data.attacker_id = attacker.get_instance_id()
-	hit_data.target_id = best_target.get_instance_id()
+	hit_data.target_id = target.get_instance_id()
 	hit_data.amount = damage
 	hit_data.source_tags = [source_tag]
+	hit_data.source_tags.append_array(_get_hit_zone_tags(collider as Node))
 	hit_data.stagger = stagger
 	hit_data.knockback_force = knockback_force
-	hit_data.hit_position = best_target.global_position
+	hit_data.hit_position = contact.get("position", Vector3.ZERO)
 
-	if best_target.has_method("receive_damage"):
-		best_target.receive_damage(hit_data)
+	if target.has_method("receive_damage"):
+		target.call("receive_damage", hit_data)
+
+
+func _find_melee_contact(attacker: Node3D, reach: float) -> Dictionary:
+	if attacker == null or ray_origin == null:
+		return {}
+	var origin: Vector3 = ray_origin.global_position
+	var direction: Vector3 = -ray_origin.global_transform.basis.z.normalized()
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, origin + direction * reach)
+	query.collision_mask = melee_hit_collision_mask
+	query.collide_with_areas = true
+	query.collide_with_bodies = true
+	if attacker is CollisionObject3D:
+		query.exclude = [(attacker as CollisionObject3D).get_rid()]
+	var result: Dictionary = attacker.get_world_3d().direct_space_state.intersect_ray(query)
+	return result
 
 
 func _base_damage() -> float:
 	if current_weapon != null:
 		return current_weapon.base_damage
 	return _combat().unarmed_damage
+
+
+func _get_hit_zone_tags(collider: Node) -> Array[StringName]:
+	if collider != null and collider.has_method("get_damage_tags"):
+		var tags: Variant = collider.call("get_damage_tags")
+		if tags is Array:
+			var resolved_tags: Array[StringName] = []
+			for tag: Variant in tags:
+				if tag is StringName:
+					resolved_tags.append(tag as StringName)
+			return resolved_tags
+	return []
 
 
 func _on_weapon_changed(weapon: WeaponDefinition) -> void:

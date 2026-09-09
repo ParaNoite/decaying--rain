@@ -48,6 +48,7 @@ func resolve_damage(data: DamageEventData, target: Node) -> DamageResolutionData
 		result.outgoing_multiplier = _get_outgoing_multiplier(data)
 		result.critical_multiplier = maxf(1.0, data.critical_multiplier) if data.is_critical else 1.0
 		result.damage_type_multiplier = _get_damage_type_multiplier(target, data.damage_type)
+		result.hit_zone_multiplier = _get_hit_zone_multiplier(target, data)
 		result.incoming_multiplier = _get_incoming_multiplier(data, target)
 		result.final_amount = maxf(
 			0.0,
@@ -55,6 +56,7 @@ func resolve_damage(data: DamageEventData, target: Node) -> DamageResolutionData
 			* result.outgoing_multiplier
 			* result.critical_multiplier
 			* result.damage_type_multiplier
+			* result.hit_zone_multiplier
 			* result.incoming_multiplier
 		)
 		if result.final_amount > 0.0:
@@ -86,6 +88,12 @@ func _get_incoming_multiplier(data: DamageEventData, target: Node) -> float:
 func _get_damage_type_multiplier(target: Node, damage_type: StringName) -> float:
 	if target.has_method("get_damage_type_multiplier"):
 		return maxf(0.0, float(target.call("get_damage_type_multiplier", damage_type)))
+	return 1.0
+
+
+func _get_hit_zone_multiplier(target: Node, data: DamageEventData) -> float:
+	if target.has_method("get_hit_zone_damage_multiplier"):
+		return maxf(0.0, float(target.call("get_hit_zone_damage_multiplier", data.source_tags)))
 	return 1.0
 
 

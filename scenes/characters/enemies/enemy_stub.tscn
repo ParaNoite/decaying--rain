@@ -1,39 +1,54 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://b1amjjxehex8q"]
 
-[ext_resource type="Script" path="res://scripts/characters/enemies/enemy_base.gd" id="1_enemy"]
-[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health"]
-[ext_resource type="Script" path="res://scripts/components/status_container.gd" id="3_status"]
-[ext_resource type="Script" path="res://scripts/characters/enemies/enemy_animation_controller.gd" id="4_animation"]
-[ext_resource type="Script" path="res://scripts/characters/enemies/enemy_visual_rig.gd" id="5_visual"]
+[ext_resource type="Script" uid="uid://byh7dm1o3qact" path="res://scripts/characters/enemies/enemy_base.gd" id="1_enemy"]
+[ext_resource type="Script" uid="uid://b05152axhs1sg" path="res://scripts/components/health_component.gd" id="2_health"]
+[ext_resource type="Script" uid="uid://d08ty8ajb7ksp" path="res://scripts/components/status_container.gd" id="3_status"]
+[ext_resource type="Script" uid="uid://bak7cdgt1q3fq" path="res://scripts/characters/enemies/enemy_animation_controller.gd" id="4_animation"]
+[ext_resource type="Script" uid="uid://b652mugfo2gnq" path="res://scripts/characters/enemies/enemy_visual_rig.gd" id="5_visual"]
+[ext_resource type="Script" uid="uid://2hex3qlrxalc" path="res://scripts/characters/enemies/enemy_hit_zone.gd" id="6_hit_zone"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_enemy"]
 radius = 0.38
 height = 1.82
 
-[node name="EnemyStub" type="CharacterBody3D"]
+[sub_resource type="SphereShape3D" id="SphereShape3D_head"]
+radius = 0.26
+
+[node name="EnemyStub" type="CharacterBody3D" unique_id=1195154468]
 collision_layer = 4
 collision_mask = 7
 floor_snap_length = 0.2
 script = ExtResource("1_enemy")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-position = Vector3(0, 0.91, 0)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=880089381]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.91, 0)
 shape = SubResource("CapsuleShape3D_enemy")
 
-[node name="EnemyVisualRig" type="Node3D" parent="."]
+[node name="HeadHitZone" type="Area3D" parent="." unique_id=1045447773]
+unique_name_in_owner = true
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("6_hit_zone")
+hit_zone_id = &"headshot"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HeadHitZone" unique_id=392268498]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.03, 0)
+shape = SubResource("SphereShape3D_head")
+
+[node name="EnemyVisualRig" type="Node3D" parent="." unique_id=6367391]
 unique_name_in_owner = true
 script = ExtResource("5_visual")
 
-[node name="EnemyAnimationController" type="Node" parent="."]
+[node name="EnemyAnimationController" type="Node" parent="." unique_id=167006406]
 unique_name_in_owner = true
 script = ExtResource("4_animation")
 
-[node name="Components" type="Node" parent="."]
+[node name="Components" type="Node" parent="." unique_id=309325039]
 
-[node name="HealthComponent" type="Node" parent="Components"]
+[node name="HealthComponent" type="Node" parent="Components" unique_id=1284947935]
 unique_name_in_owner = true
 script = ExtResource("2_health")
 
-[node name="StatusContainer" type="Node" parent="Components"]
+[node name="StatusContainer" type="Node" parent="Components" unique_id=1996899469]
 unique_name_in_owner = true
 script = ExtResource("3_status")

@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/hud_controller.gd" id="1_hud"]
+[ext_resource type="Script" path="res://scripts/ui/watch_projection_overlay.gd" id="2_projection"]
+[ext_resource type="Script" path="res://scripts/ui/watch_tactical_map.gd" id="3_map"]
+[ext_resource type="Script" path="res://scripts/ui/hit_marker.gd" id="4_hit_marker"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -232,7 +235,7 @@ text = "PARRY SUCCESS"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="WatchPanel" type="PanelContainer" parent="Root"]
+[node name="WatchPanel" type="Control" parent="Root"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -241,90 +244,218 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 0
+
+[node name="ProjectionBackdrop" type="ColorRect" parent="Root/WatchPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.08, 0.1, 0.62)
+
+[node name="ProjectionGrid" type="Control" parent="Root/WatchPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_projection")
 
 [node name="WatchMargin" type="MarginContainer" parent="Root/WatchPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 40
-theme_override_constants/margin_top = 40
-theme_override_constants/margin_right = 40
-theme_override_constants/margin_bottom = 40
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 42.0
+offset_top = 34.0
+offset_right = -42.0
+offset_bottom = -34.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="WatchStack" type="VBoxContainer" parent="Root/WatchPanel/WatchMargin"]
 layout_mode = 2
+theme_override_constants/separation = 14
 
-[node name="WatchWaveLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+[node name="WatchHeader" type="HBoxContainer" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+layout_mode = 2
+
+[node name="WatchTitle" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 1, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+text = "WATCH // TACTICAL PROJECTION"
+
+[node name="HeaderSpacer" type="Control" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SignalLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.34, 0.82, 0.74, 1)
+text = "SIGNAL STABLE"
+
+[node name="WatchTabs" type="HBoxContainer" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="WatchTabStatus" type="Button" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(190, 44)
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "STATUS & MAP"
+
+[node name="WatchTabSupplies" type="Button" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(190, 44)
+layout_mode = 2
+toggle_mode = true
+text = "SUPPLIES"
+
+[node name="WatchPages" type="Control" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+custom_minimum_size = Vector2(0, 390)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="WatchStatusPage" type="Control" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StatusColumns" type="HBoxContainer" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 34
+
+[node name="MapColumn" type="VBoxContainer" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage/StatusColumns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="MapTitle" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage/StatusColumns/MapColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 1, 0.88, 1)
+text = "AREA MAP"
+
+[node name="WatchMap" type="Control" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage/StatusColumns/MapColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 330)
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("3_map")
+
+[node name="WatchLocationLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage/StatusColumns/MapColumn"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Wave --"
+theme_override_colors/font_color = Color(0.72, 1, 0.91, 1)
+text = "LOCATION // UNKNOWN"
 
-[node name="WatchTimerLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+[node name="StatusColumn" type="VBoxContainer" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage/StatusColumns"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="WatchPhaseLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage/StatusColumns/StatusColumn"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "--"
+theme_override_colors/font_color = Color(0.3, 1, 0.88, 1)
+theme_override_font_sizes/font_size = 24
+text = "PHASE // --"
 
-[node name="WatchMapLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
-layout_mode = 2
-text = "Map: Base / Scavenge corridor"
-
-[node name="WatchDetailLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
-layout_mode = 2
-text = "Details: loop status, resource pressure, return timing"
-
-[node name="WatchStatusLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
+[node name="WatchTimerLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage/StatusColumns/StatusColumn"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "CONDITIONS\nSTATUS CLEAR"
+theme_override_font_sizes/font_size = 38
+text = "--:--"
 
-[node name="WatchInventoryLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack"]
-unique_name_in_owner = true
+[node name="WatchStatusTitle" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage/StatusColumns/StatusColumn"]
 layout_mode = 2
-text = "SUPPLIES\nEmpty"
+theme_override_colors/font_color = Color(0.3, 1, 0.88, 1)
+text = "CURRENT CONDITIONS"
 
-[node name="InventoryPanel" type="PanelContainer" parent="Root"]
+[node name="WatchStatusLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchStatusPage/StatusColumns/StatusColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.79, 0.95, 0.91, 1)
+text = "STATUS CLEAR"
+
+[node name="WatchSuppliesPage" type="Control" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -210.0
-offset_top = -190.0
-offset_right = 210.0
-offset_bottom = 190.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
-[node name="InventoryMargin" type="MarginContainer" parent="Root/InventoryPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+[node name="SuppliesStack" type="VBoxContainer" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchSuppliesPage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
 
-[node name="InventoryStack" type="VBoxContainer" parent="Root/InventoryPanel/InventoryMargin"]
+[node name="SuppliesTitle" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchSuppliesPage/SuppliesStack"]
 layout_mode = 2
-
-[node name="InventoryTitle" type="Label" parent="Root/InventoryPanel/InventoryMargin/InventoryStack"]
-layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 1, 0.88, 1)
 theme_override_font_sizes/font_size = 24
-text = "INVENTORY"
+text = "FIELD SUPPLIES"
 
-[node name="InventoryContentsLabel" type="Label" parent="Root/InventoryPanel/InventoryMargin/InventoryStack"]
+[node name="WatchAmmoLightLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchSuppliesPage/SuppliesStack"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Empty"
+theme_override_font_sizes/font_size = 20
+text = "LIGHT AMMO  //  0"
 
-[node name="UseBandageButton" type="Button" parent="Root/InventoryPanel/InventoryMargin/InventoryStack"]
+[node name="WatchAmmoRifleLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchSuppliesPage/SuppliesStack"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Use Bandage"
+theme_override_font_sizes/font_size = 20
+text = "RIFLE AMMO  //  0"
 
-[node name="UseFoodButton" type="Button" parent="Root/InventoryPanel/InventoryMargin/InventoryStack"]
+[node name="WatchAmmoShellsLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchSuppliesPage/SuppliesStack"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Eat Food Ration"
+theme_override_font_sizes/font_size = 20
+text = "SHELLS  //  0"
+
+[node name="WatchFoodCountLabel" type="Label" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchSuppliesPage/SuppliesStack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 1, 0.91, 1)
+theme_override_font_sizes/font_size = 22
+text = "FOOD RATION  //  0"
+
+[node name="WatchEatFoodButton" type="Button" parent="Root/WatchPanel/WatchMargin/WatchStack/WatchPages/WatchSuppliesPage/SuppliesStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(230, 48)
+layout_mode = 2
+disabled = true
+text = "EAT FOOD RATION"
 
 [node name="Crosshair" type="Label" parent="Root"]
 layout_mode = 1
@@ -341,6 +472,24 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "+"
 horizontal_alignment = 1
+
+[node name="HitMarker" type="Control" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_hit_marker")
 
 [node name="ItemUseLabel" type="Label" parent="Root"]
 unique_name_in_owner = true

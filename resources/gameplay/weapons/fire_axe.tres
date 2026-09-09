@@ -8,7 +8,7 @@ script = ExtResource("2_timing")
 windup_seconds = 0.21
 release_seconds = 0.08
 impact_seconds = 0.05
-recovery_seconds = 0.20
+recovery_seconds = 0.2
 
 [sub_resource type="Resource" id="ActionTiming_primary"]
 script = ExtResource("2_timing")

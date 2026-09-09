@@ -67,7 +67,8 @@ func physics_update(body: CharacterBody3D, input_reader: PlayerInputReader, cons
 	var can_sprint: bool = input_reader.wants_sprint and not _action_blocked(constraints, &"sprint") and input_vector != Vector2.ZERO and body.is_on_floor() and can_use_mobility and not watch_active
 	if watch_active:
 		target_speed = _movement().watch_walk_speed * speed_multiplier
-	elif can_sprint and _consume_sprint_reserve(delta):
+	elif can_sprint:
+		_consume_sprint_reserve(delta)
 		target_speed = _movement().sprint_speed * speed_multiplier * sprint_speed_multiplier
 
 	var control_multiplier: float = 1.0 if body.is_on_floor() else _movement().air_control_multiplier

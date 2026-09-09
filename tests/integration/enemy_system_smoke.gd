@@ -44,7 +44,9 @@ func _ready() -> void:
 	await _check_all_fixed_wave_tables_spawn()
 	await _check_wave_spawns_and_clears()
 	await _check_all_enemy_definitions_bind_to_visible_bodies()
+	await _check_enemy_head_hit_zones()
 	await _check_ruptured_heavy_attack_contract()
+	await _check_ruptured_tracking_attack_contract()
 	await _check_enemy_state_machine_and_melee_cooldown()
 	await _check_armored_attack_direction()
 	await _check_player_reactions_drive_enemy_animation()
@@ -263,9 +265,62 @@ func _check_all_enemy_definitions_bind_to_visible_bodies() -> void:
 	_check(enemy_ids.size() == 4, "all four enemy definitions should have unique IDs")
 
 
+func _check_enemy_head_hit_zones() -> void:
+	var enemy: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
+	_check(enemy != null, "enemy head hit-zone test must instantiate an enemy")
+	enemy.definition = RUPTURED_DEFINITION
+	add_child(enemy)
+	await get_tree().physics_frame
+
+	var head_zone: EnemyHitZone = enemy.get_node_or_null("HeadHitZone") as EnemyHitZone
+	_check(head_zone != null, "enemy should expose a dedicated head hit zone")
+	_check(head_zone.get_collision_layer_value(3), "enemy head hit zone should share the enemy hit collision layer")
+	_check(head_zone.get_damage_tags().has(&"headshot"), "enemy head hit zone should report a headshot tag")
+
+	var origin: Vector3 = enemy.global_position + Vector3(0.0, 2.03, 3.0)
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, origin + Vector3(0.0, 0.0, -6.0))
+	query.collision_mask = 4
+	query.collide_with_areas = true
+	query.collide_with_bodies = true
+	var ray_hit: Dictionary = enemy.get_world_3d().direct_space_state.intersect_ray(query)
+	_check(ray_hit.get("collider") == head_zone, "a head-height ray should hit the head zone before the body capsule")
+	_check(is_equal_approx(enemy.get_hit_zone_damage_multiplier([&"headshot"]), enemy.definition.headshot_damage_multiplier), "headshot tags should use the enemy resource multiplier")
+	_check(is_equal_approx(enemy.get_hit_zone_damage_multiplier([&"melee"]), 1.0), "body hits should retain normal damage")
+
+	var damage_resolver: Node = get_node_or_null("/root/DamageResolver")
+	_check(damage_resolver != null, "DamageResolver autoload missing for headshot damage test")
+	var body_hit: DamageEventData = DamageEventData.new()
+	body_hit.attacker_id = get_instance_id()
+	body_hit.target_id = enemy.get_instance_id()
+	body_hit.amount = 10.0
+	body_hit.bypass_outgoing_modifiers = true
+	body_hit.bypass_incoming_modifiers = true
+	var body_resolution: DamageResolutionData = damage_resolver.call("resolve_damage", body_hit, enemy) as DamageResolutionData
+	_check(body_resolution != null and is_equal_approx(body_resolution.final_amount, 10.0), "body hits should resolve at base damage")
+
+	var headshot_hit: DamageEventData = DamageEventData.new()
+	headshot_hit.attacker_id = get_instance_id()
+	headshot_hit.target_id = enemy.get_instance_id()
+	headshot_hit.amount = 10.0
+	headshot_hit.source_tags = [&"headshot"]
+	headshot_hit.bypass_outgoing_modifiers = true
+	headshot_hit.bypass_incoming_modifiers = true
+	var headshot_resolution: DamageResolutionData = damage_resolver.call("resolve_damage", headshot_hit, enemy) as DamageResolutionData
+	_check(
+		headshot_resolution != null
+		and is_equal_approx(headshot_resolution.final_amount, 10.0 * enemy.definition.headshot_damage_multiplier),
+		"headshots should resolve through DamageResolver using the enemy resource multiplier"
+	)
+
+	enemy.queue_free()
+	await get_tree().process_frame
+
+
 func _check_enemy_state_machine_and_melee_cooldown() -> void:
 	var enemy: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
-	enemy.definition = RUPTURED_DEFINITION
+	var heavy_test_definition: EnemyDefinition = RUPTURED_DEFINITION.duplicate(true) as EnemyDefinition
+	heavy_test_definition.heavy_attack_trigger_probability = 1.0
+	enemy.definition = heavy_test_definition
 	enemy.position = Vector3.ZERO
 	add_child(enemy)
 
@@ -322,8 +377,11 @@ func _check_enemy_state_machine_and_melee_cooldown() -> void:
 	hurt.amount = 1.0
 	hurt.damage_type = &"test"
 	enemy.receive_damage(hurt)
-	_check(enemy.get_state() == EnemyBase.State.CHASE, "nonlethal damage should not interrupt the enemy state")
-	_check(animation.get_action_state() == EnemyAnimationController.ACTION_NONE, "normal damage should not replace locomotion with a hurt animation")
+	_check(enemy.get_state() == EnemyBase.State.HURT, "nonlethal damage should briefly interrupt the enemy")
+	_check(animation.get_action_state() == EnemyAnimationController.ACTION_HURT, "normal damage should play the hurt reaction")
+	_check(is_zero_approx(enemy.get_knockback_velocity().length()), "normal damage must not apply physical knockback")
+	get_node("/root/BuffResolver").call("remove_status", enemy, &"staggered")
+	enemy._physics_process(0.01)
 	enemy._attack_cooldown_remaining = 0.0
 	target.position = enemy.position + Vector3(0.0, 0.0, -1.0)
 	enemy._physics_process(0.05)
@@ -341,14 +399,14 @@ func _check_enemy_state_machine_and_melee_cooldown() -> void:
 	shove.source_tags = [&"shove"]
 	shove.hit_position = enemy.global_position + Vector3(0.0, 0.0, 1.0)
 	enemy.receive_damage(shove)
-	_check(enemy.get_state() == EnemyBase.State.ATTACK, "shove should not interrupt an active attack")
-	_check(animation.get_action_state() == EnemyAnimationController.ACTION_ATTACK_WINDUP, "shove should not replace the active attack animation")
+	_check(enemy.get_state() == EnemyBase.State.HURT, "shove should interrupt an active attack")
+	_check(animation.get_action_state() == EnemyAnimationController.ACTION_SHOVED, "shove should play its old knockback animation")
 	var shove_velocity: float = enemy.get_knockback_velocity().length()
-	_check(shove_velocity > 5.4, "shove should apply tuned physical knockback")
+	_check(shove_velocity > 5.4, "shove should apply its tuned physical knockback")
 	var position_before_shove: Vector3 = enemy.global_position
 	enemy._physics_process(0.1)
-	_check(enemy.global_position.z < position_before_shove.z, "shove should physically move the enemy away from the hit")
-	_check(enemy._attack_elapsed > 0.0, "shove should not reset the active attack timeline")
+	_check(enemy.global_position.z < position_before_shove.z, "shove should move the enemy away from the hit")
+	_check(is_zero_approx(enemy._attack_elapsed), "shove should cancel the active attack timeline")
 
 	var parry: DamageEventData = DamageEventData.new()
 	parry.attacker_id = get_instance_id()
@@ -358,9 +416,9 @@ func _check_enemy_state_machine_and_melee_cooldown() -> void:
 	parry.source_tags = [&"parry", &"melee"]
 	parry.hit_position = enemy.global_position + Vector3(0.0, 0.0, 1.0)
 	enemy.receive_damage(parry)
-	_check(enemy.get_state() == EnemyBase.State.ATTACK, "parry should not interrupt an active attack")
-	_check(animation.get_action_state() == EnemyAnimationController.ACTION_ATTACK_WINDUP, "parry should preserve the active attack animation")
-	_check(enemy.get_knockback_velocity().length() > shove_velocity, "parry should knock enemies back harder than shove")
+	_check(enemy.get_state() == EnemyBase.State.HURT, "parry should keep the enemy interrupted")
+	_check(animation.get_action_state() == EnemyAnimationController.ACTION_PARRIED, "parry should play its old weapon-side knockback animation")
+	_check(enemy.get_knockback_velocity().length() > shove_velocity, "parry should knock back harder than shove")
 
 	var lethal: DamageEventData = DamageEventData.new()
 	lethal.attacker_id = get_instance_id()
@@ -377,7 +435,44 @@ func _check_enemy_state_machine_and_melee_cooldown() -> void:
 	_check(not is_instance_valid(enemy), "enemy should be cleaned up after the death animation")
 
 
+func _check_ruptured_tracking_attack_contract() -> void:
+	var enemy: EnemyBase = ENEMY_SCENE.instantiate() as EnemyBase
+	enemy.definition = RUPTURED_DEFINITION
+	enemy.position = Vector3.ZERO
+	add_child(enemy)
+	var target: DamageTarget = DamageTarget.new()
+	target.position = Vector3(0.0, 0.0, -2.2)
+	add_child(target)
+	await get_tree().physics_frame
+	enemy.set_physics_process(false)
+	enemy.target = target
+	enemy._begin_attack(target, EnemyBase.AttackKind.TRACKING)
+	enemy._physics_process(0.10)
+	_check(enemy.get_state() == EnemyBase.State.ATTACK, "tracking attack should enter the attack state")
+	_check(enemy.get_active_attack_kind() == EnemyBase.AttackKind.TRACKING, "tracking attack should remain distinct from the stationary normal attack")
+	_check(Vector2(enemy.velocity.x, enemy.velocity.z).length() > 0.1, "tracking attack should move during its windup")
+	var animation: EnemyAnimationController = enemy.get_animation_controller()
+	animation._process(0.10)
+	_check(animation._walk_weight > 0.0, "tracking attack should retain a low-weight lower-body locomotion blend while moving")
+
+	var impact_delta: float = enemy.tracking_attack_timing.impact_start_seconds() - 0.10 + 0.001
+	enemy._physics_process(impact_delta)
+	animation._process(impact_delta)
+	_check(is_zero_approx(Vector2(enemy.velocity.x, enemy.velocity.z).length()), "tracking attack should lock horizontal movement at impact")
+	_check(target.received_hits == 1, "tracking attack should still resolve damage at its timing contract impact start")
+	_check(target.last_damage.source_tags.has(&"tracking_attack"), "tracking attack damage should carry a distinct source tag")
+
+	target.queue_free()
+	enemy.queue_free()
+	await get_tree().process_frame
+
+
 func _check_ruptured_heavy_attack_contract() -> void:
+	_check(RUPTURED_DEFINITION.tracking_attack_enabled, "ruptured should opt into its controller-driven tracking attack through data")
+	_check(RUPTURED_DEFINITION.tracking_attack_movement != null, "ruptured tracking attack should define its movement policy")
+	_check(RUPTURED_DEFINITION.tracking_attack_movement.movement_source == AttackMovementDefinition.MovementSource.CONTROLLER, "tracking attack movement should be owned by the character controller")
+	_check(RUPTURED_DEFINITION.tracking_attack_movement.impact_speed_multiplier <= 0.0, "tracking attack should lock its feet at the impact phase")
+	_check(RUPTURED_DEFINITION.tracking_attack_movement.recovery_speed_multiplier <= 0.0, "tracking attack should remain planted during recovery")
 	_check(RUPTURED_DEFINITION.heavy_attack_enabled, "ruptured should opt into its advanced heavy attack through data")
 	_check(RUPTURED_DEFINITION.heavy_attack_min_range >= 2.5, "ruptured should not start a jumping heavy attack at point-blank range")
 	_check(RUPTURED_DEFINITION.heavy_attack_decision_min_seconds > 0.0, "ruptured heavy attack should use a timed decision interval instead of rolling every frame")
@@ -396,8 +491,6 @@ func _check_ruptured_heavy_attack_contract() -> void:
 	await get_tree().physics_frame
 	enemy.set_physics_process(false)
 	enemy.target = target
-	var saved_heavy_attack_probability: float = RUPTURED_DEFINITION.heavy_attack_trigger_probability
-	RUPTURED_DEFINITION.heavy_attack_trigger_probability = 1.0
 	enemy._heavy_attack_decision_remaining = 0.0
 	_check(enemy.heavy_attack_timing == RUPTURED_DEFINITION.heavy_attack_timing, "heavy gameplay and animation should share the definition's timing resource instance")
 	_check(enemy.heavy_attack_pounce_timing == RUPTURED_DEFINITION.heavy_attack_pounce_timing, "heavy pounce contact window should use the definition timing resource instance")
@@ -491,16 +584,13 @@ func _check_ruptured_heavy_attack_contract() -> void:
 	shove.source_tags = [&"shove"]
 	shove.hit_position = interrupted.global_position + Vector3(0.0, 0.0, 1.0)
 	interrupted.receive_damage(shove)
-	_check(interrupted.get_state() == EnemyBase.State.ATTACK, "shove should not interrupt a heavy windup")
-	_check(interrupted.get_animation_controller().get_action_state() == EnemyAnimationController.ACTION_ATTACK_WINDUP, "shove should preserve the heavy windup animation")
-	var attack_elapsed_before_shove_update: float = interrupted._attack_elapsed
-	interrupted._update_attack(interrupted.heavy_attack_timing.total_seconds())
-	_check(interrupted._attack_elapsed > attack_elapsed_before_shove_update, "a shove should not reset or pause a heavy attack timeline")
+	_check(interrupted.get_state() == EnemyBase.State.HURT, "shove should interrupt a heavy windup")
+	_check(interrupted.get_animation_controller().get_action_state() == EnemyAnimationController.ACTION_SHOVED, "shove should replace heavy windup with the old reaction animation")
+	_check(is_zero_approx(interrupted._attack_elapsed), "shove should cancel the heavy attack timeline")
 
 	enemy.queue_free()
 	interrupted.queue_free()
 	target.queue_free()
-	RUPTURED_DEFINITION.heavy_attack_trigger_probability = saved_heavy_attack_probability
 	await get_tree().process_frame
 
 
@@ -517,14 +607,13 @@ func _check_player_reactions_drive_enemy_animation() -> void:
 	enemy.set_physics_process(false)
 
 	var animation: EnemyAnimationController = enemy.get_animation_controller()
-	var action_before_shove: StringName = animation.get_action_state()
 	_check(player.combat_driver.begin_shove(), "real player combat driver should begin shove")
 	_check(player.combat_driver.resolve_shove(player), "real player combat driver should resolve shove")
-	_check(animation.get_action_state() == action_before_shove, "real player shove should not replace the current enemy animation")
-	_check(enemy.get_knockback_velocity().length() >= player.combat_definition.shove_knockback_force - 0.1, "real player shove should deliver configured physical knockback")
+	_check(animation.get_action_state() == EnemyAnimationController.ACTION_SHOVED, "real player shove should play the old enemy shove animation")
+	var shove_velocity: float = enemy.get_knockback_velocity().length()
+	_check(shove_velocity > 5.4, "real player shove should deliver physical knockback")
 
 	var health_before_parry: float = player.health.current_health
-	var action_before_parry: StringName = animation.get_action_state()
 	player.combat_state_machine.parry_active = true
 	var melee_hit: DamageEventData = DamageEventData.new()
 	melee_hit.attacker_id = enemy.get_instance_id()
@@ -533,30 +622,33 @@ func _check_player_reactions_drive_enemy_animation() -> void:
 	melee_hit.source_tags = [&"enemy", &"melee"]
 	player.receive_damage(melee_hit)
 	_check(is_equal_approx(player.health.current_health, health_before_parry), "successful player parry should block enemy damage")
-	_check(animation.get_action_state() == action_before_parry, "real player parry should not replace the current enemy animation")
-	_check(enemy.get_knockback_velocity().length() >= player.combat_definition.parry_knockback_force - 0.1, "real player parry should deliver configured physical knockback")
+	_check(animation.get_action_state() == EnemyAnimationController.ACTION_PARRIED, "real player parry should play the old enemy parry animation")
+	_check(enemy.get_knockback_velocity().length() > shove_velocity, "real player parry should knock back harder than shove")
+	get_node("/root/BuffResolver").call("remove_status", enemy, &"staggered")
+	enemy._physics_process(0.01)
 
-	# Exercise the complete enemy attack stack while the parry counter-damage
-	# leaves its action timeline and animation intact.
+	# Exercise the complete enemy attack stack and ensure its impact pose cannot
+	# overwrite the synchronous parry counter-reaction.
 	enemy._attack_cooldown_remaining = 0.0
-	enemy._knockback_velocity = Vector3.ZERO
 	player.combat_state_machine.parry_active = true
 	enemy._begin_attack(player)
 	enemy._update_attack(enemy.attack_timing.impact_start_seconds() + 0.01)
-	_check(enemy.get_state() == EnemyBase.State.ATTACK, "successful Q parry should not interrupt the enemy attack")
+	_check(enemy.get_state() == EnemyBase.State.HURT, "successful Q parry should interrupt the enemy attack")
 	_check(enemy._attack_has_resolved, "a parried attack should still resolve its attack timeline once")
-	animation._process(enemy.attack_timing.impact_start_seconds() + 0.01)
-	_check(animation.get_action_state() == EnemyAnimationController.ACTION_ATTACK_IMPACT, "enemy attack impact should remain visible after a Q parry")
+	animation._process(0.35)
+	_check(animation.get_action_state() == EnemyAnimationController.ACTION_PARRIED, "enemy attack impact must not overwrite the Q parry animation")
+	_check(absf(enemy.get_visual_rig().spine.rotation.x) > 0.25, "Q parry should hold a visible backward stagger pose")
 
 	# The pouncing heavy attack must use the same Q window at contact, not wait
 	# until its landing slam has already played.
 	enemy._attack_cooldown_remaining = 0.0
 	enemy._heavy_attack_cooldown_remaining = 0.0
-	enemy._knockback_velocity = Vector3.ZERO
+	get_node("/root/BuffResolver").call("remove_status", enemy, &"staggered")
+	enemy._physics_process(0.01)
 	player.combat_state_machine.parry_active = true
 	enemy._begin_attack(player, EnemyBase.AttackKind.HEAVY)
 	enemy._update_attack(enemy.heavy_attack_timing.impact_start_seconds() + 0.01)
-	_check(enemy.get_state() == EnemyBase.State.ATTACK, "Q parry should not interrupt the heavy attack")
+	_check(enemy.get_state() == EnemyBase.State.HURT, "Q parry should interrupt the heavy attack")
 	_check(enemy._attack_has_resolved, "a parried heavy attack should still resolve its attack timeline once")
 
 	player.queue_free()

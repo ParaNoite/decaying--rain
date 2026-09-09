@@ -18,7 +18,7 @@ size = Vector3(1.2, 1.2, 1.2)
 script = ExtResource("1_resource")
 loot_table = ExtResource("3_loot")
 
-[node name="ResourceMesh" type="MeshInstance3D" parent="."]
+[node name="ContainerMesh" type="MeshInstance3D" parent="."]
 material_override = SubResource("StandardMaterial3D_resource")
 mesh = SubResource("BoxMesh_resource")
 

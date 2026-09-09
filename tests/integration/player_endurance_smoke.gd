@@ -56,8 +56,23 @@ func _check_sprint_reserve_is_separate_from_stamina() -> void:
 	_check(player.sprint_reserve.current_reserve < reserve_before, "sprinting did not consume the hidden reserve")
 	_check(is_equal_approx(player.stamina.current_stamina, 61.0), "sprinting consumed combat stamina")
 	player.sprint_reserve.current_reserve = 0.0
-	_check(not player.locomotion_state_machine._consume_sprint_reserve(0.1), "empty sprint reserve still allowed sprinting")
+	_check(not player.locomotion_state_machine._consume_sprint_reserve(0.1), "empty sprint reserve did not report exhaustion")
+	_check_empty_sprint_reserve_stays_empty_while_drained()
 	player.queue_free()
+
+
+func _check_empty_sprint_reserve_stays_empty_while_drained() -> void:
+	var reserve := SprintReserveComponent.new()
+	reserve.max_reserve = 100.0
+	reserve.current_reserve = 0.0
+	reserve.recovery_per_second = 100.0
+	reserve.recovery_delay_seconds = 0.01
+	for _index: int in 3:
+		reserve.consume(1.0)
+		reserve._process(0.02)
+	_check(is_equal_approx(reserve.current_reserve, 0.0), "empty reserve recovered while sprint drain continued")
+	reserve._process(0.02)
+	_check(reserve.current_reserve > 0.0, "empty reserve did not recover after sprint drain stopped")
 
 
 func _check_exhausted_attack_and_combo_rules() -> void:

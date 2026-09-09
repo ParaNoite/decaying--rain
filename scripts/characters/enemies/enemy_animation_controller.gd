@@ -28,6 +28,7 @@ var _attack_active: bool = false
 var _presentation_timing: ActionTimingDefinition
 var _is_ranged_attack: bool = false
 var _attack_style: StringName = ATTACK_STYLE_DEFAULT
+var _attack_movement: AttackMovementDefinition
 var _heavy_lunge_amount: float = 0.0
 var _heavy_pounce_start_seconds: float = 0.22
 var _heavy_windup_seconds: float = 1.0
@@ -92,12 +93,18 @@ func _sync_attack_phase() -> void:
 			current_action = ACTION_ATTACK_RECOVERY
 
 
-func play_attack(timing: ActionTimingDefinition, is_ranged: bool, attack_style: StringName = ATTACK_STYLE_DEFAULT) -> void:
+func play_attack(
+	timing: ActionTimingDefinition,
+	is_ranged: bool,
+	attack_style: StringName = ATTACK_STYLE_DEFAULT,
+	attack_movement: AttackMovementDefinition = null
+) -> void:
 	if (
 		_attack_active
 		and _attack_timing == timing
 		and _is_ranged_attack == is_ranged
 		and _attack_style == attack_style
+		and _attack_movement == attack_movement
 	):
 		return
 	_presentation_timing = null
@@ -106,11 +113,13 @@ func play_attack(timing: ActionTimingDefinition, is_ranged: bool, attack_style: 
 	_attack_active = timing != null
 	_is_ranged_attack = is_ranged
 	_attack_style = attack_style
+	_attack_movement = attack_movement
 	_sync_attack_phase()
 
 
 func play_reaction(reaction: StringName, timing: ActionTimingDefinition, duration_override: float = -1.0) -> void:
 	_attack_active = false
+	_attack_movement = null
 	_presentation_timing = timing
 	current_action = reaction
 	_action_elapsed = 0.0
@@ -121,6 +130,7 @@ func play_reaction(reaction: StringName, timing: ActionTimingDefinition, duratio
 
 func play_death(timing: ActionTimingDefinition) -> void:
 	_attack_active = false
+	_attack_movement = null
 	_presentation_timing = timing
 	current_action = ACTION_DEAD
 	_action_elapsed = 0.0
@@ -133,7 +143,7 @@ func get_action_state() -> StringName:
 
 
 func _update_pose(delta: float) -> void:
-	var locomotion_target: float = locomotion_amount if current_action == ACTION_NONE else 0.0
+	var locomotion_target: float = locomotion_amount if current_action == ACTION_NONE else _attack_locomotion_weight()
 	_walk_weight = move_toward(_walk_weight, locomotion_target, delta * 6.0)
 	_reset_pose()
 	_apply_breathing_and_walk()
@@ -168,6 +178,20 @@ func _update_pose(delta: float) -> void:
 	if not _attack_active and current_action not in [ACTION_NONE, ACTION_DEAD] and _action_elapsed >= _action_duration:
 		current_action = ACTION_NONE
 		attack_pose_amount = 0.0
+
+
+func _attack_locomotion_weight() -> float:
+	if (
+		not _attack_active
+		or _attack_movement == null
+		or not _attack_movement.use_locomotion_blend
+		or _attack_timing == null
+	):
+		return 0.0
+	var phase: ActionTimingDefinition.Phase = _attack_timing.phase_at(_attack_total_elapsed)
+	if _attack_movement.speed_multiplier_for_phase(phase) <= 0.0:
+		return 0.0
+	return minf(locomotion_amount, _attack_movement.locomotion_blend_max_weight)
 
 
 func _reset_pose() -> void:
@@ -296,6 +320,7 @@ func _apply_ranged_aim(weight: float) -> void:
 
 
 func _apply_melee_windup(weight: float, heavy: float) -> void:
+	var leg_lock_weight: float = 1.0 - _attack_locomotion_weight() * 0.85
 	_offset(_rig.hips, Vector3(-0.06 * weight, -0.07 * weight, 0.09 * weight))
 	_pose(_rig.hips, Vector3(-8.0 * weight, -25.0 * weight, -5.0 * weight))
 	_pose(_rig.spine, Vector3(-13.0 * weight, -32.0 * weight, -8.0 * weight))
@@ -304,9 +329,9 @@ func _apply_melee_windup(weight: float, heavy: float) -> void:
 	_pose(_rig.right_forearm, Vector3(31.0 * heavy * weight, 7.0 * weight, -5.0 * weight))
 	_pose(_rig.left_arm, Vector3(56.0 * heavy * weight, 24.0 * weight, 25.0 * weight))
 	_pose(_rig.left_forearm, Vector3(24.0 * heavy * weight, -7.0 * weight, 5.0 * weight))
-	_pose(_rig.left_leg, Vector3(-16.0 * weight, 0.0, -5.0 * weight))
-	_pose(_rig.right_leg, Vector3(14.0 * weight, 0.0, 3.0 * weight))
-	_pose(_rig.right_knee, Vector3(20.0 * weight, 0.0, 0.0))
+	_pose_attack_leg(_rig.left_leg, Vector3(-16.0 * weight * leg_lock_weight, 0.0, -5.0 * weight * leg_lock_weight))
+	_pose_attack_leg(_rig.right_leg, Vector3(14.0 * weight * leg_lock_weight, 0.0, 3.0 * weight * leg_lock_weight))
+	_pose_attack_leg(_rig.right_knee, Vector3(20.0 * weight * leg_lock_weight, 0.0, 0.0))
 	_pose(_rig.coat_left, Vector3(-18.0 * weight, 6.0 * weight, 9.0 * weight))
 	_pose(_rig.coat_right, Vector3(-13.0 * weight, -7.0 * weight, -7.0 * weight))
 
@@ -344,10 +369,10 @@ func _apply_attack_impact(progress_override: float = -1.0) -> void:
 	_pose(_rig.right_forearm, Vector3(right_forearm_x, 4.0 * recovery_weight, 0.0))
 	_pose(_rig.left_arm, Vector3(left_arm_x, lerpf(24.0, 2.0, contact_blend) * recovery_weight, 14.0 * recovery_weight))
 	_pose(_rig.left_forearm, Vector3(left_forearm_x, -4.0 * recovery_weight, 0.0))
-	_pose(_rig.left_leg, Vector3(lerpf(-16.0, 7.0, contact_blend) * recovery_weight, 0.0, -3.0 * recovery_weight))
-	_pose(_rig.right_leg, Vector3(lerpf(14.0, -8.0, contact_blend) * recovery_weight, 0.0, 3.0 * recovery_weight))
-	_pose(_rig.left_knee, Vector3(10.0 * contact_blend * recovery_weight, 0.0, 0.0))
-	_pose(_rig.right_knee, Vector3(12.0 * recovery_weight, 0.0, 0.0))
+	_pose_attack_leg(_rig.left_leg, Vector3(lerpf(-16.0, 7.0, contact_blend) * recovery_weight, 0.0, -3.0 * recovery_weight))
+	_pose_attack_leg(_rig.right_leg, Vector3(lerpf(14.0, -8.0, contact_blend) * recovery_weight, 0.0, 3.0 * recovery_weight))
+	_pose_attack_leg(_rig.left_knee, Vector3(10.0 * contact_blend * recovery_weight, 0.0, 0.0))
+	_pose_attack_leg(_rig.right_knee, Vector3(12.0 * recovery_weight, 0.0, 0.0))
 	_pose(_rig.coat_left, Vector3(-22.0 * contact_blend * recovery_weight, -7.0 * recovery_weight, 10.0 * recovery_weight))
 	_pose(_rig.coat_right, Vector3(-19.0 * contact_blend * recovery_weight, -5.0 * recovery_weight, -9.0 * recovery_weight))
 
@@ -447,6 +472,13 @@ func _pose_add(node: Node3D, degrees: Vector3) -> void:
 		deg_to_rad(degrees.x), deg_to_rad(degrees.y), deg_to_rad(degrees.z)
 	))
 	node.quaternion = node.quaternion * addition
+
+
+func _pose_attack_leg(node: Node3D, degrees: Vector3) -> void:
+	if _attack_locomotion_weight() > 0.0:
+		_pose_add(node, degrees)
+	else:
+		_pose(node, degrees)
 
 
 func _offset(node: Node3D, offset: Vector3) -> void:

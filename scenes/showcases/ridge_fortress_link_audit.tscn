@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/showcases/forest_world_fortress.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/showcases/ridge_fortress_link_audit.gd" id="2"]
+
+[node name="FortressLinkAudit" instance=ExtResource("1")]
+script = ExtResource("2")

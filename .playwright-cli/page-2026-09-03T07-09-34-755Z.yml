@@ -1,0 +1,34 @@
+- generic [active] [ref=e1]:
+  - heading "Debuff 图标意象候选" [level=1] [ref=e2]
+  - paragraph [ref=e3]: "图标本体均为透明背景、仅使用纯红 #ff0000。每行比较的是不同意象，不是不同画风。"
+  - main [ref=e4]:
+    - generic [ref=e5]:
+      - heading "流血" [level=2] [ref=e6]
+      - generic [ref=e7]: 正式版：裂纹血滴
+    - generic [ref=e11]:
+      - heading "骨折" [level=2] [ref=e12]
+      - generic [ref=e13]: 正式版：肢段断裂
+    - generic [ref=e17]:
+      - heading "断腿" [level=2] [ref=e18]
+      - generic [ref=e19]: 正式版：标准侧视
+    - generic [ref=e23]:
+      - heading "饥肠辘辘" [level=2] [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e26]: 细厨师刀
+        - generic [ref=e29]: 细高刀刃
+        - generic [ref=e32]: 细圆头餐刀
+        - generic [ref=e35]: 细收腰刀刃
+    - generic [ref=e38]:
+      - heading "劳累" [level=2] [ref=e39]
+      - generic [ref=e40]:
+        - generic [ref=e41]: 冲刺耗尽
+        - generic [ref=e44]: 弯腰力竭
+        - generic [ref=e47]: 低体力仪表
+        - generic [ref=e50]: 喘息
+    - generic [ref=e53]:
+      - heading "雨淋" [level=2] [ref=e54]
+      - generic [ref=e55]:
+        - generic [ref=e56]: 暴雨云
+        - generic [ref=e59]: 湿透兜帽
+        - generic [ref=e62]: 雨中人物
+        - generic [ref=e65]: 破伞淋雨

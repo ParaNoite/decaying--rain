@@ -4,14 +4,6 @@
 [ext_resource type="Script" path="res://scripts/components/interactable_component.gd" id="2_interactable"]
 [ext_resource type="Resource" path="res://resources/loot/mvp_scavenge.tres" id="3_loot"]
 
-[sub_resource type="StandardMaterial3D" id="1_material"]
-albedo_color = Color(0.28, 0.42, 0.36, 1)
-roughness = 0.8
-
-[sub_resource type="BoxMesh" id="2_mesh"]
-size = Vector3(0.9, 0.6, 0.65)
-material = SubResource("1_material")
-
 [sub_resource type="BoxShape3D" id="3_shape"]
 size = Vector3(1.25, 1.1, 1.15)
 
@@ -22,7 +14,6 @@ loot_table = ExtResource("3_loot")
 
 [node name="ContainerMesh" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0.3, 0)
-mesh = SubResource("2_mesh")
 
 [node name="InteractableComponent" type="Area3D" parent="."]
 unique_name_in_owner = true

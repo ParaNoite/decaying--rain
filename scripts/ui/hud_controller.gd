@@ -15,20 +15,31 @@ extends CanvasLayer
 @onready var ammo_label: Label = %AmmoLabel
 @onready var status_row: HFlowContainer = %StatusRow
 @onready var status_empty_label: Label = %StatusEmptyLabel
+@onready var gameplay_top_left: VBoxContainer = $Root/TopLeft
 @onready var prompt_label: Label = %PromptLabel
+@onready var status_dock: VBoxContainer = $Root/StatusDock
 @onready var debug_notice_stack: VBoxContainer = %DebugNoticeStack
+@onready var quick_slots: VBoxContainer = $Root/QuickSlots
 @onready var combat_banner_label: Label = %CombatBannerLabel
 @onready var watch_panel: Control = %WatchPanel
-@onready var watch_wave_label: Label = %WatchWaveLabel
+@onready var watch_status_page: Control = %WatchStatusPage
+@onready var watch_supplies_page: Control = %WatchSuppliesPage
+@onready var watch_tab_status: Button = %WatchTabStatus
+@onready var watch_tab_supplies: Button = %WatchTabSupplies
+@onready var watch_phase_label: Label = %WatchPhaseLabel
 @onready var watch_timer_label: Label = %WatchTimerLabel
 @onready var watch_status_label: Label = %WatchStatusLabel
-@onready var watch_inventory_label: Label = %WatchInventoryLabel
-@onready var inventory_panel: Control = %InventoryPanel
-@onready var inventory_contents_label: Label = %InventoryContentsLabel
+@onready var watch_map: WatchTacticalMap = %WatchMap
+@onready var watch_location_label: Label = %WatchLocationLabel
+@onready var watch_ammo_light_label: Label = %WatchAmmoLightLabel
+@onready var watch_ammo_rifle_label: Label = %WatchAmmoRifleLabel
+@onready var watch_ammo_shells_label: Label = %WatchAmmoShellsLabel
+@onready var watch_food_count_label: Label = %WatchFoodCountLabel
+@onready var watch_eat_food_button: Button = %WatchEatFoodButton
 @onready var quick_slot_labels: Array[Label] = [%QuickSlot1, %QuickSlot2, %QuickSlot3, %QuickSlot4]
-@onready var use_bandage_button: Button = %UseBandageButton
-@onready var use_food_button: Button = %UseFoodButton
 @onready var death_label: Label = %DeathLabel
+@onready var crosshair: Label = $Root/Crosshair
+@onready var hit_marker: HitMarker = %HitMarker
 @onready var item_use_progress: ProgressBar = %ItemUseProgress
 @onready var item_use_label: Label = %ItemUseLabel
 
@@ -36,14 +47,22 @@ const MAX_DEBUG_NOTICE_COUNT: int = 5
 
 var _event_bus = null
 var _combat_banner_tween: Tween
+var _watch_transition_tween: Tween
 var _perk_display_name: String = "--"
 var _skill_display_name: String = "--"
 var _skill_id: StringName = &"none"
 var _skill_cooldown_remaining: float = 0.0
-var _inventory_items: Dictionary = {}
 var _special_inventory_items: Dictionary = {}
 var _active_statuses: Array[Dictionary] = []
 var _selected_inventory_slot: int = 0
+var _watch_phase: StringName = &"none"
+var _item_use_active: bool = false
+var _combat_banner_active: bool = false
+
+
+func _process(_delta: float) -> void:
+	if watch_panel.visible:
+		watch_location_label.text = "LOCATION // %s" % watch_map.get_region_name()
 
 
 func _ready() -> void:
@@ -63,7 +82,6 @@ func _ready() -> void:
 	_event_bus.inventory_changed.connect(_on_inventory_changed)
 	_event_bus.special_inventory_changed.connect(_on_special_inventory_changed)
 	_event_bus.inventory_selection_changed.connect(_on_inventory_selection_changed)
-	_event_bus.inventory_visibility_changed.connect(_on_inventory_visibility_changed)
 	_event_bus.item_use_progress.connect(_on_item_use_progress)
 	_event_bus.interaction_prompt_changed.connect(_on_interaction_prompt_changed)
 	_event_bus.player_perk_selected.connect(_on_player_perk_selected)
@@ -74,13 +92,16 @@ func _ready() -> void:
 	_event_bus.status_list_changed.connect(_on_status_list_changed)
 	_event_bus.debug_test_notice.connect(_on_debug_test_notice)
 	_event_bus.combat_feedback.connect(_on_combat_feedback)
+	_event_bus.damage_resolved.connect(_on_damage_resolved)
 	_event_bus.watch_state_changed.connect(_on_watch_state_changed)
 	_event_bus.wave_timer_changed.connect(_on_wave_timer_changed)
 	_event_bus.player_died.connect(_on_player_died)
 	_event_bus.enemy_spawned.connect(_on_enemy_spawned)
 	_event_bus.enemy_died.connect(_on_enemy_died)
-	use_bandage_button.pressed.connect(_request_item_use.bind(&"bandage"))
-	use_food_button.pressed.connect(_request_item_use.bind(&"food_ration"))
+	watch_tab_status.pressed.connect(_show_status_page)
+	watch_tab_supplies.pressed.connect(_show_supplies_page)
+	watch_eat_food_button.pressed.connect(_request_watch_item_use.bind(&"food_ration"))
+	_show_status_page()
 	_sync_initial_values()
 
 
@@ -111,8 +132,6 @@ func _exit_tree() -> void:
 		_event_bus.special_inventory_changed.disconnect(_on_special_inventory_changed)
 	if _event_bus.inventory_selection_changed.is_connected(_on_inventory_selection_changed):
 		_event_bus.inventory_selection_changed.disconnect(_on_inventory_selection_changed)
-	if _event_bus.inventory_visibility_changed.is_connected(_on_inventory_visibility_changed):
-		_event_bus.inventory_visibility_changed.disconnect(_on_inventory_visibility_changed)
 	if _event_bus.item_use_progress.is_connected(_on_item_use_progress):
 		_event_bus.item_use_progress.disconnect(_on_item_use_progress)
 	if _event_bus.interaction_prompt_changed.is_connected(_on_interaction_prompt_changed):
@@ -133,6 +152,8 @@ func _exit_tree() -> void:
 		_event_bus.debug_test_notice.disconnect(_on_debug_test_notice)
 	if _event_bus.combat_feedback.is_connected(_on_combat_feedback):
 		_event_bus.combat_feedback.disconnect(_on_combat_feedback)
+	if _event_bus.damage_resolved.is_connected(_on_damage_resolved):
+		_event_bus.damage_resolved.disconnect(_on_damage_resolved)
 	if _event_bus.watch_state_changed.is_connected(_on_watch_state_changed):
 		_event_bus.watch_state_changed.disconnect(_on_watch_state_changed)
 	if _event_bus.wave_timer_changed.is_connected(_on_wave_timer_changed):
@@ -147,6 +168,8 @@ func _exit_tree() -> void:
 
 func _on_phase_changed(_previous_phase: StringName, current_phase: StringName, wave_index: int) -> void:
 	phase_label.text = "Wave %d / %s" % [wave_index, String(current_phase)]
+	_watch_phase = current_phase
+	watch_phase_label.text = "WAVE %d  //  %s" % [wave_index, _display_name_from_id(current_phase).to_upper()]
 
 
 func _on_player_health_changed(current: float, maximum: float) -> void:
@@ -189,7 +212,7 @@ func _on_item_used(item_id: StringName, _quantity: int) -> void:
 
 func _on_interaction_prompt_changed(prompt: String) -> void:
 	prompt_label.text = prompt
-	prompt_label.visible = not prompt.is_empty()
+	prompt_label.visible = not watch_panel.visible and not prompt.is_empty()
 
 
 func _on_player_perk_selected(perk_id: StringName) -> void:
@@ -220,18 +243,17 @@ func _on_player_ammo_changed(current: int, reserve: int) -> void:
 
 
 func _on_inventory_changed(items: Dictionary) -> void:
-	_inventory_items = items.duplicate(true)
-	var text: String = _format_inventory(_inventory_items)
-	inventory_contents_label.text = text
-	_configure_use_button(use_bandage_button, &"bandage")
-	_configure_use_button(use_food_button, &"food_ration")
 	_refresh_quick_slots()
 
 
 func _on_special_inventory_changed(items: Dictionary) -> void:
 	_special_inventory_items = items.duplicate(true)
-	watch_inventory_label.text = "SUPPLIES\n%s" % _format_inventory(_special_inventory_items)
-	_configure_use_button(use_food_button, &"food_ration")
+	watch_ammo_light_label.text = "LIGHT AMMO  //  %d" % _get_special_quantity(&"light_ammo")
+	watch_ammo_rifle_label.text = "RIFLE AMMO  //  %d" % _get_special_quantity(&"rifle_ammo")
+	watch_ammo_shells_label.text = "SHELLS  //  %d" % _get_special_quantity(&"shells")
+	var food_quantity: int = _get_special_quantity(&"food_ration")
+	watch_food_count_label.text = "FOOD RATION  //  %d" % food_quantity
+	watch_eat_food_button.disabled = food_quantity <= 0
 
 
 func _on_inventory_selection_changed(slot_index: int) -> void:
@@ -239,13 +261,10 @@ func _on_inventory_selection_changed(slot_index: int) -> void:
 	_refresh_quick_slots()
 
 
-func _on_inventory_visibility_changed(active: bool) -> void:
-	inventory_panel.visible = active
-
-
 func _on_item_use_progress(item_id: StringName, progress: float, active: bool) -> void:
-	item_use_progress.visible = active
-	item_use_label.visible = active
+	_item_use_active = active
+	item_use_progress.visible = active and not watch_panel.visible
+	item_use_label.visible = active and not watch_panel.visible
 	if not active:
 		item_use_progress.value = 0.0
 		return
@@ -253,9 +272,23 @@ func _on_item_use_progress(item_id: StringName, progress: float, active: bool) -
 	item_use_progress.value = clampf(progress, 0.0, 1.0) * 100.0
 
 
-func _request_item_use(item_id: StringName) -> void:
+func _request_watch_item_use(item_id: StringName) -> void:
 	if _event_bus != null:
-		_event_bus.inventory_item_use_requested.emit(item_id)
+		_event_bus.watch_item_use_requested.emit(item_id)
+
+
+func _show_status_page() -> void:
+	watch_status_page.visible = true
+	watch_supplies_page.visible = false
+	watch_tab_status.set_pressed_no_signal(true)
+	watch_tab_supplies.set_pressed_no_signal(false)
+
+
+func _show_supplies_page() -> void:
+	watch_status_page.visible = false
+	watch_supplies_page.visible = true
+	watch_tab_status.set_pressed_no_signal(false)
+	watch_tab_supplies.set_pressed_no_signal(true)
 
 
 func _on_status_list_changed(target_id: int, statuses: Array[Dictionary]) -> void:
@@ -296,7 +329,8 @@ func _on_combat_feedback(message: String, tone: StringName) -> void:
 		_combat_banner_tween.kill()
 
 	combat_banner_label.text = message
-	combat_banner_label.visible = true
+	_combat_banner_active = true
+	combat_banner_label.visible = not watch_panel.visible
 	combat_banner_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	match tone:
 		&"success":
@@ -309,16 +343,103 @@ func _on_combat_feedback(message: String, tone: StringName) -> void:
 	_combat_banner_tween = create_tween()
 	_combat_banner_tween.tween_interval(0.55)
 	_combat_banner_tween.tween_property(combat_banner_label, "modulate:a", 0.0, 0.35)
-	_combat_banner_tween.tween_callback(combat_banner_label.hide)
+	_combat_banner_tween.tween_callback(_hide_combat_banner)
+
+
+func _on_damage_resolved(result: DamageResolutionData) -> void:
+	if not _is_player_enemy_melee_resolution(result):
+		return
+	if not watch_panel.visible and gameplay_top_left.visible:
+		hit_marker.show_hit()
 
 
 func _on_watch_state_changed(active: bool) -> void:
-	watch_panel.visible = active
+	var timing: ActionTimingDefinition = _get_watch_timing()
+	if active:
+		_set_gameplay_hud_visible(false)
+		_show_watch_projection(timing)
+	else:
+		_hide_watch_projection(timing)
+	if not active:
+		return
+	var player: Node3D = get_tree().get_first_node_in_group("player") as Node3D
+	watch_map.set_player(player)
+	watch_location_label.text = "LOCATION // %s" % watch_map.get_region_name()
+
+
+func _show_watch_projection(timing: ActionTimingDefinition) -> void:
+	if _watch_transition_tween != null:
+		_watch_transition_tween.kill()
+	watch_panel.visible = true
+	watch_panel.pivot_offset = watch_panel.size * 0.5
+	watch_panel.scale = Vector2(0.035, 0.035)
+	watch_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	_watch_transition_tween = create_tween()
+	_watch_transition_tween.tween_interval(timing.windup_seconds)
+	_watch_transition_tween.tween_property(watch_panel, "scale", Vector2.ONE, timing.release_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	_watch_transition_tween.parallel().tween_property(watch_panel, "modulate:a", 1.0, timing.release_seconds)
+
+
+func _hide_watch_projection(timing: ActionTimingDefinition) -> void:
+	if _watch_transition_tween != null:
+		_watch_transition_tween.kill()
+	if not watch_panel.visible:
+		_set_gameplay_hud_visible(true)
+		return
+	watch_panel.pivot_offset = watch_panel.size * 0.5
+	_watch_transition_tween = create_tween().set_parallel(true)
+	_watch_transition_tween.tween_property(watch_panel, "scale", Vector2(0.035, 0.035), timing.release_seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_watch_transition_tween.tween_property(watch_panel, "modulate:a", 0.0, timing.release_seconds)
+	_watch_transition_tween.chain().tween_callback(_complete_watch_close)
+
+
+func _complete_watch_close() -> void:
+	watch_panel.hide()
+	watch_panel.scale = Vector2.ONE
+	watch_panel.modulate = Color.WHITE
+	_set_gameplay_hud_visible(true)
+
+
+func _get_watch_timing() -> ActionTimingDefinition:
+	var player: Player3DController = get_tree().get_first_node_in_group("player") as Player3DController
+	if player != null and player.combat_definition != null and player.combat_definition.watch_timing != null:
+		return player.combat_definition.watch_timing
+	return ActionTimingDefinition.new()
+
+
+func _set_gameplay_hud_visible(visible: bool) -> void:
+	gameplay_top_left.visible = visible
+	status_dock.visible = visible
+	debug_notice_stack.visible = visible
+	quick_slots.visible = visible
+	crosshair.visible = visible
+	if not visible:
+		hit_marker.hide()
+	prompt_label.visible = visible and not prompt_label.text.is_empty()
+	item_use_progress.visible = visible and _item_use_active
+	item_use_label.visible = visible and _item_use_active
+	combat_banner_label.visible = visible and _combat_banner_active
+
+
+func _is_player_enemy_melee_resolution(result: DamageResolutionData) -> bool:
+	if result == null or not result.applied or result.blocked or result.event == null:
+		return false
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player == null or result.event.attacker_id != player.get_instance_id():
+		return false
+	if result.target == null or not result.target.is_in_group("enemy"):
+		return false
+	return result.event.source_tags.has(&"melee") or result.event.source_tags.has(&"shove")
+
+
+func _hide_combat_banner() -> void:
+	_combat_banner_active = false
+	combat_banner_label.hide()
 
 
 func _on_wave_timer_changed(remaining_seconds: float, total_seconds: float, wave_index: int) -> void:
-	watch_wave_label.text = "Wave %d" % wave_index
-	watch_timer_label.text = "Time %.0f / %.0f" % [remaining_seconds, total_seconds]
+	watch_phase_label.text = "WAVE %d  //  %s" % [wave_index, _display_name_from_id(_watch_phase).to_upper()]
+	watch_timer_label.text = "%s  /  %s" % [_format_clock(remaining_seconds), _format_clock(total_seconds)]
 
 
 func _on_player_died(reason: StringName) -> void:
@@ -456,25 +577,13 @@ func _skill_display_name_for_id(skill_id: StringName) -> String:
 	return _display_name_from_id(skill_id)
 
 
-func _format_inventory(items: Dictionary) -> String:
-	if items.is_empty():
-		return "Empty"
-	var lines: PackedStringArray = []
-	var keys: Array = items.keys()
-	keys.sort()
-	for item_value: Variant in keys:
-		lines.append("%s  x%d" % [_item_display_name(StringName(item_value)), int(items[item_value])])
-	return "\n".join(lines)
+func _get_special_quantity(item_id: StringName) -> int:
+	return int(_special_inventory_items.get(item_id, 0))
 
 
-func _configure_use_button(button: Button, item_id: StringName) -> void:
-	if button == null:
-		return
-	var item: ItemDefinition = _get_item_definition(item_id)
-	var display_name: String = item.display_name if item != null else _display_name_from_id(item_id)
-	button.text = "Use %s" % display_name
-	var inventory: PlayerInventoryComponent = _get_player_inventory()
-	button.disabled = item == null or not item.has_use_effect() or inventory == null or inventory.get_quantity(item_id) <= 0
+func _format_clock(seconds: float) -> String:
+	var total_seconds: int = maxi(0, ceili(seconds))
+	return "%02d:%02d" % [total_seconds / 60, total_seconds % 60]
 
 
 func _item_display_name(item_id: StringName) -> String:

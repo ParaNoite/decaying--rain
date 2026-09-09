@@ -57,7 +57,7 @@ func _ready() -> void:
 	await _check_arm_elbow_direction(first_person_arms, player)
 	_check_action_timing_contract(player, first_person_arms)
 	_check_held_combo_cadence(player)
-	_check(inventory.get_quantity(&"bandage") == 1, "profession starting item missing")
+	_check(inventory.get_quantity(&"bandage") == 0, "profession must not grant a placeholder bandage")
 	_check(loadout.equipped_weapons.size() == 3, "starting loadout should contain unarmed, crowbar and pistol")
 	_check(loadout.get_current_weapon().weapon_id == &"crowbar", "crowbar should be equipped first")
 	_check(statuses.has_status(&"deserter_baseline"), "profession status was not applied")
@@ -99,6 +99,7 @@ func _ready() -> void:
 
 	player.health.set_health(50.0)
 	_check(player.apply_status_by_id(&"bleeding"), "bleeding could not be applied for bandage test")
+	_check(inventory.add_item(&"bandage"), "bandage should fit into an empty slot")
 	_check(player.use_item(&"bandage"), "bandage use failed")
 	_check(is_equal_approx(player.health.current_health, 50.0), "bandage resolved before the impact phase")
 	player.interaction_state_machine._update_instant_use(player.combat_definition.interact_timing.impact_start_seconds())
@@ -405,6 +406,10 @@ func _check_action_timing_contract(player: Player3DController, arms: PlayerFirst
 	_check(
 		is_equal_approx(player.movement_definition.slide_timing.total_seconds(), 0.35),
 		"slide gameplay duration must come from the movement timing contract"
+	)
+	_check(
+		is_equal_approx(player.floor_max_angle, deg_to_rad(player.movement_definition.max_walkable_slope_degrees)),
+		"player slope limit must come from the movement definition"
 	)
 	_check(
 		player.combat_definition.heavy_attack_timing.windup_seconds > weapon.primary_timing.windup_seconds,

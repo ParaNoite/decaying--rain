@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/loot/wild_loot_spawner.gd" id="1_spawner"]
+[ext_resource type="Resource" path="res://resources/loot/mvp_scavenge.tres" id="2_loot"]
+
+[node name="WildLootSpawner" type="Node3D"]
+script = ExtResource("1_spawner")
+loot_table = ExtResource("2_loot")
+minimum_spawn_count = 3
+maximum_spawn_count = 5
+
+[node name="SpawnPoints" type="Node3D" parent="."]

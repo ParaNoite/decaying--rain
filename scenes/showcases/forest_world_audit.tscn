@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/showcases/forest_world_scale.tscn" id="1_world"]
+
+[node name="ForestWorldAudit" instance=ExtResource("1_world")]
+automated_audit = true
+audit_from_route = 0

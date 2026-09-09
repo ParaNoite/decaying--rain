@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/base/mvp_base_compound.tscn" id="4_base"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/loot_container.tscn" id="6_resource"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="7_hud"]
+[ext_resource type="PackedScene" path="res://scenes/systems/loot/wild_loot_spawner.tscn" id="9_wild_loot"]
 [ext_resource type="Resource" uid="uid://c823iahk0etks" path="res://resources/gameplay/mvp_run_config.tres" id="8_run"]
 [ext_resource type="Script" uid="uid://b21sdw6pkqs8k" path="res://scripts/resources/wave_definition.gd" id="10_wave_script"]
 [ext_resource type="Script" uid="uid://dcoffbioobbqk" path="res://scripts/resources/enemy_definition.gd" id="11_enemy_script"]
@@ -160,15 +161,36 @@ shape = SubResource("BoxShape3D_floor")
 
 [node name="NearResource" parent="ScavengeArea" unique_id=961127877 instance=ExtResource("6_resource")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.4, -42)
-resource_id = &"near_resource"
+container_id = &"near_wood_crate"
 
 [node name="MidResource" parent="ScavengeArea" unique_id=1445181692 instance=ExtResource("6_resource")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.4, -51)
-resource_id = &"mid_resource"
+container_id = &"mid_metal_cache"
+visual_kind = 1
 
 [node name="FarResource" parent="ScavengeArea" unique_id=1912367092 instance=ExtResource("6_resource")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0.4, -61)
-resource_id = &"far_resource"
+container_id = &"far_wood_crate"
+
+[node name="WildLootSpawner" parent="ScavengeArea" unique_id=1883649818 instance=ExtResource("9_wild_loot")]
+
+[node name="GroundLootA" type="Marker3D" parent="ScavengeArea/WildLootSpawner/SpawnPoints"]
+position = Vector3(-7, 0, -36)
+
+[node name="GroundLootB" type="Marker3D" parent="ScavengeArea/WildLootSpawner/SpawnPoints"]
+position = Vector3(4, 0, -40)
+
+[node name="GroundLootC" type="Marker3D" parent="ScavengeArea/WildLootSpawner/SpawnPoints"]
+position = Vector3(-14, 0, -48)
+
+[node name="GroundLootD" type="Marker3D" parent="ScavengeArea/WildLootSpawner/SpawnPoints"]
+position = Vector3(12, 0, -56)
+
+[node name="GroundLootE" type="Marker3D" parent="ScavengeArea/WildLootSpawner/SpawnPoints"]
+position = Vector3(-4, 0, -58)
+
+[node name="GroundLootF" type="Marker3D" parent="ScavengeArea/WildLootSpawner/SpawnPoints"]
+position = Vector3(16, 0, -47)
 
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=470361610]
 
@@ -219,5 +241,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 15)
 
 [node name="SupplyContainer" parent="." instance=ExtResource("6_resource")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 10.5)
+container_id = &"base_metal_cache"
+visual_kind = 1
 
 [node name="HUD" parent="." unique_id=1537201166 instance=ExtResource("7_hud")]

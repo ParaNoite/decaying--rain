@@ -30,6 +30,7 @@ var _root_tween: Tween
 var _sprinting: bool = false
 var _bob_time: float = 0.0
 var _root_motion_time_remaining: float = 0.0
+var _watch_pose_active: bool = false
 var current_action_timing: ActionTimingDefinition
 var held_item_id: StringName = &""
 var _held_item_proxy: MeshInstance3D
@@ -49,6 +50,8 @@ func _process(delta: float) -> void:
 		_root_motion_time_remaining = maxf(0.0, _root_motion_time_remaining - delta)
 		return
 	if _action_tween != null and _action_tween.is_running():
+		return
+	if _watch_pose_active:
 		return
 	if _sprinting:
 		_update_sprint_pose(delta)
@@ -108,6 +111,39 @@ func set_held_item(item: ItemDefinition) -> void:
 			_held_item_proxy.position = Vector3(-0.03, 0.04, -0.10)
 			material.albedo_color = Color(0.42, 0.48, 0.44, 1.0)
 	_held_item_proxy.material_override = material
+
+
+func play_watch_raised(timing: ActionTimingDefinition) -> void:
+	_begin_action(false, timing)
+	_watch_pose_active = true
+	_action_tween = _new_action_tween(Tween.TRANS_CUBIC, Tween.EASE_OUT)
+	_pose(
+		_action_tween,
+		Vector3(0.0, 0.0, 0.0),
+		Vector3(8.0, 0.0, 0.0),
+		Vector3(118.0, 18.0, 26.0),
+		Vector3(92.0, -8.0, 0.0),
+		timing.windup_seconds
+	)
+	_action_tween.chain().tween_interval(timing.release_seconds + timing.impact_seconds + timing.recovery_seconds)
+
+
+func play_watch_lowered(timing: ActionTimingDefinition) -> void:
+	if not _watch_pose_active:
+		return
+	_reset_action_tween()
+	_action_tween = _new_action_tween(Tween.TRANS_CUBIC, Tween.EASE_IN_OUT)
+	_action_tween.tween_interval(timing.release_seconds + timing.impact_seconds)
+	_queue_return(timing.recovery_seconds)
+	_action_tween.chain().tween_callback(_clear_watch_pose)
+
+
+func is_watch_pose_active() -> bool:
+	return _watch_pose_active
+
+
+func _clear_watch_pose() -> void:
+	_watch_pose_active = false
 
 
 func play_attack(combo_index: int, timing: ActionTimingDefinition, keep_left_guard: bool = false) -> void:
@@ -368,6 +404,7 @@ func _update_relaxed_pose(delta: float) -> void:
 
 
 func _begin_action(reset_root: bool = false, timing: ActionTimingDefinition = null, preserve_light_guard: bool = false) -> void:
+	_watch_pose_active = false
 	current_action_timing = timing
 	_reset_action_tween()
 	if not preserve_light_guard:

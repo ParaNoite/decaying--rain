@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120">
+  <defs>
+    <style>
+      .bg { fill: #101816; }
+      .map { fill: #283d30; stroke: #a2b69b; stroke-width: 5; }
+      .forest-dark { fill: #1d3428; }
+      .forest-mid { fill: #34513b; }
+      .forest-light { fill: #48684a; }
+      .slope { fill: none; stroke: #84a277; stroke-width: 13; opacity: .72; }
+      .road { fill: none; stroke: #c6aa72; stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; }
+      .crossroad { fill: none; stroke: #a6c5aa; stroke-width: 8; stroke-dasharray: 17 13; stroke-linecap: round; }
+      .waterbed { fill: #66746a; stroke: #c0d2bd; stroke-width: 5; }
+      .building { fill: #3b403a; stroke: #ddd4ae; stroke-width: 5; }
+      .roof { fill: #57574b; }
+      .interior { fill: #202726; }
+      .fortress { fill: #542c2b; stroke: #ff9b78; stroke-width: 7; }
+      .fortress-inner { fill: #2d2928; stroke: #cf604d; stroke-width: 4; }
+      .base { fill: #26383b; stroke: #bee0d1; stroke-width: 5; }
+      .gate { fill: #846c48; stroke: #f2d292; stroke-width: 5; }
+      .label { fill: #eff4e8; font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 26px; font-weight: 700; text-anchor: middle; }
+      .small { fill: #cedbcf; font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 19px; text-anchor: middle; }
+      .note { fill: #dce9db; font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 20px; }
+      .title { fill: #f5f4e8; font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 40px; font-weight: 700; }
+      .legend { fill: #172421; stroke: #617b68; stroke-width: 3; }
+      .danger { fill: #ffb09a; font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 20px; font-weight: 700; text-anchor: middle; }
+    </style>
+    <pattern id="trees" width="52" height="52" patternUnits="userSpaceOnUse">
+      <circle cx="13" cy="15" r="10" fill="#173127"/>
+      <circle cx="31" cy="11" r="13" fill="#21402f"/>
+      <circle cx="42" cy="31" r="12" fill="#1a3629"/>
+      <circle cx="20" cy="39" r="13" fill="#294936"/>
+    </pattern>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z" fill="#c6aa72"/></marker>
+  </defs>
+
+  <rect class="bg" width="1600" height="1120"/>
+  <text class="title" x="65" y="62">衰朽之雨：丘陵林地外出区</text>
+  <text class="note" x="65" y="96">大地图地编概念 v1 | 固定地形与固定高危堡垒 | 北向上方</text>
+
+  <rect class="map" x="70" y="135" width="1120" height="900"/>
+  <rect x="75" y="140" width="1110" height="890" fill="url(#trees)" opacity=".62"/>
+
+  <!-- Landform bands -->
+  <path class="forest-dark" d="M75 200 C210 145 350 198 465 156 C580 114 692 160 796 143 L784 394 C650 376 523 420 395 382 C245 338 151 392 75 354 Z"/>
+  <path class="forest-mid" d="M75 583 C230 518 352 570 469 530 C615 480 735 523 876 495 C1014 468 1117 500 1185 470 L1185 720 C1032 746 893 706 776 757 C642 817 501 750 372 796 C219 850 134 800 75 840 Z"/>
+  <path class="forest-light" d="M75 890 C210 838 326 868 466 835 C611 800 734 852 868 825 C1000 800 1100 835 1185 810 L1185 1030 L75 1030 Z"/>
+
+  <!-- Gentle slopes and ridge -->
+  <path class="slope" d="M108 260 C237 213 330 270 442 230"/>
+  <path class="slope" d="M96 296 C222 249 334 308 458 268"/>
+  <path class="slope" d="M125 735 C255 687 355 740 457 700"/>
+  <path class="slope" d="M772 565 C910 523 1020 571 1145 530"/>
+  <text class="small" x="245" y="225">西侧山脊</text>
+  <text class="small" x="948" y="610">东侧溪沟</text>
+
+  <!-- Reservoir and pump station -->
+  <path class="waterbed" d="M214 420 C284 357 412 365 492 428 C548 473 551 570 476 622 C401 673 282 653 220 588 C177 543 169 465 214 420 Z"/>
+  <path d="M204 475 C290 438 431 447 514 493" fill="none" stroke="#a6b4ab" stroke-width="8" stroke-dasharray="14 12"/>
+  <rect class="building" x="314" y="449" width="164" height="113"/>
+  <rect class="roof" x="330" y="466" width="52" height="75"/>
+  <rect class="interior" x="397" y="466" width="59" height="75"/>
+  <text class="label" x="350" y="408">干涸水库</text>
+  <text class="small" x="396" y="590">泵站 / 控制楼</text>
+  <text class="small" x="351" y="617">中段横切节点</text>
+
+  <!-- Forestry hangar -->
+  <rect class="building" x="138" y="725" width="230" height="132"/>
+  <rect class="roof" x="160" y="746" width="80" height="92"/>
+  <rect class="interior" x="257" y="746" width="88" height="92"/>
+  <path d="M257 746 V838 M301 746 V838" stroke="#c7c0a0" stroke-width="4"/>
+  <text class="label" x="253" y="702">林业设备机库</text>
+  <text class="small" x="253" y="884">南部第一座探索建筑</text>
+
+  <!-- Sawmill -->
+  <rect class="building" x="523" y="235" width="284" height="174"/>
+  <rect class="roof" x="545" y="257" width="96" height="127"/>
+  <rect class="interior" x="662" y="257" width="121" height="127"/>
+  <path d="M702 257 V384 M742 257 V384" stroke="#c7c0a0" stroke-width="4"/>
+  <path d="M532 427 H798" stroke="#a58d5f" stroke-width="14"/>
+  <text class="label" x="665" y="211">废弃巨型锯木厂</text>
+  <text class="small" x="665" y="456">北部常规深区 / 大型空壳建筑</text>
+
+  <!-- Fortress clearing and fortress -->
+  <rect x="840" y="175" width="290" height="254" fill="#6b7668" stroke="#b8c6ae" stroke-width="4"/>
+  <rect class="fortress" x="880" y="214" width="205" height="162"/>
+  <rect class="fortress-inner" x="903" y="239" width="55" height="59"/>
+  <rect class="fortress-inner" x="995" y="239" width="61" height="59"/>
+  <rect class="fortress-inner" x="948" y="318" width="60" height="36"/>
+  <path d="M880 214 L913 178 H1052 L1085 214" fill="#663530" stroke="#ff9b78" stroke-width="7"/>
+  <text class="danger" x="982" y="462">高危阵营堡垒</text>
+  <text class="small" x="982" y="488">开放入口 / 固定“高危”标记</text>
+  <text class="small" x="982" y="513">塔楼、高墙、探照灯压住天际线</text>
+
+  <!-- Main routes -->
+  <path class="road" d="M629 924 C540 848 465 747 406 641 C375 591 373 570 390 560" marker-end="url(#arrow)"/>
+  <path class="road" d="M629 924 C655 812 648 690 662 583 C676 499 672 455 666 409" marker-end="url(#arrow)"/>
+  <path class="road" d="M629 924 C752 826 821 731 842 641 C874 548 920 473 967 405" marker-end="url(#arrow)"/>
+  <path class="road" d="M698 411 C779 444 837 475 897 521 C931 549 948 580 954 628" marker-end="url(#arrow)"/>
+  <path class="crossroad" d="M390 561 C491 603 612 628 736 608 C819 595 889 603 954 628"/>
+  <path class="crossroad" d="M368 789 C485 760 596 754 718 778 C792 792 843 780 887 744"/>
+
+  <!-- Base -->
+  <rect class="base" x="490" y="922" width="280" height="83"/>
+  <rect class="gate" x="588" y="906" width="84" height="25"/>
+  <circle cx="630" cy="966" r="25" fill="#8bd8ce" stroke="#e4ffff" stroke-width="4"/>
+  <text class="label" x="630" y="103">北</text>
+  <text class="label" x="630" y="983">基地与北门</text>
+  <text class="small" x="630" y="1018">外出起点 / 雨前撤离终点</text>
+
+  <!-- Direction / scale -->
+  <path d="M110 947 V892" stroke="#edf5e9" stroke-width="4" marker-end="url(#arrow)"/>
+  <text class="small" x="110" y="976">北</text>
+  <path d="M130 997 H330" stroke="#edf5e9" stroke-width="4"/>
+  <path d="M130 989 V1005 M330 989 V1005" stroke="#edf5e9" stroke-width="4"/>
+  <text class="small" x="230" y="1023">约 50m</text>
+
+  <!-- Legend -->
+  <rect class="legend" x="1225" y="135" width="320" height="470"/>
+  <text class="label" x="1385" y="180">地编阅读方式</text>
+  <line x1="1262" y1="220" x2="1333" y2="220" class="road"/>
+  <text class="note" x="1360" y="228">主深入 / 撤离路线</text>
+  <line x1="1262" y1="270" x2="1333" y2="270" class="crossroad"/>
+  <text class="note" x="1360" y="278">林间回环路线</text>
+  <rect class="building" x="1262" y="313" width="71" height="35"/>
+  <text class="note" x="1360" y="340">大型空壳建筑</text>
+  <rect class="waterbed" x="1262" y="375" width="71" height="35"/>
+  <text class="note" x="1360" y="402">水库低地 / 泵站</text>
+  <rect class="fortress" x="1262" y="437" width="71" height="35"/>
+  <text class="note" x="1360" y="464">高危堡垒</text>
+  <text class="note" x="1262" y="522">地图目标：</text>
+  <text class="note" x="1262" y="550">林地用于遮挡与绕行</text>
+  <text class="note" x="1262" y="576">建筑承担探索与伏击</text>
+  <text class="note" x="1262" y="602">堡垒作为可见的贪婪终点</text>
+</svg>

@@ -3,7 +3,6 @@ extends Node
 
 var move_vector: Vector2 = Vector2.ZERO
 var wants_sprint: bool = false
-var wants_watch: bool = false
 var wants_primary_attack: bool = false
 var wants_interact: bool = false
 
@@ -18,7 +17,7 @@ var active_skill_buffered: bool = false
 var reload_buffered: bool = false
 var weapon_next_buffered: bool = false
 var weapon_previous_buffered: bool = false
-var inventory_buffered: bool = false
+var watch_toggle_buffered: bool = false
 var inventory_slot_buffered: int = -1
 var inventory_drop_buffered: bool = false
 var inventory_clear_selection_buffered: bool = false
@@ -28,7 +27,6 @@ var pause_buffered: bool = false
 func refresh() -> void:
 	move_vector = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	wants_sprint = Input.is_action_pressed("sprint")
-	wants_watch = Input.is_action_pressed("watch")
 	wants_primary_attack = Input.is_action_pressed("attack_primary")
 	wants_interact = Input.is_action_pressed("interact")
 
@@ -56,8 +54,8 @@ func handle_input(event: InputEvent) -> void:
 		weapon_next_buffered = true
 	if event.is_action_pressed("weapon_previous"):
 		weapon_previous_buffered = true
-	if event.is_action_pressed("inventory"):
-		inventory_buffered = true
+	if event.is_action_pressed("watch"):
+		watch_toggle_buffered = true
 	for slot_index: int in 4:
 		if event.is_action_pressed("inventory_slot_%d" % (slot_index + 1)):
 			inventory_slot_buffered = slot_index
@@ -113,8 +111,8 @@ func consume_weapon_previous() -> bool:
 	return _consume("weapon_previous_buffered")
 
 
-func consume_inventory() -> bool:
-	return _consume("inventory_buffered")
+func consume_watch_toggle() -> bool:
+	return _consume("watch_toggle_buffered")
 
 
 func consume_inventory_slot() -> int:
@@ -147,7 +145,7 @@ func clear_action_buffers() -> void:
 	reload_buffered = false
 	weapon_next_buffered = false
 	weapon_previous_buffered = false
-	inventory_buffered = false
+	watch_toggle_buffered = false
 	inventory_slot_buffered = -1
 	inventory_drop_buffered = false
 	inventory_clear_selection_buffered = false

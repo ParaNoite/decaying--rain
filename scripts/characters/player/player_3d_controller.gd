@@ -32,7 +32,6 @@ var _event_bus = null
 var _game_manager = null
 var _buff_resolver: Node
 var _damage_resolver: Node
-var inventory_open: bool = false
 var debug_god_mode_enabled: bool = false
 var _held_item_id: StringName = &""
 
@@ -45,7 +44,7 @@ func _ready() -> void:
 	_damage_resolver = get_node_or_null("/root/DamageResolver")
 	if _event_bus != null:
 		_event_bus.phase_changed.connect(_on_phase_changed)
-		_event_bus.inventory_item_use_requested.connect(_on_inventory_item_use_requested)
+		_event_bus.watch_item_use_requested.connect(_on_watch_item_use_requested)
 
 	_apply_definitions()
 	_initialize_runtime_components()
@@ -70,14 +69,17 @@ func _exit_tree() -> void:
 		return
 	if _event_bus.phase_changed.is_connected(_on_phase_changed):
 		_event_bus.phase_changed.disconnect(_on_phase_changed)
-	if _event_bus.inventory_item_use_requested.is_connected(_on_inventory_item_use_requested):
-		_event_bus.inventory_item_use_requested.disconnect(_on_inventory_item_use_requested)
+	if _event_bus.watch_item_use_requested.is_connected(_on_watch_item_use_requested):
+		_event_bus.watch_item_use_requested.disconnect(_on_watch_item_use_requested)
 
 
 func _input(event: InputEvent) -> void:
-	if inventory_open:
+	if watch_state_machine.is_active():
+		if event.is_action_pressed("watch") or event.is_action_pressed("ui_cancel"):
+			watch_state_machine.close()
+			get_viewport().set_input_as_handled()
 		return
-	if not Input.is_action_pressed("watch") and camera_rig.recapture_from_click(event):
+	if camera_rig.recapture_from_click(event):
 		get_viewport().set_input_as_handled()
 		return
 
@@ -105,24 +107,16 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	input_reader.refresh()
 	_sync_survival_statuses()
+	_update_watch_state()
 	_process_quick_slot_input()
-	_update_overlay_state()
 	movement_motor.tick_timers(delta, is_on_floor())
 	movement_motor.apply_gravity(self, delta)
 
 	var constraints: Dictionary = _buff_resolver.call("get_constraints", self) if _buff_resolver != null else {}
 	constraints = condition_state_machine.update(constraints)
-	if inventory_open:
-		_merge_constraints(constraints, {
-			"movement_disabled": true,
-			"combat_blocked": true,
-			"interaction_blocked": true,
-			"mobility_blocked": true,
-			"inventory_open": true,
-		})
 	if stamina != null:
 		stamina.recovery_multiplier = maxf(0.0, float(constraints.get("stamina_recovery_multiplier", 1.0)))
-	_merge_constraints(constraints, watch_state_machine.update(input_reader))
+	_merge_constraints(constraints, watch_state_machine.update())
 	_merge_constraints(constraints, skill_component.update(self, input_reader, constraints, delta))
 	_update_held_item_state(constraints, delta)
 
@@ -279,6 +273,7 @@ func is_alive() -> bool:
 
 func _apply_definitions() -> void:
 	if movement_definition != null:
+		floor_max_angle = deg_to_rad(movement_definition.max_walkable_slope_degrees)
 		camera_rig.movement_definition = movement_definition
 		movement_motor.movement_definition = movement_definition
 		locomotion_state_machine.movement_definition = movement_definition
@@ -374,7 +369,7 @@ func receive_item(item: ItemDefinition, quantity: int) -> bool:
 
 
 func _process_quick_slot_input() -> void:
-	if inventory_component == null:
+	if inventory_component == null or watch_state_machine.is_active():
 		return
 	var slot_index: int = input_reader.consume_inventory_slot()
 	if slot_index >= 0:
@@ -401,10 +396,12 @@ func _drop_selected_inventory_item() -> void:
 	world_parent.add_child(pickup)
 	var forward: Vector3 = -global_transform.basis.z.normalized()
 	pickup.global_position = global_position + forward * 0.9 + Vector3.UP * 0.35
+	pickup.launch(forward * 0.7 + Vector3.UP * 0.35)
 	_emit_debug_notice("Dropped %s" % item.display_name, &"inventory")
 
 
-func _on_inventory_item_use_requested(item_id: StringName) -> void:
+func _on_watch_item_use_requested(item_id: StringName) -> void:
+	watch_state_machine.close()
 	use_item(item_id)
 
 
@@ -434,7 +431,7 @@ func _sync_held_item() -> void:
 func _get_item_use_constraints() -> Dictionary:
 	var constraints: Dictionary = _buff_resolver.call("get_constraints", self) if _buff_resolver != null else {}
 	constraints = condition_state_machine.update(constraints)
-	_merge_constraints(constraints, watch_state_machine.update(input_reader))
+	_merge_constraints(constraints, watch_state_machine.update())
 	return constraints
 
 
@@ -527,6 +524,11 @@ func _on_interaction_state_changed(_previous_state: StringName, current_state: S
 
 
 func _on_watch_state_changed(active: bool) -> void:
+	var timing: ActionTimingDefinition = combat_definition.watch_timing if combat_definition != null else ActionTimingDefinition.new()
+	if active:
+		_call_arms(&"play_watch_raised", [timing])
+	else:
+		_call_arms(&"play_watch_lowered", [timing])
 	_emit_debug_notice("Action: watch %s" % ("open" if active else "closed"), &"action")
 
 
@@ -574,13 +576,9 @@ func _consume_deferred_inputs() -> void:
 	input_reader.consume_pause()
 
 
-func _update_overlay_state() -> void:
-	if not input_reader.consume_inventory():
-		return
-	inventory_open = not inventory_open
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if inventory_open else Input.MOUSE_MODE_CAPTURED
-	if _event_bus != null:
-		_event_bus.inventory_visibility_changed.emit(inventory_open)
+func _update_watch_state() -> void:
+	if input_reader.consume_watch_toggle():
+		watch_state_machine.toggle()
 
 
 func _emit_action_blocked(action_id: StringName, reason_id: StringName) -> void:

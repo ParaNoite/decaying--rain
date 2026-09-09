@@ -6,10 +6,14 @@
 [sub_resource type="Resource" id="WaveEnemyEntry_ruptured_1"]
 script = ExtResource("2_entry")
 enemy_id = &"ruptured"
-count = 3
+
+[sub_resource type="Resource" id="Resource_bbrf2"]
+script = ExtResource("2_entry")
+enemy_id = &"armored_scavenger"
+metadata/_custom_type_script = "uid://v5r8w6q1x2ya"
 
 [resource]
 script = ExtResource("1_wave")
 pressure_theme = &"melee_intro"
-enemy_ids = Array[StringName]([&"ruptured"])
-spawn_entries = Array[ExtResource("2_entry")]([SubResource("WaveEnemyEntry_ruptured_1")])
+enemy_ids = Array[StringName]([&"ruptured", &"armored_scavenger"])
+spawn_entries = Array[ExtResource("2_entry")]([SubResource("WaveEnemyEntry_ruptured_1"), SubResource("Resource_bbrf2")])

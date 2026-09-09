@@ -9,6 +9,7 @@ extends Resource
 @export_range(0.0, 100.0, 1.0) var acceleration: float = 22.0
 @export_range(0.0, 100.0, 1.0) var deceleration: float = 28.0
 @export_range(0.0, 5.0, 0.05) var air_control_multiplier: float = 0.45
+@export_range(0.0, 89.0, 1.0) var max_walkable_slope_degrees: float = 60.0
 
 @export_group("Jump")
 @export_range(0.0, 20.0, 0.1) var jump_velocity: float = 4.8

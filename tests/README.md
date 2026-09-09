@@ -1,5 +1,11 @@
 # Tests
 
+## 音频系统验收
+
+自动验收运行 `res://tests/integration/audio_system_smoke.tscn`。Output 出现 `AUDIO_SYSTEM_SMOKE: PASS` 且没有红色错误，表示默认总线、Master Limiter、Cue 目录校验、全局和 3D 固定池、音乐状态、线性音量转换与 `user://settings/audio.cfg` 持久化均正常。
+
+人工验收：运行主场景，在 Remote 场景树展开 `AudioManager`，确认存在两个 `MusicPlayer`、16 个 `GlobalSfxPlayer` 与 24 个 `SpatialSfxPlayer`；打开 Audio 面板，确认 `Master`、`Music`、`SFX`、`UI`、`Ambience` 五条总线，且 Master 的第一个效果为 Limiter。通过 `AudioManager.set_bus_volume_linear(&"SFX", 0.0)` 将 SFX 设为静音，重启场景后确认仍为静音且 Output 没有 `-inf` 错误；将其恢复到 `1.0`。
+
 Automated tests will live here once the project adds a Godot test runner.
 
 Recommended first coverage:
@@ -83,6 +89,14 @@ Run `res://tests/integration/combat_buff_resolver_smoke.tscn`. It validates cent
 ## 大基地布局验收
 
 自动验收运行 `res://tests/integration/base_layout_smoke.tscn`。Output 出现 `BASE_LAYOUT_SMOKE: PASS` 且没有红色错误，表示基地四周墙体、门楼、内堡和掩体均有碰撞，旧的核心与北门路径保持兼容，出生点与采集区分别位于基地南北两侧。
+
+自动验收运行 `res://tests/integration/loot_world_smoke.tscn`。Output 出现 `LOOT_WORLD_SMOKE: PASS` 且没有红色错误，表示地面物品是受重力影响的 `RigidBody3D`，物理层只扫描 World 而不会与玩家或敌人发生实体碰撞，且野外刷新器会从候选点中随机生成指定数量的可拾取物品。
+
+自动验收运行 `res://tests/integration/watch_hud_smoke.tscn`。Output 出现 `WATCH_HUD_SMOKE: PASS` 且没有红色错误，表示 Tab 手表可持续开关，左手会先举起并保持，投影再从中心点展开；关闭时投影先收拢，左手在恢复阶段才放下。状态页能区分基地与搜刮区、显示时钟格式的阶段倒计时，物资页能显示食物并在点击后关闭手表、按既有动作合同消耗食物和恢复饱食度，旧 I 键背包入口已移除。
+
+人工验收：运行主场景，按 Tab 打开全屏全息手表投影；先确认左手向上抬至视线顶部并保持，随后投影从屏幕中心快速放大。确认移动降至手表步行速度，攻击和交互失效但世界计时继续。再次按 Tab 或 Esc，确认投影先快速缩回中心点，左手随后才落回待机。点击 `STATUS & MAP`，从基地前往北侧搜刮区，确认位置文字与地图箭头同步变化。点击 `SUPPLIES`，拾取 Light Ammo、Rifle Ammo、Shells 和 Food Ration 后确认数量即时刷新；点击 `EAT FOOD RATION` 后手表关闭，食物在使用动作命中阶段消耗并恢复饱食度。按 I 不应再出现独立背包窗口。
+
+人工验收运行主场景 `res://scenes/levels/mvp_skeleton.tscn`。离开基地进入北方的 ScavengeArea，确认每局在六个候选位置中随机出现三到五个带模型的地面物品；等待它们落地后，确认不会阻挡玩家或敌人。对准物品按交互键，应进入背包。对木箱或金属箱长按交互键，确认掉落物带模型、会落地且可拾取。打开背包选中普通物品后按丢弃键，确认丢出的同一物品会向前轻抛、落地并可再次拾取。
 
 人工验收运行 `res://tests/manual/base_layout_acceptance.tscn`。该场景不会自动开局，也不会自动结束，可以自由走动检查空间：
 

@@ -50,15 +50,18 @@ release_seconds = 0.07
 impact_seconds = 0.03
 recovery_seconds = 0.48
 
+[sub_resource type="Resource" id="ActionTiming_watch"]
+script = ExtResource("2_timing")
+windup_seconds = 0.16
+release_seconds = 0.075
+recovery_seconds = 0.16
+
 [resource]
 script = ExtResource("1_combat")
 melee_range = 2.8
 melee_radius = 1.2
 heavy_attack_stamina_cost = 20.0
 shove_stamina_cost = 25.0
-stamina_recovery_delay_seconds = 0.9
-exhausted_attack_damage_multiplier = 0.3
-light_attack_reach_multiplier = 1.5
 heavy_attack_damage_multiplier = 1.7
 light_attack_timing = SubResource("ActionTiming_light")
 heavy_attack_timing = SubResource("ActionTiming_heavy")
@@ -67,4 +70,5 @@ parry_success_timing = SubResource("ActionTiming_parry_success")
 shove_timing = SubResource("ActionTiming_shove")
 interact_timing = SubResource("ActionTiming_interact")
 hurt_timing = SubResource("ActionTiming_hurt")
+watch_timing = SubResource("ActionTiming_watch")
 shove_range = 2.65

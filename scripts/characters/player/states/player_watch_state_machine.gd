@@ -14,15 +14,26 @@ func _ready() -> void:
 	_event_bus = get_node_or_null("/root/EventBus")
 
 
-func update(input_reader: PlayerInputReader) -> Dictionary:
-	var active: bool = input_reader.wants_watch
-	_transition_to(STATE_INSPECTING if active else STATE_HIDDEN)
+func update() -> Dictionary:
+	var active: bool = is_active()
 	return {
 		"watch_active": active,
 		"combat_blocked": active,
 		"interaction_blocked": active,
 		"mobility_blocked": active,
 	}
+
+
+func toggle() -> void:
+	_transition_to(STATE_HIDDEN if is_active() else STATE_INSPECTING)
+
+
+func close() -> void:
+	_transition_to(STATE_HIDDEN)
+
+
+func is_active() -> bool:
+	return current_state == STATE_INSPECTING
 
 
 func _transition_to(next_state: StringName) -> void:

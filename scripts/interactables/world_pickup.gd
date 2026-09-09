@@ -1,5 +1,5 @@
 class_name WorldPickup
-extends Node3D
+extends RigidBody3D
 
 signal picked_up(item: ItemDefinition, quantity: int)
 
@@ -9,12 +9,19 @@ signal picked_up(item: ItemDefinition, quantity: int)
 @onready var interactable: InteractableComponent = %InteractableComponent
 @onready var visual: MeshInstance3D = $Visual
 
+var _pending_impulse: Vector3 = Vector3.ZERO
+var _settle_requested: bool = false
+
 
 func _ready() -> void:
 	_configure_visual()
 	if interactable != null:
 		interactable.prompt = _prompt_text()
 		interactable.interacted.connect(_on_interacted)
+	body_entered.connect(_on_world_contact)
+	if not _pending_impulse.is_zero_approx():
+		apply_central_impulse(_pending_impulse)
+		_pending_impulse = Vector3.ZERO
 
 
 func configure(next_item: ItemDefinition, next_quantity: int) -> void:
@@ -23,6 +30,33 @@ func configure(next_item: ItemDefinition, next_quantity: int) -> void:
 	_configure_visual()
 	if interactable != null:
 		interactable.prompt = _prompt_text()
+
+
+func launch(impulse: Vector3) -> void:
+	if impulse.is_zero_approx():
+		return
+	freeze = false
+	sleeping = false
+	_settle_requested = false
+	if is_inside_tree():
+		apply_central_impulse(impulse)
+		return
+	_pending_impulse = impulse
+
+
+func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	if not _settle_requested:
+		return
+	_settle_requested = false
+	state.linear_velocity = Vector3.ZERO
+	state.angular_velocity = Vector3.ZERO
+	freeze = true
+
+
+func _on_world_contact(_body: Node) -> void:
+	if freeze:
+		return
+	_settle_requested = true
 
 
 func _on_interacted(actor: Node) -> void:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/interactables/world_pickup.gd" id="1_pickup"]
 [ext_resource type="Script" path="res://scripts/components/interactable_component.gd" id="2_interactable"]
@@ -16,11 +16,23 @@ material = SubResource("1_material")
 [sub_resource type="SphereShape3D" id="3_shape"]
 radius = 0.35
 
-[node name="WorldPickup" type="Node3D"]
+[sub_resource type="SphereShape3D" id="4_physics_shape"]
+radius = 0.18
+
+[node name="WorldPickup" type="RigidBody3D"]
+mass = 0.25
+collision_layer = 0
+collision_mask = 1
+continuous_cd = 2
+contact_monitor = true
+max_contacts_reported = 1
 script = ExtResource("1_pickup")
 
 [node name="Visual" type="MeshInstance3D" parent="."]
 mesh = SubResource("2_mesh")
+
+[node name="WorldCollision" type="CollisionShape3D" parent="."]
+shape = SubResource("4_physics_shape")
 
 [node name="InteractableComponent" type="Area3D" parent="."]
 unique_name_in_owner = true

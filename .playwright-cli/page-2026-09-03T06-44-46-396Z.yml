@@ -1,0 +1,24 @@
+- generic [active] [ref=e1]:
+  - heading "Debuff 图标意象候选" [level=1] [ref=e2]
+  - paragraph [ref=e3]: "图标本体均为透明背景、仅使用纯红 #ff0000。每行比较的是不同意象，不是不同画风。"
+  - main [ref=e4]:
+    - generic [ref=e5]:
+      - heading "流血" [level=2] [ref=e6]
+      - generic [ref=e7]: 正式版：裂纹血滴
+    - generic [ref=e11]:
+      - heading "骨折" [level=2] [ref=e12]
+      - generic [ref=e13]: 正式版：肢段断裂
+    - generic [ref=e17]:
+      - heading "断腿" [level=2] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]: 标准侧视
+        - generic [ref=e23]: 紧凑符号
+        - generic [ref=e26]: 大轮脚踏
+        - generic [ref=e29]: 椅背结构
+    - generic [ref=e32]:
+      - heading "饥肠辘辘" [level=2] [ref=e33]
+      - generic [ref=e34]:
+        - generic [ref=e35]: 左右刀叉
+        - generic [ref=e38]: 交叉刀叉
+        - generic [ref=e41]: 上置刀叉
+        - generic [ref=e44]: 下置横餐具

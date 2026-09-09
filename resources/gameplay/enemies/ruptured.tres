@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dcoffbioobbqk" path="res://scripts/resources/enemy_definition.gd" id="1_enemy"]
 [ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+[ext_resource type="Script" uid="uid://du32v7ghq5o8y" path="res://scripts/resources/attack_movement_definition.gd" id="3_tracking_movement"]
 
 [sub_resource type="Resource" id="ActionTiming_attack"]
 script = ExtResource("2_timing")
@@ -34,30 +35,52 @@ release_seconds = 0.08
 impact_seconds = 0.04
 recovery_seconds = 0.26
 
+[sub_resource type="Resource" id="AttackMovement_tracking"]
+script = ExtResource("3_tracking_movement")
+movement_source = 1
+windup_speed_multiplier = 0.4
+release_speed_multiplier = 0.18
+stop_distance = 1.35
+use_locomotion_blend = true
+locomotion_blend_max_weight = 0.42
+
+[sub_resource type="Resource" id="ActionTiming_tracking_attack"]
+script = ExtResource("2_timing")
+windup_seconds = 0.56
+release_seconds = 0.12
+impact_seconds = 0.04
+recovery_seconds = 0.18
+
 [resource]
 script = ExtResource("1_enemy")
 enemy_id = &"ruptured"
 display_name = "Ruptured"
 max_health = 55.0
-move_speed = 3.8
+move_speed = 8.0
 attack_damage = 9.0
-attack_range = 1.7
+attack_range = 2.5
 attack_cooldown_seconds = 1.35
 attack_timing = SubResource("ActionTiming_attack")
 attack_status_ids = Array[StringName]([&"bleeding"])
+tracking_attack_enabled = true
+tracking_attack_probability = 0.4
+tracking_attack_timing = SubResource("ActionTiming_tracking_attack")
+tracking_attack_movement = SubResource("AttackMovement_tracking")
 heavy_attack_enabled = true
-heavy_attack_range = 5.2
-heavy_attack_min_range = 2.5
+heavy_attack_range = 7.199999999999999
+heavy_attack_min_range = 1.9
 heavy_attack_decision_min_seconds = 0.55
 heavy_attack_decision_max_seconds = 1.05
+heavy_attack_trigger_probability = 0.31
 heavy_attack_damage_multiplier = 2.0
-heavy_attack_lunge_speed = 10.5
-heavy_attack_brake_distance = 2.2
-heavy_attack_brake_speed = 2.2
-heavy_attack_cooldown_seconds = 4.5
+heavy_attack_lunge_speed = 12.7
+heavy_attack_brake_distance = 1.2000000000000002
+heavy_attack_brake_speed = 3.2
+heavy_attack_brake_seconds = 0.12
+heavy_attack_cooldown_seconds = 5.699999999999999
 heavy_attack_timing = SubResource("ActionTiming_heavy_attack")
 heavy_attack_pounce_timing = SubResource("ActionTiming_heavy_pounce")
-heavy_attack_pounce_range = 3.0
+heavy_attack_pounce_range = 3.6
 heavy_attack_impact_range = 2.4
 hurt_timing = SubResource("ActionTiming_hurt")
 death_timing = SubResource("ActionTiming_death")

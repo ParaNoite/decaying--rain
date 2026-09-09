@@ -30,6 +30,7 @@ extends Resource
 @export var shove_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.05, 0.08, 0.02, 0.10)
 @export var interact_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.17, 0.10, 0.04, 0.20)
 @export var hurt_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.0, 0.07, 0.03, 0.20)
+@export var watch_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.16, 0.075, 0.0, 0.16)
 @export_range(0.0, 1000.0, 1.0) var parry_stagger: float = 45.0
 @export_range(0.0, 30.0, 0.1) var parry_knockback_force: float = 8.0
 @export_range(0.0, 1000.0, 1.0) var stagger_threshold: float = 20.0

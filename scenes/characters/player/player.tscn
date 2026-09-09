@@ -10,8 +10,8 @@
 [ext_resource type="Script" uid="uid://bg0ixljnrudic" path="res://scripts/characters/player/player_combat_driver.gd" id="8_combat_driver"]
 [ext_resource type="Script" uid="uid://b05152axhs1sg" path="res://scripts/components/health_component.gd" id="9_health"]
 [ext_resource type="Script" uid="uid://cbdeyixajddyv" path="res://scripts/components/stamina_component.gd" id="10_stamina"]
-[ext_resource type="Script" path="res://scripts/components/sprint_reserve_component.gd" id="11_sprint_reserve"]
 [ext_resource type="Script" uid="uid://b62bs0cwcv44q" path="res://scripts/components/hunger_component.gd" id="11_hunger"]
+[ext_resource type="Script" uid="uid://cmi3aptgp5jsb" path="res://scripts/components/sprint_reserve_component.gd" id="11_sprint_reserve"]
 [ext_resource type="Script" uid="uid://b4d16mopgvcu4" path="res://scripts/resources/item_definition.gd" id="11_sulyr"]
 [ext_resource type="Script" uid="uid://d08ty8ajb7ksp" path="res://scripts/components/status_container.gd" id="12_status"]
 [ext_resource type="Script" uid="uid://gdse1mng5y6b" path="res://scripts/characters/player/states/player_locomotion_state_machine.gd" id="13_locomotion"]
@@ -80,6 +80,11 @@ target_position = Vector3(0, 0, -3)
 collision_mask = 8
 collide_with_areas = true
 
+[node name="MeleeImpactRayCast3D" type="RayCast3D" parent="Head" unique_id=740499587]
+unique_name_in_owner = true
+target_position = Vector3(0, 0, -5)
+collision_mask = 65
+
 [node name="Sockets" type="Node3D" parent="." unique_id=719284101]
 
 [node name="RightHandSocket" type="Marker3D" parent="Sockets" unique_id=169364550]
@@ -104,7 +109,7 @@ script = ExtResource("10_stamina")
 recovery_per_second = 10.0
 broadcast_player_events = true
 
-[node name="SprintReserveComponent" type="Node" parent="Components"]
+[node name="SprintReserveComponent" type="Node" parent="Components" unique_id=1840792120]
 unique_name_in_owner = true
 script = ExtResource("11_sprint_reserve")
 

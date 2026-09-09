@@ -22,7 +22,6 @@ const _KEY_ACTIONS: Dictionary[StringName, Key] = {
 	&"interact": KEY_E,
 	&"reload": KEY_R,
 	&"attack_secondary": KEY_C,
-	&"inventory": KEY_I,
 	&"inventory_slot_1": KEY_1,
 	&"inventory_slot_2": KEY_2,
 	&"inventory_slot_3": KEY_3,

@@ -185,6 +185,7 @@ func _fire_charged_beam(body: Node3D, skill: Resource) -> void:
 	hit_data.amount = skill.beam_damage
 	hit_data.damage_type = &"energy"
 	hit_data.source_tags = skill.beam_tags.duplicate()
+	hit_data.source_tags.append_array(_get_hit_zone_tags(target))
 	hit_data.hit_position = hit_position
 
 	receiver.call("receive_damage", hit_data)
@@ -218,6 +219,18 @@ func _find_damage_receiver(node: Node) -> Node:
 			return current
 		current = current.get_parent()
 	return null
+
+
+func _get_hit_zone_tags(collider: Node) -> Array[StringName]:
+	if collider != null and collider.has_method("get_damage_tags"):
+		var tags: Variant = collider.call("get_damage_tags")
+		if tags is Array:
+			var resolved_tags: Array[StringName] = []
+			for tag: Variant in tags:
+				if tag is StringName:
+					resolved_tags.append(tag as StringName)
+			return resolved_tags
+	return []
 
 
 func _beam_visual_origin(fallback_origin: Vector3, skill: Resource) -> Vector3:

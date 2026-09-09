@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/showcases/ridge_fortress_showcase.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="2"]
+
+[node name="RidgeFortressWalkthrough" instance=ExtResource("1")]
+script = null
+
+[node name="ReferenceCamera" parent="." index="2"]
+current = false
+
+[node name="Player" parent="." instance=ExtResource("2")]
+position = Vector3(0, 1.8, 93)

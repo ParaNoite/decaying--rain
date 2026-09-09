@@ -6,11 +6,13 @@ signal died(enemy_id: StringName, instance_id: int, wave_index: int)
 enum State {
 	CHASE,
 	ATTACK,
+	HURT,
 	DEAD,
 }
 
 enum AttackKind {
 	NORMAL,
+	TRACKING,
 	HEAVY,
 }
 
@@ -21,7 +23,6 @@ enum AttackKind {
 @export_range(0.1, 20.0, 0.1) var attack_range: float = 1.5
 @export_range(0.1, 100.0, 0.1) var attack_damage: float = 10.0
 @export_range(0.1, 20.0, 0.1) var attack_cooldown_seconds: float = 1.5
-@export_range(0.0, 30.0, 0.1) var normal_hit_knockback_force: float = 1.2
 @export_range(1.0, 60.0, 0.5) var knockback_deceleration: float = 18.0
 @export_flags_3d_physics var attack_collision_mask: int = 3
 
@@ -32,8 +33,10 @@ enum AttackKind {
 
 var target: Node3D
 var attack_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.45, 0.10, 0.04, 0.16)
+var tracking_attack_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.45, 0.10, 0.04, 0.16)
 var heavy_attack_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(1.0, 0.22, 0.10, 0.65)
 var heavy_attack_pounce_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.22, 0.0, 0.32, 0.0)
+var hurt_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.0, 0.08, 0.04, 0.26)
 var death_timing: ActionTimingDefinition = ActionTimingDefinition.from_phases(0.0, 0.18, 0.12, 0.35)
 var _state: State = State.CHASE
 var _attack_cooldown_remaining: float = 0.0
@@ -47,6 +50,8 @@ var _heavy_attack_braking: bool = false
 var _heavy_attack_brake_elapsed: float = 0.0
 var _heavy_attack_brake_start_speed: float = 0.0
 var _pending_attack_target: Node3D
+var blood_hit_effect_count: int = 0
+var last_blood_hit_position: Vector3 = Vector3.ZERO
 var _knockback_velocity: Vector3 = Vector3.ZERO
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _buff_resolver: Node
@@ -67,8 +72,10 @@ func _ready() -> void:
 		fallback_move_speed = definition.move_speed
 		attack_cooldown_seconds = definition.attack_cooldown_seconds
 		attack_timing = definition.attack_timing
+		tracking_attack_timing = definition.tracking_attack_timing
 		heavy_attack_timing = definition.heavy_attack_timing
 		heavy_attack_pounce_timing = definition.heavy_attack_pounce_timing
+		hurt_timing = definition.hurt_timing
 		death_timing = definition.death_timing
 		_reset_heavy_attack_decision_timer()
 		_apply_target_tags()
@@ -94,6 +101,17 @@ func _physics_process(delta: float) -> void:
 	if _heavy_attack_decision_remaining > 0.0:
 		_heavy_attack_decision_remaining = maxf(0.0, _heavy_attack_decision_remaining - delta)
 
+	if _state == State.HURT:
+		velocity.x = _knockback_velocity.x
+		velocity.z = _knockback_velocity.z
+		_knockback_velocity = _knockback_velocity.move_toward(Vector3.ZERO, knockback_deceleration * delta)
+		_sync_locomotion_animation()
+		move_and_slide()
+		if status_container == null or not status_container.has_status(&"staggered"):
+			_knockback_velocity = Vector3.ZERO
+			_transition_to(State.CHASE)
+		return
+
 	if _state == State.ATTACK:
 		_update_attack(delta)
 		_sync_locomotion_animation()
@@ -108,7 +126,6 @@ func _physics_process(delta: float) -> void:
 		velocity.x = 0.0
 		velocity.z = 0.0
 		_sync_locomotion_animation()
-		_apply_knockback_velocity(delta)
 		move_and_slide()
 		return
 
@@ -121,7 +138,6 @@ func _physics_process(delta: float) -> void:
 		velocity.z = 0.0
 		_face_target(target)
 		_sync_locomotion_animation()
-		_apply_knockback_velocity(delta)
 		move_and_slide()
 		return
 
@@ -135,7 +151,7 @@ func _physics_process(delta: float) -> void:
 		velocity.z = 0.0
 		_face_target(target)
 		if _attack_cooldown_remaining <= 0.0:
-			_begin_attack(target)
+			_begin_attack(target, _choose_close_attack_kind())
 		else:
 			_transition_to(State.CHASE)
 	else:
@@ -147,7 +163,6 @@ func _physics_process(delta: float) -> void:
 		_face_target(target)
 
 	_sync_locomotion_animation()
-	_apply_knockback_velocity(delta)
 	move_and_slide()
 
 
@@ -157,9 +172,33 @@ func receive_damage(data: DamageEventData) -> void:
 
 
 func on_damage_resolved(result: DamageResolutionData) -> void:
-	if not result.applied or _state == State.DEAD:
+	if not result.applied:
 		return
+	if _is_player_melee_damage(result):
+		_spawn_blood_hit_effect(result.event)
+	if _state == State.DEAD or result.event == null:
+		return
+
+	var stagger_duration: float = 0.0
+	if result.event.stagger > 0.0:
+		stagger_duration = maxf(0.35, result.event.stagger * 0.05)
+	elif result.final_amount > 0.0:
+		stagger_duration = hurt_timing.total_seconds()
+	if stagger_duration <= 0.0:
+		return
+
+	var reaction: StringName = EnemyAnimationController.ACTION_HURT
+	if result.event.source_tags.has(&"parry"):
+		reaction = EnemyAnimationController.ACTION_PARRIED
+	elif result.event.source_tags.has(&"shove"):
+		reaction = EnemyAnimationController.ACTION_SHOVED
+
+	_cancel_pending_attack()
+	apply_status_by_id(&"staggered", stagger_duration, result.event.attacker_id)
 	_apply_hit_knockback(result.event)
+	_transition_to(State.HURT)
+	if animation_controller != null:
+		animation_controller.play_reaction(reaction, hurt_timing, stagger_duration)
 
 
 func get_knockback_velocity() -> Vector3:
@@ -167,10 +206,7 @@ func get_knockback_velocity() -> Vector3:
 
 
 func _apply_hit_knockback(data: DamageEventData) -> void:
-	var force: float = data.knockback_force
-	if force <= 0.0 and data.amount > 0.0:
-		force = normal_hit_knockback_force
-	if force <= 0.0:
+	if data.knockback_force <= 0.0:
 		_knockback_velocity = Vector3.ZERO
 		return
 
@@ -183,12 +219,37 @@ func _apply_hit_knockback(data: DamageEventData) -> void:
 	direction.y = 0.0
 	if direction.length_squared() <= 0.0001:
 		direction = global_basis.z
-	direction.y = 0.0
-	_knockback_velocity = direction.normalized() * force
+	_knockback_velocity = direction.normalized() * data.knockback_force
+
+
+func _is_player_melee_damage(result: DamageResolutionData) -> bool:
+	if result.event == null or result.final_amount <= 0.0:
+		return false
+	if not result.event.source_tags.has(&"melee"):
+		return false
+	var attacker: Object = instance_from_id(result.event.attacker_id)
+	return attacker is Node and (attacker as Node).is_in_group("player")
+
+
+func _spawn_blood_hit_effect(data: DamageEventData) -> void:
+	var impact_position: Vector3 = data.hit_position if data.hit_position != Vector3.ZERO else global_position
+	var spray_direction: Vector3 = global_position - impact_position
+	var attacker: Object = instance_from_id(data.attacker_id)
+	if attacker is Node3D:
+		spray_direction = global_position - (attacker as Node3D).global_position
+	MeleeImpactEffects.spawn_blood(get_tree().current_scene, impact_position, spray_direction)
+	blood_hit_effect_count += 1
+	last_blood_hit_position = impact_position
 
 
 func get_health_component() -> HealthComponent:
 	return health
+
+
+func get_hit_zone_damage_multiplier(source_tags: Array[StringName]) -> float:
+	if definition != null and source_tags.has(&"headshot"):
+		return definition.headshot_damage_multiplier
+	return 1.0
 
 
 func get_status_container() -> StatusContainer:
@@ -278,7 +339,7 @@ func _begin_attack(current_target: Node3D, attack_kind: AttackKind = AttackKind.
 	if animation_controller != null:
 		var is_ranged: bool = definition != null and definition.pressure_role == EnemyDefinition.PressureRole.RANGED_PRESSURE
 		var style: StringName = EnemyAnimationController.ATTACK_STYLE_HEAVY if attack_kind == AttackKind.HEAVY else EnemyAnimationController.ATTACK_STYLE_DEFAULT
-		animation_controller.play_attack(_current_attack_timing(), is_ranged, style)
+		animation_controller.play_attack(_current_attack_timing(), is_ranged, style, _current_attack_movement())
 
 
 func _update_attack(delta: float) -> void:
@@ -290,12 +351,14 @@ func _update_attack(delta: float) -> void:
 	# var previous_attack_elapsed: float = _attack_elapsed
 	_attack_elapsed = minf(timing.total_seconds(), _attack_elapsed + maxf(0.0, delta))
 	_update_attack_movement(timing, delta)
-	_apply_knockback_velocity(delta)
 	# Intentionally disabled: restore this call to re-enable the optional pounce-contact hit window.
 	# _try_resolve_heavy_pounce(previous_attack_elapsed)
 	if not _attack_has_resolved and _attack_elapsed >= timing.impact_start_seconds():
 		if _can_resolve_pending_attack():
 			_try_attack(_pending_attack_target, 1.0, &"", _active_attack_kind == AttackKind.HEAVY and _heavy_attack_pounce_has_resolved)
+			if _state != State.ATTACK:
+				_attack_has_resolved = true
+				return
 		_attack_has_resolved = true
 	if _attack_elapsed >= timing.total_seconds():
 		_pending_attack_target = null
@@ -307,6 +370,10 @@ func _update_attack_movement(timing: ActionTimingDefinition, delta: float) -> vo
 	velocity.z = 0.0
 	if animation_controller != null:
 		animation_controller.set_heavy_lunge_amount(0.0)
+	var movement: AttackMovementDefinition = _current_attack_movement()
+	if movement != null and movement.movement_source == AttackMovementDefinition.MovementSource.CONTROLLER:
+		_update_controller_attack_movement(timing, movement, delta)
+		return
 	if _active_attack_kind != AttackKind.HEAVY or _pending_attack_target == null or not is_instance_valid(_pending_attack_target):
 		return
 	var phase: ActionTimingDefinition.Phase = timing.phase_at(_attack_elapsed)
@@ -342,6 +409,33 @@ func _update_attack_movement(timing: ActionTimingDefinition, delta: float) -> vo
 	if animation_controller != null:
 		animation_controller.set_heavy_lunge_amount(movement_speed / maxf(0.1, lunge_speed))
 	var direction: Vector3 = offset.normalized()
+	velocity.x = direction.x * movement_speed
+	velocity.z = direction.z * movement_speed
+
+
+func _update_controller_attack_movement(
+	timing: ActionTimingDefinition,
+	movement: AttackMovementDefinition,
+	delta: float
+) -> void:
+	if _pending_attack_target == null or not is_instance_valid(_pending_attack_target):
+		return
+	var constraints: Dictionary = _buff_resolver.call("get_constraints", self) if _buff_resolver != null else {}
+	if bool(constraints.get("movement_disabled", false)):
+		return
+	var phase: ActionTimingDefinition.Phase = timing.phase_at(_attack_elapsed)
+	var speed_multiplier: float = movement.speed_multiplier_for_phase(phase)
+	if speed_multiplier <= 0.0:
+		return
+	var offset: Vector3 = _pending_attack_target.global_position - global_position
+	offset.y = 0.0
+	var target_distance: float = offset.length()
+	if target_distance <= movement.stop_distance:
+		return
+	var direction: Vector3 = offset.normalized()
+	var distance_to_stop: float = target_distance - movement.stop_distance
+	var status_speed_multiplier: float = maxf(0.0, float(constraints.get("movement_speed_multiplier", 1.0)))
+	var movement_speed: float = minf(fallback_move_speed * speed_multiplier * status_speed_multiplier, distance_to_stop / maxf(0.001, delta))
 	velocity.x = direction.x * movement_speed
 	velocity.z = direction.z * movement_speed
 
@@ -397,6 +491,20 @@ func _can_begin_heavy_attack(distance_to_target: float) -> bool:
 	return randf() <= definition.heavy_attack_trigger_probability
 
 
+func _choose_close_attack_kind() -> AttackKind:
+	if (
+		definition == null
+		or not definition.tracking_attack_enabled
+		or definition.tracking_attack_probability <= 0.0
+		or definition.tracking_attack_movement == null
+		or definition.tracking_attack_movement.movement_source != AttackMovementDefinition.MovementSource.CONTROLLER
+	):
+		return AttackKind.NORMAL
+	if definition.tracking_attack_probability >= 1.0 or randf() < definition.tracking_attack_probability:
+		return AttackKind.TRACKING
+	return AttackKind.NORMAL
+
+
 func _reset_heavy_attack_decision_timer() -> void:
 	if definition == null:
 		_heavy_attack_decision_remaining = 0.0
@@ -409,7 +517,15 @@ func _reset_heavy_attack_decision_timer() -> void:
 func _current_attack_timing() -> ActionTimingDefinition:
 	if _active_attack_kind == AttackKind.HEAVY:
 		return heavy_attack_timing
+	if _active_attack_kind == AttackKind.TRACKING:
+		return tracking_attack_timing
 	return attack_timing
+
+
+func _current_attack_movement() -> AttackMovementDefinition:
+	if _active_attack_kind == AttackKind.TRACKING and definition != null:
+		return definition.tracking_attack_movement
+	return null
 
 
 func _cancel_pending_attack() -> void:
@@ -452,6 +568,8 @@ func _deal_melee(current_target: Node3D, damage_multiplier: float = 1.0, attack_
 		hit_data.status_ids_to_apply = definition.attack_status_ids.duplicate()
 	if _active_attack_kind == AttackKind.HEAVY:
 		hit_data.source_tags.append(&"heavy_attack")
+	elif _active_attack_kind == AttackKind.TRACKING:
+		hit_data.source_tags.append(&"tracking_attack")
 	if not attack_tag.is_empty():
 		hit_data.source_tags.append(attack_tag)
 	hit_data.hit_position = current_target.global_position
@@ -546,12 +664,6 @@ func _sync_locomotion_animation() -> void:
 		return
 	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
 	animation_controller.set_locomotion_speed(horizontal_speed / maxf(0.1, fallback_move_speed))
-
-
-func _apply_knockback_velocity(delta: float) -> void:
-	velocity.x += _knockback_velocity.x
-	velocity.z += _knockback_velocity.z
-	_knockback_velocity = _knockback_velocity.move_toward(Vector3.ZERO, knockback_deceleration * maxf(0.0, delta))
 
 
 func _enemy_id() -> StringName:

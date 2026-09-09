@@ -28,6 +28,7 @@ func consume(amount: float) -> bool:
 	if amount <= 0.0:
 		return true
 	if current_reserve <= 0.0:
+		recovery_delay_remaining = recovery_delay_seconds
 		return false
 	current_reserve = maxf(0.0, current_reserve - amount)
 	recovery_delay_remaining = recovery_delay_seconds
