@@ -239,7 +239,20 @@ func road_mesh(points: PackedVector3Array, width: float) -> void:
 			g.rail(a+side*sign_side,b+side*sign_side)
 
 func stair(a: Vector3, b: Vector3, width: float) -> void:
-	g.stairs(a,b,width,ceili((b.y-a.y)/.18))
+	var steps: int = ceili((b.y-a.y)/.18)
+	var thickness: float = .24
+	for i: int in range(steps):
+		var t: float = float(i+1)/steps
+		var p: Vector3 = a.lerp(b,t)
+		box("SteelStairTread",p-Vector3.UP*(thickness*.5),Vector3(width,thickness,absf(b.z-a.z)/steps+.04),metal)
+	for x: float in [-width*.5,width*.5]:
+		g.beam("StairStringer",a+Vector3(x,-.12,0),b+Vector3(x,-.12,0),.12,.22,metal)
+		var rail_a: Vector3 = a+Vector3(x,1,0)
+		var rail_b: Vector3 = b+Vector3(x,1,0)
+		g.tube("Handrail",rail_a,rail_b,.036,g.rust,12)
+		for j: int in range(6):
+			var post: Vector3 = a.lerp(b,float(j)/5.0)+Vector3(x,0,0)
+			g.tube("StairBaluster",post,post+Vector3.UP,.027,g.rust,10)
 	road_mesh(PackedVector3Array([a+Vector3.UP*.03,b+Vector3.UP*.03]),width)
 
 func terrain_height(p: Vector2) -> float:

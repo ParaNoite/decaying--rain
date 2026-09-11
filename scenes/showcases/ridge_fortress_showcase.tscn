@@ -24,24 +24,24 @@ fog_enabled = true
 fog_light_color = Color(0.27, 0.32, 0.34, 1)
 fog_density = 0.0008
 
-[node name="RidgeFortressShowcase" type="Node3D" unique_id=2060629206]
+[node name="RidgeFortressShowcase" type="Node3D" unique_id=1759542231]
 script = ExtResource("1_m6kqd")
 
-[node name="RidgeFortress" type="Node3D" parent="." unique_id=41697681 instance=ExtResource("2_2ucex")]
+[node name="RidgeFortress" type="Node3D" parent="." unique_id=1370807389 instance=ExtResource("2_2ucex")]
 
-[node name="OvercastWorld" type="Node3D" parent="." unique_id=1635012551]
+[node name="OvercastWorld" type="Node3D" parent="." unique_id=2046321312]
 
-[node name="@WorldEnvironment@44909" type="WorldEnvironment" parent="OvercastWorld" unique_id=384627455]
+[node name="@WorldEnvironment@69134" type="WorldEnvironment" parent="OvercastWorld" unique_id=21120739]
 environment = SubResource("Environment_ya42j")
 
-[node name="@DirectionalLight3D@44910" type="DirectionalLight3D" parent="OvercastWorld" unique_id=868923486]
+[node name="@DirectionalLight3D@69135" type="DirectionalLight3D" parent="OvercastWorld" unique_id=865286858]
 transform = Transform3D(0.8660254, 0.37157243, -0.33456528, 0, 0.66913056, 0.74314487, 0.5, -0.64358234, 0.57948405, 0, 0, 0)
 light_color = Color(0.81, 0.87, 0.88, 1)
 light_energy = 0.8
 shadow_enabled = true
 directional_shadow_max_distance = 130.0
 
-[node name="ReferenceCamera" type="Camera3D" parent="." unique_id=1039283083]
+[node name="ReferenceCamera" type="Camera3D" parent="." unique_id=1261091806]
 transform = Transform3D(0.91755563, 0.06886828, 0.3915978, 0, 0.9848855, -0.17320672, -0.39760745, 0.1589268, 0.90368724, 52, 7, 108)
 current = true
 fov = 58.0
