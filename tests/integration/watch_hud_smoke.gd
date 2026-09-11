@@ -78,6 +78,7 @@ func _check(condition: bool, message: String) -> void:
 
 func _press_key(player: Player3DController, keycode: Key) -> void:
 	var event: InputEventKey = InputEventKey.new()
+	event.keycode = keycode
 	event.physical_keycode = keycode
 	event.pressed = true
 	if player.watch_state_machine.is_active():

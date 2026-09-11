@@ -2,7 +2,7 @@ class_name PlayerCombatStateMachine
 extends Node
 
 signal state_changed(previous_state: StringName, current_state: StringName)
-signal action_phase_changed(state: StringName, phase: ActionTimingDefinition.Phase)
+signal action_phase_changed(state: StringName, phase: int)
 
 const STATE_READY: StringName = &"ready"
 const STATE_LIGHT_ATTACK: StringName = &"light_attack"
@@ -43,8 +43,14 @@ func update(body: Node3D, input_reader: PlayerInputReader, constraints: Dictiona
 	if current_state == STATE_DISABLED:
 		_transition_to(STATE_READY)
 
-	combat_driver.firearm_spread_multiplier = float(constraints.get("firearm_spread_multiplier", 1.0))
+	combat_driver.apply_firearm_modifiers(constraints)
+	if current_state == STATE_RELOAD:
+		if input_reader.wants_interact or input_reader.weapon_next_buffered or input_reader.weapon_previous_buffered or input_reader.primary_attack_buffered:
+			interrupt()
+	var was_shell_reload: bool = current_state == STATE_RELOAD and combat_driver.current_weapon.reload_per_shell
 	_tick_action(body, delta)
+	if was_shell_reload and current_state == STATE_READY and combat_driver.try_reload():
+		_start_action(body, STATE_RELOAD, combat_driver.get_reload_timing())
 
 	if current_state != STATE_READY:
 		_clear_actions(input_reader)
@@ -62,7 +68,9 @@ func update(body: Node3D, input_reader: PlayerInputReader, constraints: Dictiona
 		not combat_driver.is_current_firearm() or combat_driver.is_current_weapon_automatic()
 	)
 	if pressed_primary or held_primary:
-		if _action_blocked(constraints, &"attack_primary"):
+		if combat_driver.is_current_firearm() and constraints.get("firearm_sprinting", false):
+			pass
+		elif _action_blocked(constraints, &"attack_primary"):
 			_emit_blocked(&"attack_primary", &"perk_restriction")
 		elif combat_driver.begin_primary_attack():
 			_start_action(
@@ -72,7 +80,7 @@ func update(body: Node3D, input_reader: PlayerInputReader, constraints: Dictiona
 			)
 			return
 
-	if input_reader.consume_secondary_attack():
+	if input_reader.consume_secondary_attack() and not combat_driver.is_current_firearm():
 		if _action_blocked(constraints, &"attack_secondary"):
 			_emit_blocked(&"attack_secondary", &"perk_restriction")
 		elif combat_driver.begin_heavy_attack():
@@ -80,7 +88,9 @@ func update(body: Node3D, input_reader: PlayerInputReader, constraints: Dictiona
 			return
 
 	if input_reader.consume_reload():
-		if _action_blocked(constraints, &"reload"):
+		if constraints.get("firearm_sprinting", false):
+			pass
+		elif _action_blocked(constraints, &"reload"):
 			_emit_blocked(&"reload", &"perk_restriction")
 		elif combat_driver.try_reload():
 			_start_action(body, STATE_RELOAD, combat_driver.get_reload_timing())
@@ -104,7 +114,7 @@ func get_current_action_timing() -> ActionTimingDefinition:
 	return current_action_timing
 
 
-func get_current_action_phase() -> ActionTimingDefinition.Phase:
+func get_current_action_phase() -> int:
 	if current_action_timing == null:
 		return ActionTimingDefinition.Phase.COMPLETE
 	return current_action_timing.phase_at(state_elapsed)

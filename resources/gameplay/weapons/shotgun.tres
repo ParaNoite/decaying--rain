@@ -5,22 +5,20 @@
 
 [sub_resource type="Resource" id="ActionTiming_primary"]
 script = ExtResource("2_timing")
-windup_seconds = 0.12
-release_seconds = 0.1
-impact_seconds = 0.05
-recovery_seconds = 0.63
+impact_seconds = 0.025
+recovery_seconds = 0.35
 
 [sub_resource type="Resource" id="ActionTiming_reload"]
 script = ExtResource("2_timing")
-windup_seconds = 0.38
-release_seconds = 1.04
-impact_seconds = 0.16
-recovery_seconds = 0.62
+windup_seconds = 0.1
+release_seconds = 0.28
+impact_seconds = 0.04
+recovery_seconds = 0.14
 
 [resource]
 script = ExtResource("1_weapon")
 weapon_id = &"shotgun"
-display_name = "Shotgun"
+display_name = "霰弹枪"
 weapon_kind = 2
 base_damage = 70.0
 stamina_cost = 0.0
@@ -30,6 +28,20 @@ ammo_type = &"shells"
 magazine_size = 5
 reload_timing = SubResource("ActionTiming_reload")
 noise_radius = 45.0
-effective_range = 9.0
+effective_range = 50.0
 pellet_count = 8
-spread_degrees = 5.0
+spread_degrees = 4.5
+fire_interval_seconds = 0.72
+ads_spread_degrees = 3
+bloom_per_shot = 0.16
+bloom_recovery_per_second = 1.8
+recoil_pitch_degrees = 2.2
+recoil_yaw_degrees = 0.42
+recoil_recovery_per_second = 5.0
+recoil_reset_seconds = 0.22
+viewmodel_kick = 0.085
+viewmodel_pitch_degrees = 2.5
+falloff_start = 8.0
+falloff_end = 25.0
+minimum_damage_multiplier = 0.4
+reload_per_shell = true

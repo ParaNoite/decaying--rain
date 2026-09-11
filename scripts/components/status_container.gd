@@ -138,6 +138,10 @@ func get_constraints() -> Dictionary:
 		"stamina_recovery_multiplier": 1.0,
 		"movement_speed_multiplier": 1.0,
 		"sprint_speed_multiplier": 1.0,
+		"firearm_fire_rate_multiplier": 1.0,
+		"firearm_recoil_multiplier": 1.0,
+		"firearm_recoil_recovery_multiplier": 1.0,
+		"firearm_viewmodel_recoil_multiplier": 1.0,
 	}
 
 	for active: ActiveStatusData in active_statuses.values():
@@ -151,6 +155,10 @@ func get_constraints() -> Dictionary:
 		constraints["stamina_recovery_multiplier"] *= definition.stamina_recovery_multiplier
 		constraints["movement_speed_multiplier"] *= definition.movement_speed_multiplier
 		constraints["sprint_speed_multiplier"] *= definition.sprint_speed_multiplier
+		constraints["firearm_fire_rate_multiplier"] *= definition.firearm_fire_rate_multiplier
+		constraints["firearm_recoil_multiplier"] *= definition.firearm_recoil_multiplier
+		constraints["firearm_recoil_recovery_multiplier"] *= definition.firearm_recoil_recovery_multiplier
+		constraints["firearm_viewmodel_recoil_multiplier"] *= definition.firearm_viewmodel_recoil_multiplier
 
 	return constraints
 

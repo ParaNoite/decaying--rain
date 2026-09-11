@@ -34,6 +34,17 @@ var _watch_pose_active: bool = false
 var current_action_timing: ActionTimingDefinition
 var held_item_id: StringName = &""
 var _held_item_proxy: MeshInstance3D
+var _firearm: WeaponDefinition
+var _firearm_visual: Node3D
+var _firearm_aim: float = 0.0
+var _firearm_action: StringName = &""
+var _firearm_elapsed: float = 0.0
+var _firearm_kick: float = 0.0
+var _recoil_pulses: Array[Dictionary] = []
+var _recoil_rotation: Vector2 = Vector2.ZERO
+var _pose_without_recoil: Transform3D
+var _recoil_pose_applied: bool = false
+var _muzzle: MeshInstance3D
 
 
 func _ready() -> void:
@@ -53,6 +64,9 @@ func _process(delta: float) -> void:
 		return
 	if _watch_pose_active:
 		return
+	if _firearm != null and held_item_id == &"":
+		_update_firearm_pose(delta)
+		return
 	if _sprinting:
 		_update_sprint_pose(delta)
 	else:
@@ -69,7 +83,9 @@ func set_held_item(item: ItemDefinition) -> void:
 		return
 	held_item_id = next_item_id
 	if tool_proxy != null:
-		tool_proxy.visible = item == null
+		tool_proxy.visible = item == null and _firearm == null
+	if _firearm_visual != null:
+		_firearm_visual.visible = item == null and _firearm != null
 	if item == null:
 		if _held_item_proxy != null:
 			_held_item_proxy.visible = false
@@ -404,6 +420,8 @@ func _update_relaxed_pose(delta: float) -> void:
 
 
 func _begin_action(reset_root: bool = false, timing: ActionTimingDefinition = null, preserve_light_guard: bool = false) -> void:
+	# 新动作接管姿态前移除射击叠层，避免动作结束后重播残留冲击。
+	reset_firearm_recoil()
 	_watch_pose_active = false
 	current_action_timing = timing
 	_reset_action_tween()
@@ -556,3 +574,156 @@ func _reset_right_pose() -> void:
 
 func _radians(degrees: Vector3) -> Vector3:
 	return Vector3(deg_to_rad(degrees.x), deg_to_rad(degrees.y), deg_to_rad(degrees.z))
+
+
+func set_firearm(weapon: WeaponDefinition, aim: float) -> void:
+	_firearm_aim = aim
+	if _firearm == weapon:
+		return
+	reset_firearm_recoil()
+	_firearm = weapon
+	cancel_firearm_action()
+	_reset_action_tween()
+	_reset_left_guard_tween()
+	_reset_root_tween()
+	if _firearm_visual != null:
+		_firearm_visual.queue_free()
+		_firearm_visual = null
+	tool_proxy.visible = weapon == null and held_item_id == &""
+	if weapon == null:
+		return
+	_firearm_visual = Node3D.new()
+	_firearm_visual.name = "FirearmVisual"
+	_firearm_visual.rotation_degrees.x = -65.0
+	first_person_weapon_socket.add_child(_firearm_visual)
+	_firearm_visual.visible = held_item_id == &""
+	var length: float = 0.28 if weapon.weapon_id == &"pistol" else 0.60
+	if weapon.weapon_id == &"shotgun":
+		length = 0.78
+	var metal: Color = Color(0.085, 0.11, 0.13)
+	_add_gun_part(Vector3(0.095, 0.09, length), Vector3(0, 0.09, -length * 0.35), metal)
+	_add_gun_part(Vector3(0.07, 0.15, 0.085), Vector3(0, -0.025, 0.015), Color(0.17, 0.20, 0.19))
+	_add_gun_part(Vector3(0.045, 0.045, 0.16), Vector3(0, 0.10, -length * 0.85), metal)
+	_add_gun_part(Vector3(0.018, 0.025, 0.025), Vector3(0, 0.15, -length * 0.7), Color(0.8, 0.9, 0.65))
+	for side: float in [-1.0, 1.0]:
+		_add_gun_part(Vector3(0.016, 0.025, 0.025), Vector3(side * 0.03, 0.15, 0.03), metal)
+	if weapon.weapon_id != &"pistol":
+		_add_gun_part(Vector3(0.075, 0.20, 0.10), Vector3(0, -0.04, -0.16), metal)
+		_add_gun_part(Vector3(0.08, 0.09, 0.18), Vector3(0, 0.05, 0.15), metal)
+	_muzzle = _add_gun_part(Vector3(0.07, 0.07, 0.035), Vector3(0, 0.10, -length * 0.85 - 0.10), Color(1.0, 0.7, 0.2))
+	var flash_material: StandardMaterial3D = _muzzle.material_override as StandardMaterial3D
+	flash_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_muzzle.visible = false
+
+
+func _add_gun_part(size: Vector3, offset: Vector3, color: Color) -> MeshInstance3D:
+	var part: MeshInstance3D = MeshInstance3D.new()
+	var mesh: BoxMesh = BoxMesh.new()
+	mesh.size = size
+	part.mesh = mesh
+	part.position = offset
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = 0.5
+	part.material_override = material
+	part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_firearm_visual.add_child(part)
+	return part
+
+
+func play_firearm_fire(timing: ActionTimingDefinition) -> void:
+	current_action_timing = timing
+	_firearm_elapsed = 0.0
+	_firearm_action = &"fire"
+
+
+func play_firearm_reload(timing: ActionTimingDefinition) -> void:
+	current_action_timing = timing
+	_firearm_elapsed = 0.0
+	_firearm_action = &"reload"
+
+
+func firearm_impact(recoil_multiplier: float = 1.0, horizontal_direction: float = 1.0) -> void:
+	if _firearm != null:
+		_recoil_pulses.append({"elapsed": 0.0, "timing": _firearm.primary_timing,
+			"strength": maxf(0.0, recoil_multiplier), "side": signf(horizontal_direction)})
+
+
+func reset_firearm_recoil() -> void:
+	if _recoil_pose_applied:
+		transform = _pose_without_recoil
+	_recoil_pose_applied = false
+	_recoil_pulses.clear()
+	_firearm_kick = 0.0
+	_recoil_rotation = Vector2.ZERO
+
+
+func _advance_firearm_recoil(delta: float) -> void:
+	var strength: float = 0.0
+	var side: float = 0.0
+	for index: int in range(_recoil_pulses.size() - 1, -1, -1):
+		var pulse: Dictionary = _recoil_pulses[index]
+		var timing: ActionTimingDefinition = pulse["timing"]
+		pulse["elapsed"] += delta
+		var elapsed: float = pulse["elapsed"]
+		var duration: float = timing.impact_seconds + timing.recovery_seconds
+		if elapsed >= duration:
+			_recoil_pulses.remove_at(index)
+			continue
+		var envelope: float
+		if elapsed < timing.impact_seconds:
+			envelope = smoothstep(0.0, timing.impact_seconds, elapsed)
+		else:
+			envelope = 1.0 - smoothstep(0.0, maxf(0.000001, timing.recovery_seconds), elapsed - timing.impact_seconds)
+		strength += envelope * float(pulse["strength"])
+		side += envelope * float(pulse["strength"]) * float(pulse["side"])
+	var limit: float = maxf(0.0, _firearm.viewmodel_recoil_limit)
+	var ads_scale: float = lerpf(1.0, _firearm.viewmodel_ads_multiplier, _firearm_aim)
+	_firearm_kick = minf(strength, limit) * _firearm.viewmodel_kick * ads_scale
+	_recoil_rotation = Vector2(minf(strength, limit) * _firearm.viewmodel_pitch_degrees, clampf(side, -limit, limit) * _firearm.viewmodel_yaw_degrees) * ads_scale
+
+
+func cancel_firearm_action() -> void:
+	_firearm_action = &""
+	_firearm_elapsed = 0.0
+
+
+func _update_firearm_pose(delta: float) -> void:
+	if _recoil_pose_applied:
+		transform = _pose_without_recoil
+		_recoil_pose_applied = false
+	_advance_firearm_recoil(delta)
+	_firearm_elapsed += delta
+	var reload_weight: float = 0.0
+	if _firearm_action == &"reload" and current_action_timing != null:
+		var t: ActionTimingDefinition = current_action_timing
+		if _firearm_elapsed < t.windup_seconds:
+			reload_weight = _firearm_elapsed / maxf(t.windup_seconds, 0.001)
+		elif _firearm_elapsed < t.impact_end_seconds():
+			reload_weight = 1.0
+		else:
+			reload_weight = 1.0 - clampf((_firearm_elapsed - t.impact_end_seconds()) / maxf(t.recovery_seconds, 0.001), 0.0, 1.0)
+	var weight: float = 1.0 - exp(-24.0 * delta)
+	# 整条肩肘手链共同回弹，枪始终留在手部插槽。
+	position = position.lerp(_base_position + Vector3(-0.17 * _firearm_aim, -0.10 + 0.12 * _firearm_aim - 0.09 * reload_weight, -0.12 * (1.0 - _firearm_aim)), weight)
+	rotation = _base_rotation
+	_lerp_rotation(right_shoulder, _right_shoulder_base, Vector3(-8.0, 4.0, -6.0 - 18.0 * reload_weight), weight)
+	_lerp_elbow_rotation(right_elbow, _right_elbow_base, Vector3(70.0, -4.0, 0.0), weight)
+	_lerp_rotation(left_shoulder, _left_shoulder_base, Vector3(-12.0, -30.0, 12.0), weight)
+	_lerp_elbow_rotation(left_elbow, _left_elbow_base, Vector3(30.0 - 14.0 * reload_weight, 20.0, 0.0), weight)
+	# 调整整条持枪手臂，使机械瞄具与相机视线一致；武器不脱离手掌。
+	if _firearm_visual != null and get_parent() is Camera3D:
+		var camera: Camera3D = get_parent() as Camera3D
+		var chain: Basis = right_shoulder.global_basis.inverse() * _firearm_visual.global_basis
+		var desired: Basis = global_basis.orthonormalized().inverse() * camera.global_basis.orthonormalized() * chain.orthonormalized().inverse()
+		right_shoulder.quaternion = right_shoulder.quaternion.slerp(desired.get_rotation_quaternion(), 1.0 - reload_weight)
+		var sight: Vector3 = camera.to_local(_firearm_visual.to_global(Vector3(0, 0.15, 0.03)))
+		position.x -= sight.x * _firearm_aim
+		position.y -= (sight.y + 0.003) * _firearm_aim
+		position.z += (-0.48 - sight.z) * _firearm_aim
+	_pose_without_recoil = transform
+	position += Vector3(0.0, _firearm_kick * 0.12, _firearm_kick)
+	rotation += Vector3(deg_to_rad(_recoil_rotation.x), deg_to_rad(_recoil_rotation.y), 0.0)
+	_recoil_pose_applied = true
+	if _muzzle != null:
+		_muzzle.visible = _firearm_action == &"fire" and current_action_timing != null and current_action_timing.phase_at(_firearm_elapsed) == ActionTimingDefinition.Phase.IMPACT

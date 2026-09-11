@@ -35,3 +35,6 @@ Thumbs.db
 # Local assistant / machine state
 .claude/settings.local.json
 .godot-prompter-cache/
+
+# Locally downloaded and unpacked audio-source libraries (about 600 MB).
+artifacts/audio_assembled/

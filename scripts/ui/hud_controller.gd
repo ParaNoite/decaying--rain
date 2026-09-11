@@ -61,6 +61,9 @@ var _combat_banner_active: bool = false
 
 
 func _process(_delta: float) -> void:
+	var player: Player3DController = get_tree().get_first_node_in_group("player") as Player3DController
+	if player != null:
+		crosshair.visible = gameplay_top_left.visible and player.combat_driver.aim_fraction < 0.5
 	if watch_panel.visible:
 		watch_location_label.text = "LOCATION // %s" % watch_map.get_region_name()
 
@@ -282,6 +285,8 @@ func _show_status_page() -> void:
 	watch_supplies_page.visible = false
 	watch_tab_status.set_pressed_no_signal(true)
 	watch_tab_supplies.set_pressed_no_signal(false)
+	if _event_bus != null:
+		_event_bus.ui_audio.emit(&"watch.click.valid")
 
 
 func _show_supplies_page() -> void:
@@ -289,6 +294,8 @@ func _show_supplies_page() -> void:
 	watch_supplies_page.visible = true
 	watch_tab_status.set_pressed_no_signal(false)
 	watch_tab_supplies.set_pressed_no_signal(true)
+	if _event_bus != null:
+		_event_bus.ui_audio.emit(&"watch.click.valid")
 
 
 func _on_status_list_changed(target_id: int, statuses: Array[Dictionary]) -> void:

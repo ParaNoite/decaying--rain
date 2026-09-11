@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Decaying Rain MVP"
-run/main_scene="res://scenes/levels/mvp_skeleton.tscn"
+run/main_scene="uid://cq1683qltlkj1"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -27,6 +27,7 @@ AudioManager="*res://scripts/autoloads/audio_manager.gd"
 SaveManager="*res://scripts/autoloads/save_manager.gd"
 BuffResolver="*res://scripts/autoloads/buff_resolver.gd"
 DamageResolver="*res://scripts/autoloads/damage_resolver.gd"
+AudioDirector="*res://scripts/systems/audio/audio_director.gd"
 MCPRuntimeProbe="*res://addons/godot_mcp/runtime/mcp_runtime_probe.gd"
 
 [display]

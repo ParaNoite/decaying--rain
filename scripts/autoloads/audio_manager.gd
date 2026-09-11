@@ -82,6 +82,15 @@ func play_global_sfx(cue_id: StringName) -> bool:
 	return _play_global_sfx(cue_id, &"")
 
 
+func stop_sfx(cue_id: StringName) -> void:
+	for player: AudioStreamPlayer in _global_players:
+		if player.playing and _player_cue_ids.get(player.get_instance_id(), &"") == cue_id:
+			player.stop()
+	for player: AudioStreamPlayer3D in _spatial_players:
+		if player.playing and _player_cue_ids.get(player.get_instance_id(), &"") == cue_id:
+			player.stop()
+
+
 func play_3d_sfx(cue_id: StringName, world_position: Vector3) -> bool:
 	var cue: AudioCue = _get_valid_cue(cue_id)
 	if cue == null:
@@ -150,6 +159,8 @@ func _play_global_sfx(cue_id: StringName, bus_override: StringName) -> bool:
 	if not _has_valid_bus(bus_name):
 		_warn_once("cue_bus_%s" % String(cue_id), "Audio cue '%s' targets missing bus '%s'." % [String(cue_id), String(bus_name)])
 		return false
+	if cue.loop and _is_global_cue_playing(cue_id):
+		return true
 	var player: AudioStreamPlayer = _select_global_player(cue_id, cue.max_instances)
 	player.stream = cue.stream
 	player.bus = String(bus_name)
@@ -158,6 +169,13 @@ func _play_global_sfx(cue_id: StringName, bus_override: StringName) -> bool:
 	_mark_player_started(player, cue_id)
 	player.play()
 	return true
+
+
+func _is_global_cue_playing(cue_id: StringName) -> bool:
+	for player: AudioStreamPlayer in _global_players:
+		if player.playing and _player_cue_ids.get(player.get_instance_id(), &"") == cue_id:
+			return true
+	return false
 
 
 func _create_players() -> void:
@@ -206,7 +224,7 @@ func _get_valid_cue(cue_id: StringName) -> AudioCue:
 
 func _select_global_player(cue_id: StringName, max_instances: int) -> AudioStreamPlayer:
 	var matching: Array[AudioStreamPlayer] = []
-	var available: AudioStreamPlayer
+	var available: AudioStreamPlayer = null
 	for player: AudioStreamPlayer in _global_players:
 		if not player.playing:
 			if available == null:
@@ -223,7 +241,7 @@ func _select_global_player(cue_id: StringName, max_instances: int) -> AudioStrea
 
 func _select_spatial_player(cue_id: StringName, max_instances: int) -> AudioStreamPlayer3D:
 	var matching: Array[AudioStreamPlayer3D] = []
-	var available: AudioStreamPlayer3D
+	var available: AudioStreamPlayer3D = null
 	for player: AudioStreamPlayer3D in _spatial_players:
 		if not player.playing:
 			if available == null:
@@ -262,7 +280,7 @@ func _configure_spatial_player(player: AudioStreamPlayer3D, cue: AudioCue, world
 	player.global_position = world_position
 	player.unit_size = cue.unit_size
 	player.max_distance = cue.max_distance
-	player.attenuation_model = cue.attenuation_model
+	player.attenuation_model = cue.attenuation_model as AudioStreamPlayer3D.AttenuationModel
 
 
 func _mark_player_started(player: Node, cue_id: StringName) -> void:
@@ -280,8 +298,11 @@ func _silent_db() -> float:
 
 func _load_audio_settings() -> void:
 	var config: ConfigFile = ConfigFile.new()
-	if config.load(SETTINGS_PATH) != OK:
-		_apply_default_audio_settings()
+	if config.load(ProjectSettings.globalize_path(SETTINGS_PATH)) != OK:
+		# AudioServer starts with the project defaults. Preserve its current state
+		# when no user file exists, since another manager may share this server.
+		return
+	if not config.has_section_key("volume", "SFX"):
 		return
 	for bus_name: StringName in SUPPORTED_BUSES:
 		var linear_volume: float = float(config.get_value("volume", String(bus_name), 1.0))
@@ -304,17 +325,24 @@ func _apply_bus_settings(bus_name: StringName, linear_volume: float, muted: bool
 
 
 func _save_audio_settings() -> void:
-	var directory_error: Error = DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://settings"))
-	if directory_error != OK:
+	var user_directory: DirAccess = DirAccess.open("user://")
+	if user_directory == null:
+		push_error("Failed to open user settings directory.")
+		return
+	var directory_error: Error = user_directory.make_dir_recursive("settings")
+	if directory_error != OK and directory_error != ERR_ALREADY_EXISTS:
 		push_error("Failed to create audio settings directory: %s" % error_string(directory_error))
 		return
 	var config: ConfigFile = ConfigFile.new()
 	for bus_name: StringName in SUPPORTED_BUSES:
 		config.set_value("volume", String(bus_name), get_bus_volume_linear(bus_name))
 		config.set_value("mute", String(bus_name), is_bus_muted(bus_name))
-	var save_error: Error = config.save(SETTINGS_PATH)
-	if save_error != OK:
-		push_error("Failed to save audio settings: %s" % error_string(save_error))
+	var file: FileAccess = FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)
+	if file == null:
+		push_error("Failed to open audio settings file for writing: %s" % error_string(FileAccess.get_open_error()))
+		return
+	file.store_string(config.encode_to_text())
+	file.close()
 
 
 func _warn_once(key: String, message: String) -> void:

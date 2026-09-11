@@ -8,6 +8,7 @@ signal ammo_changed(current: int, reserve: int)
 @export var fallback_weapon: WeaponDefinition
 @export var weapon_catalog: Array[WeaponDefinition] = []
 @export_range(0, 10, 1) var starting_reserve_magazines: int = 2
+@export_range(1, 8, 1) var firearm_capacity: int = 4
 
 @onready var inventory: PlayerInventoryComponent = get_node(inventory_path) as PlayerInventoryComponent
 
@@ -93,6 +94,8 @@ func finish_reload() -> bool:
 		return false
 	var weapon: WeaponDefinition = get_current_weapon()
 	var needed: int = weapon.magazine_size - get_magazine_ammo()
+	if weapon.reload_per_shell:
+		needed = 1
 	var loaded: int = mini(needed, get_reserve_ammo())
 	if loaded <= 0 or not inventory.remove_item(weapon.ammo_type, loaded):
 		return false
@@ -104,6 +107,13 @@ func finish_reload() -> bool:
 func _add_weapon(weapon: WeaponDefinition) -> void:
 	if weapon == null or _has_weapon(weapon.weapon_id):
 		return
+	if weapon.is_firearm():
+		var firearm_count: int = 0
+		for equipped: WeaponDefinition in equipped_weapons:
+			if equipped.is_firearm():
+				firearm_count += 1
+		if firearm_count >= firearm_capacity:
+			return
 	equipped_weapons.append(weapon)
 	if weapon.is_firearm():
 		_magazines[weapon.weapon_id] = weapon.magazine_size
@@ -116,6 +126,11 @@ func _has_weapon(weapon_id: StringName) -> bool:
 		if weapon != null and weapon.weapon_id == weapon_id:
 			return true
 	return false
+
+
+func add_weapon(weapon_id: StringName) -> bool:
+	_add_weapon(_find_weapon(weapon_id))
+	return _has_weapon(weapon_id)
 
 
 func _find_weapon(weapon_id: StringName) -> WeaponDefinition:

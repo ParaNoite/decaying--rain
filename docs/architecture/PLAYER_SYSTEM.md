@@ -270,7 +270,7 @@ Combat
 - `Shove` 是主动控制，消耗 stamina，结果取决于敌人的 stagger 抗性。
 - `Parry` 不反制远程攻击、环境伤害、持续伤害和非 melee 标记的碰撞。
 - 近战连击由输入缓存推进，MVP 先做三段链，第三段伤害翻倍。
-- 枪械 MVP 只做 hip fire，不启用独立 `Aim` 状态。
+- 枪械支持腰射与右键按住 ADS；ADS 为持续叠加姿态，开镜过程中可开火。精度、FOV 和移动速度随开镜比例变化。
 - `Parry` 和 `Shove` 在手表查看状态下都不可用。
 
 ### InteractionStateMachine
@@ -549,7 +549,21 @@ MVP 可以先用占位 Mesh 和音效，但接口应提前留好：
 - 参考感觉：全面参照 `decaying`。
 - 跳跃：有，而且要极轻量。
 - 视角：第一人称。
-- 枪械：MVP 先 hip fire。
+- 枪械：清晰、利落的腰射与 ADS；半固定上扬后坐，移动与空中散布，距离衰减；整匣或逐发装填。枪械仍是稀缺爆发来源。
+
+### 枪械手感第一版
+
+- 相机后坐使用 `recoil_target` / `recoil_offset` 双状态；开火只累加目标，渲染帧按 `recoil_response_seconds`（默认 0.03 秒）无过冲追随。`recoil_limit_degrees` 限制双轴累积。反向鼠标输入同步消耗当前和待生效后坐，超量部分正常转动视角。
+- 枪身按基础姿态 → ADS 对齐 → 肩肘手链回弹叠加；每发沿同一个 `primary_timing` 实例的命中阶段建立冲击、后摇阶段恢复。`viewmodel_pitch_degrees`、`viewmodel_yaw_degrees`、`viewmodel_ads_multiplier`、`viewmodel_recoil_limit` 控制旋转、开镜表现与累积上限。
+- ADS 隐藏固定十字，保留独立命中提示。机械瞄具可暂时偏离中心；射线仍沿相机实际方向，不将枪身视觉偏移加入伤害散布。每发记录当时的冲击倍率，恢复倍率实时作用于剩余相机后坐；切枪丢弃待施加冲击，已有相机偏移平滑收敛，死亡清空。
+
+- `WeaponDefinition` 与四把武器 `.tres` 是射速、精度、后坐、射程和 ADS 的调参入口。运行中后坐、弹匣和散布保存在组件，不改写资源。
+- 射击与每次装填均使用原有四阶段合同，弹药扣除、射线和装填转移只在命中阶段起点发生。`fire_interval_seconds` 是独立射击冷却。
+- 霰弹枪每次合同装一发并循环；切枪、开火、受击、交互可打断，已装入的子弹保留。奔跑不会打断已经开始的换弹，但奔跑中不能开始换弹。
+- Buff 通过约束链提供 `firearm_fire_rate_multiplier`、`firearm_recoil_multiplier`、`firearm_recoil_recovery_multiplier`、`firearm_viewmodel_recoil_multiplier`。倍率只作用于运行时，不写回共享武器资源。
+- 默认独立枪械容量为 4，空手与近战不占枪械容量。普通背包四格与特殊弹药库存不变。
+- 测试入口：`res://scenes/tests/firearm_range.tscn`。正式玩家、四种枪械、10/25/50 米部位靶，25 米靶移动；弹药充足且靶子自动恢复。
+- 第一人称枪模为占位几何体，始终挂在右手武器插槽；正式模型、专用手枪和霰弹枪音色仍待替换。
 - 近战：三段轻攻击连击，长按推进连击，第 3 段伤害翻倍。
 - 饥饿：MVP 只影响攻击伤害。
 - 状态：不叠层；同类状态覆盖或刷新；全部状态都要显示，MVP 先用文本和持续时间 bar。

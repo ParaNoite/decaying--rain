@@ -44,6 +44,7 @@ var _heavy_attack_cooldown_remaining: float = 0.0
 var _heavy_attack_decision_remaining: float = 0.0
 var _attack_elapsed: float = 0.0
 var _attack_has_resolved: bool = false
+var _audio_impact_emitted: bool = false
 var _heavy_attack_pounce_has_resolved: bool = false
 var _active_attack_kind: AttackKind = AttackKind.NORMAL
 var _heavy_attack_braking: bool = false
@@ -176,6 +177,9 @@ func on_damage_resolved(result: DamageResolutionData) -> void:
 		return
 	if _is_player_melee_damage(result):
 		_spawn_blood_hit_effect(result.event)
+		var event_bus: Node = get_node_or_null("/root/EventBus")
+		if event_bus != null:
+			event_bus.combat_audio.emit(&"hit", result.event.hit_position, clampf(result.final_amount / 20.0, 0.25, 2.0))
 	if _state == State.DEAD or result.event == null:
 		return
 
@@ -328,6 +332,7 @@ func _begin_attack(current_target: Node3D, attack_kind: AttackKind = AttackKind.
 	_pending_attack_target = current_target
 	_attack_elapsed = 0.0
 	_attack_has_resolved = false
+	_audio_impact_emitted = false
 	_heavy_attack_pounce_has_resolved = false
 	_active_attack_kind = attack_kind
 	_heavy_attack_braking = false
@@ -340,6 +345,9 @@ func _begin_attack(current_target: Node3D, attack_kind: AttackKind = AttackKind.
 		var is_ranged: bool = definition != null and definition.pressure_role == EnemyDefinition.PressureRole.RANGED_PRESSURE
 		var style: StringName = EnemyAnimationController.ATTACK_STYLE_HEAVY if attack_kind == AttackKind.HEAVY else EnemyAnimationController.ATTACK_STYLE_DEFAULT
 		animation_controller.play_attack(_current_attack_timing(), is_ranged, style, _current_attack_movement())
+	var event_bus: Node = get_node_or_null("/root/EventBus")
+	if event_bus != null:
+		event_bus.enemy_action_audio.emit(_enemy_id(), &"attack", &"windup", global_position)
 
 
 func _update_attack(delta: float) -> void:
@@ -354,6 +362,11 @@ func _update_attack(delta: float) -> void:
 	# Intentionally disabled: restore this call to re-enable the optional pounce-contact hit window.
 	# _try_resolve_heavy_pounce(previous_attack_elapsed)
 	if not _attack_has_resolved and _attack_elapsed >= timing.impact_start_seconds():
+		if not _audio_impact_emitted:
+			_audio_impact_emitted = true
+			var event_bus: Node = get_node_or_null("/root/EventBus")
+			if event_bus != null:
+				event_bus.enemy_action_audio.emit(_enemy_id(), &"attack", &"impact", global_position)
 		if _can_resolve_pending_attack():
 			_try_attack(_pending_attack_target, 1.0, &"", _active_attack_kind == AttackKind.HEAVY and _heavy_attack_pounce_has_resolved)
 			if _state != State.ATTACK:

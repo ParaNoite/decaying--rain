@@ -11,6 +11,7 @@ extends Resource
 @export_range(0.1, 3.0, 0.01) var pitch_scale_min: float = 1.0
 @export_range(0.1, 3.0, 0.01) var pitch_scale_max: float = 1.0
 @export_range(1, 32, 1) var max_instances: int = 4
+@export var loop: bool = false
 
 @export_group("Spatial")
 @export_range(0.1, 1000.0, 0.1) var unit_size: float = 6.0

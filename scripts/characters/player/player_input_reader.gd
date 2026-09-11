@@ -4,6 +4,7 @@ extends Node
 var move_vector: Vector2 = Vector2.ZERO
 var wants_sprint: bool = false
 var wants_primary_attack: bool = false
+var wants_aim: bool = false
 var wants_interact: bool = false
 
 var jump_buffered: bool = false
@@ -28,6 +29,7 @@ func refresh() -> void:
 	move_vector = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	wants_sprint = Input.is_action_pressed("sprint")
 	wants_primary_attack = Input.is_action_pressed("attack_primary")
+	wants_aim = Input.is_action_pressed("attack_secondary") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 	wants_interact = Input.is_action_pressed("interact")
 
 

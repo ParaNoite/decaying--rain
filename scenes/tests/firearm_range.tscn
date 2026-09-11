@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cq1683qltlkj1"]
+
+[ext_resource type="Script" uid="uid://b0id53e0ek67i" path="res://scripts/tests/firearm_range.gd" id="1"]
+
+[node name="FirearmRange" type="Node3D" unique_id=1291495397]
+script = ExtResource("1")

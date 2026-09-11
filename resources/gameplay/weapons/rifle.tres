@@ -5,10 +5,8 @@
 
 [sub_resource type="Resource" id="ActionTiming_primary"]
 script = ExtResource("2_timing")
-windup_seconds = 0.025
-release_seconds = 0.025
-impact_seconds = 0.015
-recovery_seconds = 0.075
+impact_seconds = 0.01
+recovery_seconds = 0.05
 
 [sub_resource type="Resource" id="ActionTiming_reload"]
 script = ExtResource("2_timing")
@@ -20,16 +18,33 @@ recovery_seconds = 0.55
 [resource]
 script = ExtResource("1_weapon")
 weapon_id = &"rifle"
-display_name = "Rifle"
+display_name = "步枪"
 weapon_kind = 2
 base_damage = 45.0
 stamina_cost = 0.0
 primary_timing = SubResource("ActionTiming_primary")
 supports_block = false
 ammo_type = &"rifle_ammo"
-magazine_size = 10
+magazine_size = 30
 reload_timing = SubResource("ActionTiming_reload")
 noise_radius = 50.0
-effective_range = 35.0
+effective_range = 120.0
 automatic = true
-spread_degrees = 0.8
+spread_degrees = 2.7
+fire_interval_seconds = 0.1
+ads_spread_degrees = 0.07
+ads_transition_seconds = 0.382
+bloom_per_shot = 0.16
+bloom_recovery_per_second = 1.8
+recoil_pitch_degrees = 1.0
+recoil_yaw_degrees = 0.7
+recoil_recovery_per_second = 5.0
+recoil_reset_seconds = 0.33
+viewmodel_kick = 0.07
+viewmodel_pitch_degrees = 0.9
+viewmodel_yaw_degrees = 0.4
+viewmodel_ads_multiplier = 0.4
+viewmodel_recoil_limit = 1.0
+falloff_start = 30.0
+falloff_end = 80.0
+minimum_damage_multiplier = 0.4

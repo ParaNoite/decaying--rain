@@ -34,6 +34,10 @@ enum StackPolicy {
 @export_range(0.0, 10.0, 0.05) var outgoing_damage_multiplier: float = 1.0
 @export_range(0.0, 10.0, 0.05) var movement_speed_multiplier: float = 1.0
 @export_range(0.0, 10.0, 0.05) var sprint_speed_multiplier: float = 1.0
+@export_range(0.05, 10.0, 0.05) var firearm_fire_rate_multiplier: float = 1.0
+@export_range(0.0, 10.0, 0.05) var firearm_recoil_multiplier: float = 1.0
+@export_range(0.05, 10.0, 0.05) var firearm_recoil_recovery_multiplier: float = 1.0
+@export_range(0.0, 10.0, 0.05) var firearm_viewmodel_recoil_multiplier: float = 1.0
 @export var movement_disabled: bool = false
 @export var mobility_blocked: bool = false
 @export var combat_blocked: bool = false

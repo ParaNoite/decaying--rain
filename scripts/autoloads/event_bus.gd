@@ -1,6 +1,9 @@
 extends Node
 
 @warning_ignore("unused_signal")
+signal player_firearm_shot(cue_id: StringName, position: Vector3)
+
+@warning_ignore("unused_signal")
 signal phase_changed(previous_phase: StringName, current_phase: StringName, wave_index: int)
 @warning_ignore("unused_signal")
 signal wave_started(wave_index: int, wave_id: StringName)
@@ -66,6 +69,21 @@ signal player_weapon_changed(weapon_id: StringName)
 signal player_ammo_changed(current: int, reserve: int)
 @warning_ignore("unused_signal")
 signal player_noise_emitted(position: Vector3, radius: float, noise_id: StringName)
+
+@warning_ignore("unused_signal")
+signal player_footstep(position: Vector3, sprinting: bool)
+@warning_ignore("unused_signal")
+signal player_footstep_stopped(position: Vector3)
+@warning_ignore("unused_signal")
+signal player_action_audio(action_id: StringName, phase: StringName, position: Vector3)
+@warning_ignore("unused_signal")
+signal enemy_action_audio(enemy_id: StringName, action_id: StringName, phase: StringName, position: Vector3)
+@warning_ignore("unused_signal")
+signal combat_audio(kind: StringName, position: Vector3, intensity: float)
+@warning_ignore("unused_signal")
+signal interaction_audio(kind: StringName, position: Vector3)
+@warning_ignore("unused_signal")
+signal ui_audio(kind: StringName)
 
 @warning_ignore("unused_signal")
 signal combat_hit(data: DamageEventData)

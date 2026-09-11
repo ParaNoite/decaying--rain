@@ -2,13 +2,14 @@ class_name PlayerCombatDriver
 extends Node
 
 signal light_combo_ended
+signal firearm_fired(weapon: WeaponDefinition, recoil: Vector2)
 
 @export var combat_definition: PlayerCombatDefinition
 @export var stamina_path: NodePath = ^"../Components/StaminaComponent"
 @export var loadout_path: NodePath = ^"../Components/PlayerLoadoutComponent"
 @export var ray_origin_path: NodePath = ^"../Head/Camera3D"
 @export_flags_3d_physics var melee_hit_collision_mask: int = 69
-@export_flags_3d_physics var firearm_collision_mask: int = 4
+@export_flags_3d_physics var firearm_collision_mask: int = 69
 @export var default_weapon: WeaponDefinition
 
 @onready var stamina: StaminaComponent = get_node(stamina_path)
@@ -21,9 +22,20 @@ var combo_time_remaining: float = 0.0
 var combo_finisher_cooldown_remaining: float = 0.0
 var shove_cooldown_remaining: float = 0.0
 var firearm_spread_multiplier: float = 1.0
+var firearm_fire_rate_multiplier: float = 1.0
+var firearm_recoil_multiplier: float = 1.0
+var firearm_recoil_recovery_multiplier: float = 1.0
+var firearm_viewmodel_recoil_multiplier: float = 1.0
 var primary_attack_exhausted: bool = false
 var heavy_attack_exhausted: bool = false
 var environment_impact_effect_count: int = 0
+var aim_fraction: float = 0.0
+var spread_bloom: float = 0.0
+var shot_cooldown: float = 0.0
+var shots_in_burst: int = 0
+var time_since_shot: float = 0.0
+var motion_spread: float = 1.0
+var _shot_random: RandomNumberGenerator = RandomNumberGenerator.new()
 
 var _event_bus = null
 
@@ -36,6 +48,12 @@ func _ready() -> void:
 
 
 func tick(delta: float) -> void:
+	shot_cooldown = maxf(-delta, shot_cooldown - delta)
+	time_since_shot += delta
+	if is_current_firearm():
+		spread_bloom = move_toward(spread_bloom, 0.0, current_weapon.bloom_recovery_per_second * delta)
+		if time_since_shot > current_weapon.recoil_reset_seconds:
+			shots_in_burst = 0
 	var combo_was_active: bool = combo_time_remaining > 0.0
 	combo_time_remaining = maxf(0.0, combo_time_remaining - delta)
 	combo_finisher_cooldown_remaining = maxf(0.0, combo_finisher_cooldown_remaining - delta)
@@ -48,9 +66,12 @@ func tick(delta: float) -> void:
 
 func begin_primary_attack() -> bool:
 	if is_current_firearm():
-		if loadout == null or loadout.get_magazine_ammo() <= 0:
-			_emit_feedback("EMPTY - RELOAD", &"danger")
+		if shot_cooldown > 0.00001:
 			return false
+		if loadout == null or loadout.get_magazine_ammo() <= 0:
+			_emit_feedback("弹匣已空，请装填", &"danger")
+			return false
+		shot_cooldown = get_effective_fire_interval() + (shot_cooldown if current_weapon.automatic and shots_in_burst > 0 else 0.0)
 		return true
 
 	var combat: PlayerCombatDefinition = _combat()
@@ -186,33 +207,39 @@ func _resolve_firearm_attack(attacker: Node3D) -> bool:
 	if current_weapon == null or loadout == null:
 		return false
 	if not loadout.consume_round():
-		_emit_feedback("EMPTY - RELOAD", &"danger")
+		_emit_feedback("弹匣已空，请装填", &"danger")
 		return false
 
 	var pellet_count: int = maxi(1, current_weapon.pellet_count)
 	var damage_per_pellet: float = current_weapon.base_damage / float(pellet_count)
 	for pellet_index: int in pellet_count:
 		_fire_ray(attacker, damage_per_pellet, pellet_index)
+	shots_in_burst += 1
+	time_since_shot = 0.0
+	spread_bloom = minf(current_weapon.bloom_max_degrees, spread_bloom + current_weapon.bloom_per_shot)
+	var yaw: float = sin(float(shots_in_burst) * 0.65) * current_weapon.recoil_yaw_degrees
+	yaw += _shot_random.randf_range(-0.2, 0.2) * current_weapon.recoil_yaw_degrees
+	firearm_fired.emit(
+		current_weapon,
+		Vector2(current_weapon.recoil_pitch_degrees, yaw) * firearm_recoil_multiplier
+	)
 
 	if _event_bus != null:
 		_event_bus.player_noise_emitted.emit(attacker.global_position, current_weapon.noise_radius, &"firearm")
-	_emit_feedback("%s FIRED" % current_weapon.display_name.to_upper(), &"neutral")
+		_event_bus.player_firearm_shot.emit(current_weapon.fire_audio_cue, attacker.global_position)
 	return true
 
 
-func _fire_ray(attacker: Node3D, damage: float, pellet_index: int) -> void:
+func _fire_ray(attacker: Node3D, damage: float, _pellet_index: int) -> void:
 	if attacker == null or ray_origin == null:
 		return
 
 	var origin: Vector3 = ray_origin.global_position
 	var direction: Vector3 = -ray_origin.global_transform.basis.z.normalized()
-	if current_weapon.spread_degrees > 0.0:
-		var seed_value: int = Time.get_ticks_usec() + pellet_index * 7919
-		var random: RandomNumberGenerator = RandomNumberGenerator.new()
-		random.seed = seed_value
-		var spread: float = deg_to_rad(current_weapon.spread_degrees * firearm_spread_multiplier)
-		direction = direction.rotated(Vector3.UP, random.randf_range(-spread, spread))
-		direction = direction.rotated(ray_origin.global_transform.basis.x, random.randf_range(-spread, spread)).normalized()
+	var spread: float = tan(deg_to_rad(get_current_spread()))
+	var angle: float = _shot_random.randf() * TAU
+	var radius: float = sqrt(_shot_random.randf()) * spread
+	direction = (direction + ray_origin.global_basis.x * cos(angle) * radius + ray_origin.global_basis.y * sin(angle) * radius).normalized()
 
 	var end: Vector3 = origin + direction * current_weapon.effective_range
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, end)
@@ -235,7 +262,9 @@ func _fire_ray(attacker: Node3D, damage: float, pellet_index: int) -> void:
 	var hit_data: DamageEventData = DamageEventData.new()
 	hit_data.attacker_id = attacker.get_instance_id()
 	hit_data.target_id = receiver.get_instance_id()
-	hit_data.amount = damage
+	var distance: float = origin.distance_to(result["position"])
+	var falloff: float = clampf(inverse_lerp(current_weapon.falloff_start, maxf(current_weapon.falloff_start + 0.01, current_weapon.falloff_end), distance), 0.0, 1.0)
+	hit_data.amount = damage * lerpf(1.0, current_weapon.minimum_damage_multiplier, falloff)
 	hit_data.damage_type = &"ballistic"
 	hit_data.source_tags = [&"firearm", current_weapon.weapon_id]
 	hit_data.source_tags.append_array(_get_hit_zone_tags(collider as Node))
@@ -328,6 +357,9 @@ func _on_weapon_changed(weapon: WeaponDefinition) -> void:
 	if combo_time_remaining > 0.0:
 		light_combo_ended.emit()
 	current_weapon = weapon if weapon != null else default_weapon
+	aim_fraction = 0.0
+	spread_bloom = 0.0
+	shots_in_burst = 0
 	combo_index = 0
 	combo_time_remaining = 0.0
 	combo_finisher_cooldown_remaining = 0.0
@@ -345,3 +377,23 @@ func _combat() -> PlayerCombatDefinition:
 	var fallback: PlayerCombatDefinition = PlayerCombatDefinition.new()
 	combat_definition = fallback
 	return fallback
+
+
+func get_current_spread() -> float:
+	if not is_current_firearm():
+		return 0.0
+	return (lerpf(current_weapon.spread_degrees, current_weapon.ads_spread_degrees, aim_fraction) + spread_bloom * lerpf(1.0, 0.25, aim_fraction)) * firearm_spread_multiplier * motion_spread
+
+
+func apply_firearm_modifiers(constraints: Dictionary) -> void:
+	firearm_spread_multiplier = maxf(0.0, float(constraints.get("firearm_spread_multiplier", 1.0)))
+	firearm_fire_rate_multiplier = maxf(0.05, float(constraints.get("firearm_fire_rate_multiplier", 1.0)))
+	firearm_recoil_multiplier = maxf(0.0, float(constraints.get("firearm_recoil_multiplier", 1.0)))
+	firearm_recoil_recovery_multiplier = maxf(0.05, float(constraints.get("firearm_recoil_recovery_multiplier", 1.0)))
+	firearm_viewmodel_recoil_multiplier = maxf(0.0, float(constraints.get("firearm_viewmodel_recoil_multiplier", 1.0)))
+
+
+func get_effective_fire_interval() -> float:
+	if not is_current_firearm():
+		return 0.0
+	return current_weapon.fire_interval_seconds / firearm_fire_rate_multiplier

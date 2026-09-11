@@ -5,10 +5,8 @@
 
 [sub_resource type="Resource" id="ActionTiming_primary"]
 script = ExtResource("2_timing")
-windup_seconds = 0.06
-release_seconds = 0.04
-impact_seconds = 0.02
-recovery_seconds = 0.16
+impact_seconds = 0.01
+recovery_seconds = 0.08
 
 [sub_resource type="Resource" id="ActionTiming_reload"]
 script = ExtResource("2_timing")
@@ -20,7 +18,7 @@ recovery_seconds = 0.34
 [resource]
 script = ExtResource("1_weapon")
 weapon_id = &"pistol"
-display_name = "Pistol"
+display_name = "手枪"
 weapon_kind = 2
 base_damage = 24.0
 stamina_cost = 0.0
@@ -30,5 +28,16 @@ ammo_type = &"light_ammo"
 magazine_size = 8
 reload_timing = SubResource("ActionTiming_reload")
 noise_radius = 28.0
-effective_range = 18.0
-spread_degrees = 0.6
+effective_range = 80.0
+spread_degrees = 1.3
+ads_spread_degrees = 0.12
+bloom_per_shot = 0.16
+bloom_recovery_per_second = 1.8
+recoil_pitch_degrees = 0.85
+recoil_yaw_degrees = 0.22
+recoil_recovery_per_second = 5.0
+recoil_reset_seconds = 0.22
+viewmodel_kick = 0.035
+falloff_start = 18.0
+falloff_end = 45.0
+minimum_damage_multiplier = 0.4

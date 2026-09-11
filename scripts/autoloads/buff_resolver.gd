@@ -213,5 +213,9 @@ func _default_constraints() -> Dictionary:
 		"movement_speed_multiplier": 1.0,
 		"sprint_speed_multiplier": 1.0,
 		"firearm_spread_multiplier": 1.0,
+		"firearm_fire_rate_multiplier": 1.0,
+		"firearm_recoil_multiplier": 1.0,
+		"firearm_recoil_recovery_multiplier": 1.0,
+		"firearm_viewmodel_recoil_multiplier": 1.0,
 		"blocked_action_ids": [],
 	}

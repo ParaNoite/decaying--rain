@@ -84,10 +84,10 @@ func _check_pool_shape(audio: Node) -> void:
 
 func _check_duplicate_id_resolution(audio: Node) -> void:
 	var first: AudioCue = _create_cue(&"test.duplicate", _create_silent_stream(), &"SFX")
-	var duplicate: AudioCue = _create_cue(&"test.duplicate", _create_silent_stream(), &"SFX")
-	duplicate.volume_db = -18.0
+	var duplicate_cue: AudioCue = _create_cue(&"test.duplicate", _create_silent_stream(), &"SFX")
+	duplicate_cue.volume_db = -18.0
 	var catalog: AudioCatalog = AudioCatalog.new()
-	catalog.cues = [first, duplicate]
+	catalog.cues = [first, duplicate_cue]
 	_check(bool(audio.call("set_catalog", catalog)), "duplicate catalog should load with first cue retained")
 	_check(bool(audio.call("play_global_sfx", &"test.duplicate")), "first duplicate cue did not play")
 	var used_first_definition: bool = false

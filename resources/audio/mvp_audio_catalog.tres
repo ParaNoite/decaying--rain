@@ -1,8 +1,120 @@
-[gd_resource type="Resource" script_class="AudioCatalog" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="AudioCatalog" format=3 uid="uid://us80hrfsum4d"]
 
-[ext_resource type="Script" path="res://scripts/resources/audio_catalog.gd" id="1_audio_catalog"]
-[ext_resource type="Script" path="res://scripts/resources/audio_cue.gd" id="2_audio_cue"]
+[ext_resource type="Script" path="res://scripts/resources/audio_catalog.gd" id="1"]
+[ext_resource type="Script" uid="uid://chjtoxdl23ji3" path="res://scripts/resources/audio_cue.gd" id="2"]
+[ext_resource type="AudioStream" uid="uid://10hohghwb0c0" path="res://assets/audio/sfx/walking.wav" id="3_walking"]
+[ext_resource type="AudioStream" uid="uid://b0f6rgn00bh5" path="res://assets/audio/sfx/player.combat.shove.start.wav" id="4_shove"]
+[ext_resource type="AudioStream" uid="uid://c6jytahrthyo8" path="res://assets/audio/sfx/food.eat.mp3" id="5_food"]
+[ext_resource type="AudioStream" uid="uid://cuil6mvbd5orh" path="res://assets/audio/music/rain.outside.ogg" id="6_rain"]
+[ext_resource type="AudioStream" uid="uid://cmfi6umkhvdv5" path="res://assets/audio/sfx/reload.start.mp3" id="7_reload_start"]
+[ext_resource type="AudioStream" uid="uid://cyebjfidq05jq" path="res://assets/audio/sfx/reload.end.mp3" id="8_reload_end"]
+[ext_resource type="AudioStream" uid="uid://cwydw8o3vj4ay" path="res://assets/audio/sfx/weapon.rifle.fire.mp3" id="9_rifle"]
+[ext_resource type="AudioStream" uid="uid://l7s5sust48vy" path="res://assets/audio/sfx/weapon.smg.fire.mp3" id="10_smg"]
+[ext_resource type="AudioStream" uid="uid://bmaq3jjijrq82" path="res://assets/audio/sfx/watch.open.mp3" id="11_watch_open"]
+[ext_resource type="AudioStream" uid="uid://mgrqp27hutvc" path="res://assets/audio/sfx/watch.close.mp3" id="12_watch_close"]
+[ext_resource type="AudioStream" uid="uid://c4ie8vdyqa27x" path="res://assets/audio/sfx/watch.click.valid.mp3" id="13_watch_valid"]
+[ext_resource type="AudioStream" uid="uid://dwns71cgafbug" path="res://assets/audio/sfx/watch.click.invalid.mp3" id="14_watch_invalid"]
+[ext_resource type="AudioStream" uid="uid://bxjn57p83iagg" path="res://assets/audio/sfx/watch.click.generic.mp3" id="15_watch_generic"]
+[ext_resource type="AudioStream" uid="uid://c13pkvlrokbkn" path="res://assets/audio/sfx/combat.hit.01.wav" id="16_hit01"]
+[ext_resource type="AudioStream" uid="uid://bjt1p1reql4de" path="res://assets/audio/sfx/combat.hit.02.wav" id="17_hit02"]
+[ext_resource type="AudioStream" uid="uid://bjtgvjgd4bhxc" path="res://assets/audio/sfx/combat.hit.03.wav" id="18_hit03"]
+
+[sub_resource type="Resource" id="walk"]
+script = ExtResource("2")
+cue_id = &"player.footstep.walk"
+stream = ExtResource("3_walking")
+max_instances = 1
+
+[sub_resource type="Resource" id="sprint"]
+script = ExtResource("2")
+cue_id = &"player.footstep.sprint"
+stream = ExtResource("3_walking")
+max_instances = 1
+
+[sub_resource type="Resource" id="shove"]
+script = ExtResource("2")
+cue_id = &"player.combat.shove"
+stream = ExtResource("4_shove")
+
+[sub_resource type="Resource" id="food"]
+script = ExtResource("2")
+cue_id = &"interaction.food.eat"
+stream = ExtResource("5_food")
+bus_name = &"UI"
+
+[sub_resource type="Resource" id="rain"]
+script = ExtResource("2")
+cue_id = &"environment.rain.loop"
+stream = ExtResource("6_rain")
+bus_name = &"Ambience"
+max_instances = 1
+loop = true
+
+[sub_resource type="Resource" id="reload_start"]
+script = ExtResource("2")
+cue_id = &"player.weapon.reload.start"
+stream = ExtResource("7_reload_start")
+
+[sub_resource type="Resource" id="reload_end"]
+script = ExtResource("2")
+cue_id = &"player.weapon.reload.finish"
+stream = ExtResource("8_reload_end")
+
+[sub_resource type="Resource" id="rifle"]
+script = ExtResource("2")
+cue_id = &"player.weapon.fire.rifle"
+stream = ExtResource("9_rifle")
+
+[sub_resource type="Resource" id="smg"]
+script = ExtResource("2")
+cue_id = &"player.weapon.fire.smg"
+stream = ExtResource("10_smg")
+
+[sub_resource type="Resource" id="watch_open"]
+script = ExtResource("2")
+cue_id = &"ui.watch.open"
+stream = ExtResource("11_watch_open")
+bus_name = &"UI"
+
+[sub_resource type="Resource" id="watch_close"]
+script = ExtResource("2")
+cue_id = &"ui.watch.close"
+stream = ExtResource("12_watch_close")
+bus_name = &"UI"
+
+[sub_resource type="Resource" id="watch_valid"]
+script = ExtResource("2")
+cue_id = &"ui.watch.click.valid"
+stream = ExtResource("13_watch_valid")
+bus_name = &"UI"
+
+[sub_resource type="Resource" id="watch_invalid"]
+script = ExtResource("2")
+cue_id = &"ui.watch.click.invalid"
+stream = ExtResource("14_watch_invalid")
+bus_name = &"UI"
+
+[sub_resource type="Resource" id="watch_generic"]
+script = ExtResource("2")
+cue_id = &"ui.watch.click.generic"
+stream = ExtResource("15_watch_generic")
+bus_name = &"UI"
+
+[sub_resource type="Resource" id="hit01"]
+script = ExtResource("2")
+cue_id = &"combat.hit.01"
+stream = ExtResource("16_hit01")
+
+[sub_resource type="Resource" id="hit02"]
+script = ExtResource("2")
+cue_id = &"combat.hit.02"
+stream = ExtResource("17_hit02")
+
+[sub_resource type="Resource" id="hit03"]
+script = ExtResource("2")
+cue_id = &"combat.hit.03"
+stream = ExtResource("18_hit03")
 
 [resource]
-script = ExtResource("1_audio_catalog")
-cues = Array[ExtResource("2_audio_cue")]([])
+script = ExtResource("1")
+cues = Array[ExtResource("2")]([SubResource("walk"), SubResource("sprint"), SubResource("shove"), SubResource("food"), SubResource("rain"), SubResource("reload_start"), SubResource("reload_end"), SubResource("rifle"), SubResource("smg"), SubResource("watch_open"), SubResource("watch_close"), SubResource("watch_valid"), SubResource("watch_invalid"), SubResource("watch_generic"), SubResource("hit01"), SubResource("hit02"), SubResource("hit03")])

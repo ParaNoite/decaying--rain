@@ -34,6 +34,8 @@ var _buff_resolver: Node
 var _damage_resolver: Node
 var debug_god_mode_enabled: bool = false
 var _held_item_id: StringName = &""
+var _footstep_elapsed: float = 0.0
+var _footstep_audio_active: bool = false
 
 
 func _ready() -> void:
@@ -56,7 +58,9 @@ func _ready() -> void:
 	health.died.connect(_on_died)
 	locomotion_state_machine.state_changed.connect(_on_locomotion_state_changed)
 	combat_state_machine.state_changed.connect(_on_combat_state_changed)
+	combat_state_machine.action_phase_changed.connect(_on_combat_action_phase_changed)
 	combat_driver.light_combo_ended.connect(_on_light_combo_ended)
+	combat_driver.firearm_fired.connect(_on_firearm_fired)
 	interaction_state_machine.state_changed.connect(_on_interaction_state_changed)
 	watch_state_machine.state_changed.connect(_on_watch_state_changed)
 	skill_component.active_skill_charge_started.connect(_on_active_skill_charge_started)
@@ -106,6 +110,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	input_reader.refresh()
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and combat_driver.is_current_firearm():
+		input_reader.wants_primary_attack = false
+		input_reader.primary_attack_buffered = false
 	_sync_survival_statuses()
 	_update_watch_state()
 	_process_quick_slot_input()
@@ -122,8 +129,10 @@ func _physics_process(delta: float) -> void:
 
 	if interaction_state_machine.current_state != PlayerInteractionStateMachine.STATE_ITEM_USE:
 		interaction_state_machine.update(self, input_reader, constraints, delta)
+	_update_firearm_handling(constraints, delta)
 	combat_state_machine.update(self, input_reader, constraints, delta)
 	locomotion_state_machine.physics_update(self, input_reader, constraints, delta)
+	_emit_footstep_if_due(delta)
 	body_visual.update_locomotion(
 		Vector2(velocity.x, velocity.z).length(),
 		locomotion_state_machine.current_state == PlayerLocomotionStateMachine.STATE_SPRINT,
@@ -187,6 +196,7 @@ func try_block_damage(data: DamageEventData) -> bool:
 	_apply_parry_counter(data)
 	play_parry_success_feedback()
 	if _event_bus != null:
+		_event_bus.combat_audio.emit(&"parry", global_position, 1.0)
 		_event_bus.debug_test_notice.emit("Parry success: blocked %.0f damage" % data.amount, &"combat")
 		_event_bus.combat_feedback.emit("PARRY SUCCESS", &"success")
 	return true
@@ -207,6 +217,7 @@ func on_damage_resolved(result: DamageResolutionData) -> void:
 	if result.final_amount > 0.0:
 		_emit_debug_notice("Player hit: -%.0f HP" % result.final_amount, &"combat")
 		if _event_bus != null:
+			_event_bus.combat_audio.emit(&"hurt", global_position, clampf(result.final_amount / 20.0, 0.25, 2.0))
 			_event_bus.combat_feedback.emit("HIT -%.0f" % result.final_amount, &"danger")
 		_call_arms(&"play_hurt", [combat_definition.hurt_timing])
 	if result.event.stagger >= combat_definition.stagger_threshold:
@@ -463,6 +474,8 @@ func _apply_parry_counter(data: DamageEventData) -> void:
 
 
 func _on_died() -> void:
+	camera_rig.reset_recoil()
+	first_person_arms.reset_firearm_recoil()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if _event_bus != null:
 		_event_bus.player_died.emit(&"player_died")
@@ -498,11 +511,11 @@ func _on_combat_state_changed(_previous_state: StringName, current_state: String
 			_emit_debug_notice("Action: heavy attack", &"action")
 			_call_arms(&"play_heavy_attack", [timing])
 		PlayerCombatStateMachine.STATE_FIRE:
-			_emit_debug_notice("Action: firearm fired", &"combat")
-			_call_arms(&"play_attack", [1, timing])
+			_call_arms(&"play_firearm_fire", [timing])
 		PlayerCombatStateMachine.STATE_RELOAD:
-			_emit_debug_notice("Action: reloading", &"combat")
-			_call_arms(&"play_interact", [timing])
+			_call_arms(&"play_firearm_reload", [timing])
+		PlayerCombatStateMachine.STATE_READY, PlayerCombatStateMachine.STATE_DISABLED:
+			_call_arms(&"cancel_firearm_action")
 		PlayerCombatStateMachine.STATE_PARRY:
 			_emit_debug_notice("Action: parry window", &"action")
 			_call_arms(&"play_parry", [timing])
@@ -513,14 +526,59 @@ func _on_combat_state_changed(_previous_state: StringName, current_state: String
 			return
 
 
+func _on_combat_action_phase_changed(action_id: StringName, phase: int) -> void:
+	if _event_bus != null:
+		_event_bus.player_action_audio.emit(action_id, _phase_name(phase), global_position)
+
+
+func _phase_name(phase: int) -> StringName:
+	match phase:
+		ActionTimingDefinition.Phase.WINDUP: return &"windup"
+		ActionTimingDefinition.Phase.RELEASE: return &"release"
+		ActionTimingDefinition.Phase.IMPACT: return &"impact"
+		ActionTimingDefinition.Phase.RECOVERY: return &"recovery"
+		_: return &"complete"
+
+
+func _emit_footstep_if_due(delta: float) -> void:
+	if _event_bus == null or not is_on_floor():
+		_footstep_elapsed = 0.0
+		_stop_footstep_audio()
+		return
+	var state: StringName = locomotion_state_machine.current_state
+	if state not in [PlayerLocomotionStateMachine.STATE_WALK, PlayerLocomotionStateMachine.STATE_SPRINT]:
+		_footstep_elapsed = 0.0
+		_stop_footstep_audio()
+		return
+	var sprinting: bool = state == PlayerLocomotionStateMachine.STATE_SPRINT
+	var cadence: float = 0.34 if sprinting else 0.52
+	_footstep_elapsed += delta
+	if _footstep_elapsed < cadence:
+		return
+	_footstep_elapsed = fmod(_footstep_elapsed, cadence)
+	_footstep_audio_active = true
+	_event_bus.player_footstep.emit(global_position, sprinting)
+
+
+func _stop_footstep_audio() -> void:
+	if not _footstep_audio_active:
+		return
+	_footstep_audio_active = false
+	if _event_bus != null:
+		_event_bus.player_footstep_stopped.emit(global_position)
+
+
 func _on_light_combo_ended() -> void:
 	_call_arms(&"release_light_combo_guard")
 
 
 func _on_interaction_state_changed(_previous_state: StringName, current_state: StringName) -> void:
 	if current_state in [PlayerInteractionStateMachine.STATE_INSTANT_USE, PlayerInteractionStateMachine.STATE_ITEM_USE]:
+		combat_state_machine.interrupt()
 		_emit_debug_notice("Action: interact", &"action")
 		_call_arms(&"play_interact", [combat_definition.interact_timing])
+		if _event_bus != null:
+			_event_bus.interaction_audio.emit(&"start", global_position)
 
 
 func _on_watch_state_changed(active: bool) -> void:
@@ -529,6 +587,8 @@ func _on_watch_state_changed(active: bool) -> void:
 		_call_arms(&"play_watch_raised", [timing])
 	else:
 		_call_arms(&"play_watch_lowered", [timing])
+	if _event_bus != null:
+		_event_bus.ui_audio.emit(&"watch.open" if active else &"watch.close")
 	_emit_debug_notice("Action: watch %s" % ("open" if active else "closed"), &"action")
 
 
@@ -600,3 +660,27 @@ func _merge_constraints(target: Dictionary, incoming: Dictionary) -> void:
 	for key: Variant in incoming.keys():
 		if not boolean_constraints.has(key):
 			target[key] = incoming[key]
+
+
+func _update_firearm_handling(constraints: Dictionary, delta: float) -> void:
+	var weapon: WeaponDefinition = combat_driver.current_weapon
+	var firearm_active: bool = combat_driver.is_current_firearm()
+	var sprinting: bool = input_reader.wants_sprint and input_reader.move_vector != Vector2.ZERO and is_on_floor() and not constraints.get("mobility_blocked", false)
+	constraints["firearm_sprinting"] = sprinting
+	if firearm_active:
+		combat_driver.apply_firearm_modifiers(constraints)
+		camera_rig.recoil_recovery_multiplier = combat_driver.firearm_recoil_recovery_multiplier
+		var aiming: bool = input_reader.wants_aim and not sprinting and not constraints.get("combat_blocked", false) and combat_state_machine.current_state != PlayerCombatStateMachine.STATE_RELOAD
+		combat_driver.aim_fraction = move_toward(combat_driver.aim_fraction, 1.0 if aiming else 0.0, delta / maxf(0.01, weapon.ads_transition_seconds))
+		constraints["movement_speed_multiplier"] = float(constraints.get("movement_speed_multiplier", 1.0)) * lerpf(1.0, weapon.ads_move_multiplier, combat_driver.aim_fraction)
+		combat_driver.motion_spread = weapon.moving_spread_multiplier if Vector2(velocity.x, velocity.z).length() > 0.3 else 1.0
+		if not is_on_floor():
+			combat_driver.motion_spread *= weapon.airborne_spread_multiplier
+	camera_rig.set_firearm(weapon if firearm_active else null)
+	camera_rig.aim_fraction = combat_driver.aim_fraction if firearm_active else 0.0
+	first_person_arms.set_firearm(weapon if firearm_active else null, camera_rig.aim_fraction)
+
+
+func _on_firearm_fired(weapon: WeaponDefinition, recoil: Vector2) -> void:
+	camera_rig.add_firearm_recoil(weapon, recoil)
+	first_person_arms.firearm_impact(combat_driver.firearm_viewmodel_recoil_multiplier, recoil.y)
