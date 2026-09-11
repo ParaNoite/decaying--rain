@@ -12,6 +12,7 @@ const RAIN_AMBIENT_ENERGY: float = 0.28
 const RAIN_SUN_COLOR: Color = Color(0.55, 0.68, 0.78, 1.0)
 const RAIN_SUN_ENERGY: float = 0.35
 const ATMOSPHERE_TRANSITION_SECONDS: float = 0.8
+const MEDIUM_RAIN_AMOUNT: int = 900
 
 @export var auto_start_run: bool = true
 @onready var phase_controller: PhaseController = %PhaseController
@@ -32,6 +33,7 @@ var _player_in_base: bool = false
 
 
 func _ready() -> void:
+	_apply_render_budget()
 	_event_bus = get_node_or_null("/root/EventBus")
 	if _event_bus != null and not _event_bus.phase_changed.is_connected(_on_phase_changed):
 		_event_bus.phase_changed.connect(_on_phase_changed)
@@ -45,6 +47,15 @@ func _ready() -> void:
 
 	if auto_start_run:
 		phase_controller.begin_run()
+
+func _apply_render_budget() -> void:
+	var viewport := get_viewport()
+	viewport.scaling_3d_scale = 1.0
+	sun.shadow_enabled = true
+	sun.directional_shadow_max_distance = 55.0
+	for emitter: GPUParticles3D in rain_particles:
+		emitter.amount = MEDIUM_RAIN_AMOUNT
+		emitter.visibility_aabb = AABB(Vector3(-24, -18, -24), Vector3(48, 26, 48))
 
 
 func _exit_tree() -> void:

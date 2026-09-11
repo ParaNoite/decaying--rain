@@ -21,6 +21,7 @@
 [ext_resource type="Resource" path="res://resources/gameplay/enemies/doorbreaker.tres" id="20_doorbreaker"]
 [ext_resource type="Resource" path="res://resources/gameplay/enemies/armored_scavenger.tres" id="21_armored_scavenger"]
 [ext_resource type="Resource" path="res://resources/gameplay/enemies/wet_gunner.tres" id="22_wet_gunner"]
+[ext_resource type="Script" path="res://scripts/systems/run/render_diagnostics.gd" id="23_render_diag"]
 
 [sub_resource type="Environment" id="Environment_mvp"]
 resource_local_to_scene = true
@@ -92,10 +93,14 @@ run_config = ExtResource("8_run")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1940466975]
 environment = SubResource("Environment_mvp")
 
+[node name="RenderDiagnostics" type="Node" parent="."]
+script = ExtResource("23_render_diag")
+
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=189635010]
 transform = Transform3D(0.819152, -0.40558, 0.40558, 0, 0.707107, 0.707107, -0.573576, -0.579228, 0.579228, 0, 0, 0)
 light_energy = 1.8
 shadow_enabled = true
+directional_shadow_max_distance = 55.0
 
 [node name="RainOutsideBase" type="Node3D" parent="." unique_id=2015129831]
 
