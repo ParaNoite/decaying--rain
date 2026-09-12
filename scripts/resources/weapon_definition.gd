@@ -13,6 +13,10 @@ enum WeaponKind {
 @export var display_name: String = "Weapon"
 @export var weapon_kind: WeaponKind = WeaponKind.MELEE
 
+@export_group("Presentation")
+## Scene root must be FirearmViewmodel, authored at the right-hand grip origin.
+@export var first_person_scene: PackedScene
+
 @export_group("Combat")
 @export_range(0.0, 1000.0, 0.5) var base_damage: float = 10.0
 @export_range(0.0, 100.0, 0.5) var stamina_cost: float = 10.0

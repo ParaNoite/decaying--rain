@@ -28,7 +28,6 @@ SaveManager="*res://scripts/autoloads/save_manager.gd"
 BuffResolver="*res://scripts/autoloads/buff_resolver.gd"
 DamageResolver="*res://scripts/autoloads/damage_resolver.gd"
 AudioDirector="*res://scripts/systems/audio/audio_director.gd"
-MCPRuntimeProbe="*res://addons/godot_mcp/runtime/mcp_runtime_probe.gd"
 
 [display]
 

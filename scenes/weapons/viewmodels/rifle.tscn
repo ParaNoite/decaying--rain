@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://dg0tkjn5s4s3p"]
+
+[ext_resource type="Script" uid="uid://cbduwv0yprelh" path="res://scripts/characters/player/firearm_viewmodel.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://drdb3d1p1udsa" path="res://addons/ShooterEssentials_PolyPack-Starter_alstraInfinite/GLB/Guns/MGP7/MGP7_Rigged.glb" id="2"]
+[ext_resource type="Script" uid="uid://cls475p48tumt" path="res://scripts/characters/player/weapon_animated_part.gd" id="3_part"]
+[ext_resource type="AnimationLibrary" uid="uid://4weq32mvcwp2" path="res://resources/animations/weapons/rifle.tres" id="4_animation"]
+
+[sub_resource type="StandardMaterial3D" id="FlashMaterial"]
+shading_mode = 0
+albedo_color = Color(1, 0.7, 0.2, 1)
+
+[sub_resource type="SphereMesh" id="FlashMesh"]
+radius = 0.018
+height = 0.065
+
+[node name="rifleViewmodel" type="Node3D" unique_id=1440400108 node_paths=PackedStringArray("aim_point", "muzzle", "muzzle_flash", "animation_player", "muzzle_light")]
+transform = Transform3D(1, 0, 0, 0, 0.42261824, 0.9063078, 0, -0.9063078, 0.42261824, 0, 0, 0)
+script = ExtResource("1")
+aim_point = NodePath("Alignment/AimPoint")
+muzzle = NodePath("Alignment/Muzzle")
+muzzle_flash = NodePath("Alignment/Muzzle/Flash")
+animation_player = NodePath("AnimationPlayer")
+muzzle_light = NodePath("Alignment/Muzzle/ShotLight")
+
+[node name="Alignment" type="Node3D" parent="." unique_id=210251556]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, -0.08380667, -0.040339984)
+
+[node name="Model" parent="Alignment" unique_id=2101619844 instance=ExtResource("2")]
+transform = Transform3D(7.54979e-08, 0, -1, 0, 1, 0, 1, 0, 7.54979e-08, 0, 0, 0.03)
+
+[node name="AimPoint" type="Marker3D" parent="Alignment" unique_id=1996363385]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1701834, 0.030307408)
+
+[node name="Muzzle" type="Marker3D" parent="Alignment" unique_id=2111610018]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.10450615, -0.37733755)
+
+[node name="Flash" type="MeshInstance3D" parent="Alignment/Muzzle" unique_id=922296338]
+transform = Transform3D(1, 0, 0, 0, 7.54979e-08, -1, 0, 1, 7.54979e-08, 0, 0, 0)
+visible = false
+material_override = SubResource("FlashMaterial")
+cast_shadow = 0
+mesh = SubResource("FlashMesh")
+
+[node name="ShotLight" type="OmniLight3D" parent="Alignment/Muzzle" unique_id=190316297]
+visible = false
+light_color = Color(1, 0.65, 0.25, 1)
+light_energy = 1.8
+omni_range = 1.2
+
+[node name="MagazineMotion" type="Node3D" parent="Alignment" unique_id=1853947295]
+script = ExtResource("3_part")
+target_path = NodePath("../Model/MGP7_Rigged/Skeleton3D/Bone_Mag/MGP7_Mag_001")
+
+[node name="BoltMotion" type="Node3D" parent="Alignment" unique_id=2049278871]
+script = ExtResource("3_part")
+target_path = NodePath("../Model/MGP7_Rigged/Skeleton3D/Bone_BulletEject/MGP7_BulletEject")
+
+[node name="TriggerMotion" type="Node3D" parent="Alignment" unique_id=1529541154]
+script = ExtResource("3_part")
+target_path = NodePath("../Model/MGP7_Rigged/Skeleton3D/Bone_Trigger/MGP7_Trigger_001")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1388664280]
+callback_mode_process = 2
+libraries/ = ExtResource("4_animation")

@@ -35,7 +35,7 @@ var current_action_timing: ActionTimingDefinition
 var held_item_id: StringName = &""
 var _held_item_proxy: MeshInstance3D
 var _firearm: WeaponDefinition
-var _firearm_visual: Node3D
+var _firearm_visual: FirearmViewmodel
 var _firearm_aim: float = 0.0
 var _firearm_action: StringName = &""
 var _firearm_elapsed: float = 0.0
@@ -44,7 +44,6 @@ var _recoil_pulses: Array[Dictionary] = []
 var _recoil_rotation: Vector2 = Vector2.ZERO
 var _pose_without_recoil: Transform3D
 var _recoil_pose_applied: bool = false
-var _muzzle: MeshInstance3D
 
 
 func _ready() -> void:
@@ -592,43 +591,17 @@ func set_firearm(weapon: WeaponDefinition, aim: float) -> void:
 	tool_proxy.visible = weapon == null and held_item_id == &""
 	if weapon == null:
 		return
-	_firearm_visual = Node3D.new()
-	_firearm_visual.name = "FirearmVisual"
-	_firearm_visual.rotation_degrees.x = -65.0
+	if weapon.first_person_scene == null:
+		push_error("Missing first-person scene for weapon: %s" % weapon.weapon_id)
+		return
+	var instance: Node = weapon.first_person_scene.instantiate()
+	if not instance is FirearmViewmodel:
+		push_error("First-person scene must use FirearmViewmodel: %s" % weapon.resource_path)
+		instance.free()
+		return
+	_firearm_visual = instance as FirearmViewmodel
 	first_person_weapon_socket.add_child(_firearm_visual)
 	_firearm_visual.visible = held_item_id == &""
-	var length: float = 0.28 if weapon.weapon_id == &"pistol" else 0.60
-	if weapon.weapon_id == &"shotgun":
-		length = 0.78
-	var metal: Color = Color(0.085, 0.11, 0.13)
-	_add_gun_part(Vector3(0.095, 0.09, length), Vector3(0, 0.09, -length * 0.35), metal)
-	_add_gun_part(Vector3(0.07, 0.15, 0.085), Vector3(0, -0.025, 0.015), Color(0.17, 0.20, 0.19))
-	_add_gun_part(Vector3(0.045, 0.045, 0.16), Vector3(0, 0.10, -length * 0.85), metal)
-	_add_gun_part(Vector3(0.018, 0.025, 0.025), Vector3(0, 0.15, -length * 0.7), Color(0.8, 0.9, 0.65))
-	for side: float in [-1.0, 1.0]:
-		_add_gun_part(Vector3(0.016, 0.025, 0.025), Vector3(side * 0.03, 0.15, 0.03), metal)
-	if weapon.weapon_id != &"pistol":
-		_add_gun_part(Vector3(0.075, 0.20, 0.10), Vector3(0, -0.04, -0.16), metal)
-		_add_gun_part(Vector3(0.08, 0.09, 0.18), Vector3(0, 0.05, 0.15), metal)
-	_muzzle = _add_gun_part(Vector3(0.07, 0.07, 0.035), Vector3(0, 0.10, -length * 0.85 - 0.10), Color(1.0, 0.7, 0.2))
-	var flash_material: StandardMaterial3D = _muzzle.material_override as StandardMaterial3D
-	flash_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_muzzle.visible = false
-
-
-func _add_gun_part(size: Vector3, offset: Vector3, color: Color) -> MeshInstance3D:
-	var part: MeshInstance3D = MeshInstance3D.new()
-	var mesh: BoxMesh = BoxMesh.new()
-	mesh.size = size
-	part.mesh = mesh
-	part.position = offset
-	var material: StandardMaterial3D = StandardMaterial3D.new()
-	material.albedo_color = color
-	material.roughness = 0.5
-	part.material_override = material
-	part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_firearm_visual.add_child(part)
-	return part
 
 
 func play_firearm_fire(timing: ActionTimingDefinition) -> void:
@@ -648,6 +621,8 @@ func get_visual_recoil_degrees() -> Vector2:
 
 
 func firearm_impact(recoil_multiplier: float = 1.0, horizontal_direction: float = 1.0) -> void:
+	if is_instance_valid(_firearm_visual):
+		_firearm_visual.confirm_shot()
 	if _firearm != null:
 		_recoil_pulses.append({"elapsed": 0.0, "timing": _firearm.primary_timing,
 			"strength": maxf(0.0, recoil_multiplier), "side": signf(horizontal_direction)})
@@ -690,6 +665,8 @@ func _advance_firearm_recoil(delta: float) -> void:
 func cancel_firearm_action() -> void:
 	_firearm_action = &""
 	_firearm_elapsed = 0.0
+	if is_instance_valid(_firearm_visual):
+		_firearm_visual.reset_action()
 
 
 func _update_firearm_pose(delta: float) -> void:
@@ -721,7 +698,7 @@ func _update_firearm_pose(delta: float) -> void:
 		var chain: Basis = right_shoulder.global_basis.inverse() * _firearm_visual.global_basis
 		var desired: Basis = global_basis.orthonormalized().inverse() * camera.global_basis.orthonormalized() * chain.orthonormalized().inverse()
 		right_shoulder.quaternion = right_shoulder.quaternion.slerp(desired.get_rotation_quaternion(), 1.0 - reload_weight)
-		var sight: Vector3 = camera.to_local(_firearm_visual.to_global(Vector3(0, 0.15, 0.03)))
+		var sight: Vector3 = camera.to_local(_firearm_visual.aim_point.global_position)
 		position.x -= sight.x * _firearm_aim
 		position.y -= (sight.y + 0.003) * _firearm_aim
 		position.z += (-0.48 - sight.z) * _firearm_aim
@@ -729,5 +706,6 @@ func _update_firearm_pose(delta: float) -> void:
 	position += Vector3(0.0, _firearm_kick * 0.12, _firearm_kick)
 	rotation += Vector3(deg_to_rad(_recoil_rotation.x), deg_to_rad(_recoil_rotation.y), 0.0)
 	_recoil_pose_applied = true
-	if _muzzle != null:
-		_muzzle.visible = _firearm_action == &"fire" and current_action_timing != null and current_action_timing.phase_at(_firearm_elapsed) == ActionTimingDefinition.Phase.IMPACT
+	if _firearm_visual != null:
+		_firearm_visual.sample_action(_firearm_action, current_action_timing, _firearm_elapsed)
+		_firearm_visual.set_muzzle_flash( _firearm_action == &"fire" and current_action_timing != null and current_action_timing.phase_at(_firearm_elapsed) == ActionTimingDefinition.Phase.IMPACT)

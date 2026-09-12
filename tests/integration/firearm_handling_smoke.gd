@@ -217,7 +217,7 @@ func _ready() -> void:
 	for frame: int in 120:
 		player.first_person_arms._update_firearm_pose(1.0 / 60.0)
 	var arms: PlayerFirstPersonArms = player.first_person_arms
-	var sight: Vector3 = player.camera_rig.camera.to_local(arms._firearm_visual.to_global(Vector3(0, 0.15, 0.03)))
+	var sight: Vector3 = player.camera_rig.camera.to_local(arms._firearm_visual.aim_point.global_position)
 	_check(absf(sight.x) < 0.01 and absf(sight.y) < 0.01 and sight.z < -0.4, "ADS 机械瞄具对齐视线并保持安全视距")
 	_check(arms.right_elbow.rotation.x >= arms.ELBOW_LOWEST_ROTATION_X and arms.left_elbow.rotation.x >= arms.ELBOW_LOWEST_ROTATION_X, "持枪肘部保持向上弯曲")
 	_check(arms._firearm_visual.get_parent() == arms.first_person_weapon_socket, "枪模保持挂在手部插槽")
@@ -225,7 +225,7 @@ func _ready() -> void:
 	arms.firearm_impact(1.0, 1.0)
 	_check(arms._firearm_kick == 0.0, "枪身冲击不会瞬移")
 	arms._update_firearm_pose(driver.current_weapon.primary_timing.impact_seconds)
-	var kicked_sight: Vector3 = player.camera_rig.camera.to_local(arms._firearm_visual.to_global(Vector3(0, 0.15, 0.03)))
+	var kicked_sight: Vector3 = player.camera_rig.camera.to_local(arms._firearm_visual.aim_point.global_position)
 	_check(absf(kicked_sight.y - sight.y) > 0.001 and arms._firearm_kick > 0.0, "ADS 对齐之后仍保留上跳与后蹬")
 	arms._update_firearm_pose(driver.current_weapon.primary_timing.recovery_seconds)
 	_check(arms._firearm_kick == 0.0, "枪身按同一动作合同恢复")

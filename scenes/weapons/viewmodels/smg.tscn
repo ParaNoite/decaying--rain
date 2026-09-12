@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://bnppcf4in0fpy"]
+
+[ext_resource type="Script" uid="uid://cbduwv0yprelh" path="res://scripts/characters/player/firearm_viewmodel.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://drdb3d1p1udsa" path="res://addons/ShooterEssentials_PolyPack-Starter_alstraInfinite/GLB/Guns/MGP7/MGP7_Rigged.glb" id="2"]
+
+[sub_resource type="StandardMaterial3D" id="FlashMaterial"]
+shading_mode = 0
+albedo_color = Color(1, 0.7, 0.2, 1)
+
+[sub_resource type="SphereMesh" id="FlashMesh"]
+radius = 0.018
+height = 0.065
+
+[node name="smgViewmodel" type="Node3D" unique_id=1674144629 node_paths=PackedStringArray("aim_point", "muzzle", "muzzle_flash")]
+transform = Transform3D(1, 0, 0, 0, 0.42261824, 0.9063078, 0, -0.9063078, 0.42261824, 0, 0, 0)
+script = ExtResource("1")
+aim_point = NodePath("Alignment/AimPoint")
+muzzle = NodePath("Alignment/Muzzle")
+muzzle_flash = NodePath("Alignment/Muzzle/Flash")
+
+[node name="Alignment" type="Node3D" parent="." unique_id=1220345894]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+
+[node name="Model" parent="Alignment" unique_id=479590420 instance=ExtResource("2")]
+transform = Transform3D(7.54979e-08, 0, -1, 0, 1, 0, 1, 0, 7.54979e-08, 0, 0, 0.03)
+
+[node name="AimPoint" type="Marker3D" parent="Alignment" unique_id=904377783]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.181, 0.025)
+
+[node name="Muzzle" type="Marker3D" parent="Alignment" unique_id=1274185941]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13, -0.38)
+
+[node name="Flash" type="MeshInstance3D" parent="Alignment/Muzzle" unique_id=970490571]
+transform = Transform3D(1, 0, 0, 0, 7.54979e-08, -1, 0, 1, 7.54979e-08, 0, 0, 0)
+visible = false
+material_override = SubResource("FlashMaterial")
+cast_shadow = 0
+mesh = SubResource("FlashMesh")

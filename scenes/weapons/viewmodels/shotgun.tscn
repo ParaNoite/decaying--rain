@@ -1,0 +1,39 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/characters/player/firearm_viewmodel.gd" id="1"]
+[ext_resource type="PackedScene" path="res://addons/ShooterEssentials_PolyPack-Starter_alstraInfinite/GLB/Guns/MGP7/MGP7_Rigged.glb" id="2"]
+
+[sub_resource type="StandardMaterial3D" id="FlashMaterial"]
+shading_mode = 0
+albedo_color = Color(1, 0.7, 0.2, 1)
+
+[sub_resource type="SphereMesh" id="FlashMesh"]
+radius = 0.018
+height = 0.065
+
+[node name="shotgunViewmodel" type="Node3D" node_paths=PackedStringArray("aim_point", "muzzle", "muzzle_flash")]
+rotation = Vector3(-1.134464, 0, 0)
+script = ExtResource("1")
+aim_point = NodePath("Alignment/AimPoint")
+muzzle = NodePath("Alignment/Muzzle")
+muzzle_flash = NodePath("Alignment/Muzzle/Flash")
+
+[node name="Alignment" type="Node3D" parent="."]
+scale = Vector3(2, 2, 2)
+
+[node name="Model" parent="Alignment" instance=ExtResource("2")]
+position = Vector3(0, 0, 0.03)
+rotation = Vector3(0, -1.5707963, 0)
+
+[node name="AimPoint" type="Marker3D" parent="Alignment"]
+position = Vector3(0, 0.181, 0.025)
+
+[node name="Muzzle" type="Marker3D" parent="Alignment"]
+position = Vector3(0, 0.13, -0.38)
+
+[node name="Flash" type="MeshInstance3D" parent="Alignment/Muzzle"]
+visible = false
+rotation = Vector3(1.5707963, 0, 0)
+cast_shadow = 0
+material_override = SubResource("FlashMaterial")
+mesh = SubResource("FlashMesh")

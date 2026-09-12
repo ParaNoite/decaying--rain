@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bu7pigdfx0oay" path="res://scripts/resources/weapon_definition.gd" id="1_weapon"]
 [ext_resource type="Script" uid="uid://bqw5y0os44anm" path="res://scripts/resources/action_timing_definition.gd" id="2_timing"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/viewmodels/smg.tscn" id="3_viewmodel"]
 
 [sub_resource type="Resource" id="ActionTiming_primary"]
 script = ExtResource("2_timing")
@@ -20,6 +21,7 @@ script = ExtResource("1_weapon")
 weapon_id = &"smg"
 display_name = "冲锋枪"
 weapon_kind = 2
+first_person_scene = ExtResource("3_viewmodel")
 base_damage = 14.0
 stamina_cost = 0.0
 primary_timing = SubResource("ActionTiming_primary")

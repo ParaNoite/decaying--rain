@@ -9,11 +9,18 @@ This repository is a Godot 4.x project for the MVP branch of Decaying Rain.
 - Use `feat/mvp-<milestone>-<short-name>` for implementation branches.
 - Pull requests for playable MVP work target `mvp`.
 - `main` receives milestone-quality snapshots from `mvp` only after review.
-- Before any Git operation, use the global `github-feature-branch-safety` skill and ask for explicit confirmation.
+- Before any Git operation, use the global `github-feature-branch-safety` skill and ask for explicit confirmation. Only use it when it is exposed as an active skill in the current session. If it is unavailable, do not search or read disabled skill directories; stop and notify the user.
+
+## Disabled Skills
+
+- Never search, read, invoke, or otherwise inspect skills under `.agents/skills.disabled/` or any global `skills.disabled*` directory.
+- A disabled skill must not be used as fallback guidance, even when another repository instruction names it.
+- Only skills explicitly exposed as active in the current agent session may be opened or invoked.
+- If a required skill is not active, stop the affected work and notify the user instead of loading its disabled copy.
 
 ## GodotPrompter
 
-When working on Godot-specific code, invoke the relevant GodotPrompter skill before editing:
+When working on Godot-specific code, invoke the relevant GodotPrompter skill before editing only if it is exposed as active in the current session. If the required skill is unavailable, follow the Disabled Skills rules and stop the affected work.
 
 - `godot-project-setup` for project layout, settings, autoloads, and repository hygiene.
 - `scene-organization` for scene tree structure and composition boundaries.

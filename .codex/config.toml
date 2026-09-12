@@ -5,3 +5,6 @@ args = [
     "mcp-remote",
     "http://localhost:19080/mcp",
 ]
+
+[mcp_servers.godot-mcp.tools.execute_editor_script]
+approval_mode = "approve"
