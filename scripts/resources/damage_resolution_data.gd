@@ -12,4 +12,5 @@ var incoming_multiplier: float = 1.0
 var final_amount: float = 0.0
 var blocked: bool = false
 var applied: bool = false
+var killed: bool = false
 var rejection_reason: StringName = &""

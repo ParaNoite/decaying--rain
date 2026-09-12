@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/hud_controller.gd" id="1_hud"]
 [ext_resource type="Script" path="res://scripts/ui/watch_projection_overlay.gd" id="2_projection"]
 [ext_resource type="Script" path="res://scripts/ui/watch_tactical_map.gd" id="3_map"]
-[ext_resource type="Script" path="res://scripts/ui/hit_marker.gd" id="4_hit_marker"]
+[ext_resource type="PackedScene" path="res://scenes/ui/aim_hud.tscn" id="4_aim"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -93,24 +93,6 @@ text = "WEAPON --"
 unique_name_in_owner = true
 layout_mode = 2
 text = "AMMO -- / --"
-
-[node name="PromptLabel" type="Label" parent="Root"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -160.0
-offset_top = -72.0
-offset_right = 160.0
-offset_bottom = -40.0
-grow_horizontal = 2
-grow_vertical = 0
-horizontal_alignment = 1
-text = ""
 
 [node name="StatusDock" type="VBoxContainer" parent="Root"]
 layout_mode = 1
@@ -457,39 +439,8 @@ layout_mode = 2
 disabled = true
 text = "EAT FOOD RATION"
 
-[node name="Crosshair" type="Label" parent="Root"]
+[node name="Crosshair" parent="Root" instance=ExtResource("4_aim")]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -8.0
-offset_top = -12.0
-offset_right = 8.0
-offset_bottom = 12.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "+"
-horizontal_alignment = 1
-
-[node name="HitMarker" type="Control" parent="Root"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("4_hit_marker")
 
 [node name="ItemUseLabel" type="Label" parent="Root"]
 unique_name_in_owner = true

@@ -11,6 +11,7 @@ var _flash: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group("firearm_target")
 	_origin = position
 	_health = HealthComponent.new()
 	_health.max_health = 1000.0

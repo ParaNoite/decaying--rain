@@ -643,6 +643,10 @@ func play_firearm_reload(timing: ActionTimingDefinition) -> void:
 	_firearm_action = &"reload"
 
 
+func get_visual_recoil_degrees() -> Vector2:
+	return _recoil_rotation if _recoil_pose_applied else Vector2.ZERO
+
+
 func firearm_impact(recoil_multiplier: float = 1.0, horizontal_direction: float = 1.0) -> void:
 	if _firearm != null:
 		_recoil_pulses.append({"elapsed": 0.0, "timing": _firearm.primary_timing,

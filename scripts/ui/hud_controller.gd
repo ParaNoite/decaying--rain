@@ -16,7 +16,7 @@ extends CanvasLayer
 @onready var status_row: HFlowContainer = %StatusRow
 @onready var status_empty_label: Label = %StatusEmptyLabel
 @onready var gameplay_top_left: VBoxContainer = $Root/TopLeft
-@onready var prompt_label: Label = %PromptLabel
+@onready var prompt_label: Label = $Root/Crosshair/PromptLabel
 @onready var status_dock: VBoxContainer = $Root/StatusDock
 @onready var debug_notice_stack: VBoxContainer = %DebugNoticeStack
 @onready var quick_slots: VBoxContainer = $Root/QuickSlots
@@ -38,8 +38,8 @@ extends CanvasLayer
 @onready var watch_eat_food_button: Button = %WatchEatFoodButton
 @onready var quick_slot_labels: Array[Label] = [%QuickSlot1, %QuickSlot2, %QuickSlot3, %QuickSlot4]
 @onready var death_label: Label = %DeathLabel
-@onready var crosshair: Label = $Root/Crosshair
-@onready var hit_marker: HitMarker = %HitMarker
+@onready var crosshair: AimHud = $Root/Crosshair
+@onready var hit_marker: HitMarker = $Root/Crosshair/HitMarker
 @onready var item_use_progress: ProgressBar = %ItemUseProgress
 @onready var item_use_label: Label = %ItemUseLabel
 
@@ -61,9 +61,6 @@ var _combat_banner_active: bool = false
 
 
 func _process(_delta: float) -> void:
-	var player: Player3DController = get_tree().get_first_node_in_group("player") as Player3DController
-	if player != null:
-		crosshair.visible = gameplay_top_left.visible and player.combat_driver.aim_fraction < 0.5
 	if watch_panel.visible:
 		watch_location_label.text = "LOCATION // %s" % watch_map.get_region_name()
 
@@ -86,7 +83,6 @@ func _ready() -> void:
 	_event_bus.special_inventory_changed.connect(_on_special_inventory_changed)
 	_event_bus.inventory_selection_changed.connect(_on_inventory_selection_changed)
 	_event_bus.item_use_progress.connect(_on_item_use_progress)
-	_event_bus.interaction_prompt_changed.connect(_on_interaction_prompt_changed)
 	_event_bus.player_perk_selected.connect(_on_player_perk_selected)
 	_event_bus.player_active_skill_changed.connect(_on_player_active_skill_changed)
 	_event_bus.player_action_blocked.connect(_on_player_action_blocked)
@@ -95,7 +91,6 @@ func _ready() -> void:
 	_event_bus.status_list_changed.connect(_on_status_list_changed)
 	_event_bus.debug_test_notice.connect(_on_debug_test_notice)
 	_event_bus.combat_feedback.connect(_on_combat_feedback)
-	_event_bus.damage_resolved.connect(_on_damage_resolved)
 	_event_bus.watch_state_changed.connect(_on_watch_state_changed)
 	_event_bus.wave_timer_changed.connect(_on_wave_timer_changed)
 	_event_bus.player_died.connect(_on_player_died)
@@ -137,8 +132,6 @@ func _exit_tree() -> void:
 		_event_bus.inventory_selection_changed.disconnect(_on_inventory_selection_changed)
 	if _event_bus.item_use_progress.is_connected(_on_item_use_progress):
 		_event_bus.item_use_progress.disconnect(_on_item_use_progress)
-	if _event_bus.interaction_prompt_changed.is_connected(_on_interaction_prompt_changed):
-		_event_bus.interaction_prompt_changed.disconnect(_on_interaction_prompt_changed)
 	if _event_bus.player_perk_selected.is_connected(_on_player_perk_selected):
 		_event_bus.player_perk_selected.disconnect(_on_player_perk_selected)
 	if _event_bus.player_active_skill_changed.is_connected(_on_player_active_skill_changed):
@@ -155,8 +148,6 @@ func _exit_tree() -> void:
 		_event_bus.debug_test_notice.disconnect(_on_debug_test_notice)
 	if _event_bus.combat_feedback.is_connected(_on_combat_feedback):
 		_event_bus.combat_feedback.disconnect(_on_combat_feedback)
-	if _event_bus.damage_resolved.is_connected(_on_damage_resolved):
-		_event_bus.damage_resolved.disconnect(_on_damage_resolved)
 	if _event_bus.watch_state_changed.is_connected(_on_watch_state_changed):
 		_event_bus.watch_state_changed.disconnect(_on_watch_state_changed)
 	if _event_bus.wave_timer_changed.is_connected(_on_wave_timer_changed):
@@ -211,11 +202,6 @@ func _on_world_item_picked_up(item_id: StringName, quantity: int) -> void:
 
 func _on_item_used(item_id: StringName, _quantity: int) -> void:
 	_on_debug_test_notice("Used %s" % _item_display_name(item_id), &"inventory")
-
-
-func _on_interaction_prompt_changed(prompt: String) -> void:
-	prompt_label.text = prompt
-	prompt_label.visible = not watch_panel.visible and not prompt.is_empty()
 
 
 func _on_player_perk_selected(perk_id: StringName) -> void:
@@ -353,13 +339,6 @@ func _on_combat_feedback(message: String, tone: StringName) -> void:
 	_combat_banner_tween.tween_callback(_hide_combat_banner)
 
 
-func _on_damage_resolved(result: DamageResolutionData) -> void:
-	if not _is_player_enemy_melee_resolution(result):
-		return
-	if not watch_panel.visible and gameplay_top_left.visible:
-		hit_marker.show_hit()
-
-
 func _on_watch_state_changed(active: bool) -> void:
 	var timing: ActionTimingDefinition = _get_watch_timing()
 	if active:
@@ -419,24 +398,10 @@ func _set_gameplay_hud_visible(visible: bool) -> void:
 	status_dock.visible = visible
 	debug_notice_stack.visible = visible
 	quick_slots.visible = visible
-	crosshair.visible = visible
-	if not visible:
-		hit_marker.hide()
-	prompt_label.visible = visible and not prompt_label.text.is_empty()
+	crosshair.set_gameplay_visible(visible)
 	item_use_progress.visible = visible and _item_use_active
 	item_use_label.visible = visible and _item_use_active
 	combat_banner_label.visible = visible and _combat_banner_active
-
-
-func _is_player_enemy_melee_resolution(result: DamageResolutionData) -> bool:
-	if result == null or not result.applied or result.blocked or result.event == null:
-		return false
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if player == null or result.event.attacker_id != player.get_instance_id():
-		return false
-	if result.target == null or not result.target.is_in_group("enemy"):
-		return false
-	return result.event.source_tags.has(&"melee") or result.event.source_tags.has(&"shove")
 
 
 func _hide_combat_banner() -> void:

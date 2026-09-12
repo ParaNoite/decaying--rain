@@ -61,6 +61,7 @@ func resolve_damage(data: DamageEventData, target: Node) -> DamageResolutionData
 		)
 		if result.final_amount > 0.0:
 			health.take_damage(result.final_amount)
+			result.killed = not health.is_alive()
 			_apply_hit_statuses(data, target)
 
 	result.applied = true

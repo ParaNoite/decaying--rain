@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="AimHudDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/aim_hud_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+color = Color(0.94, 0.97, 1, 0.9)
+outline_color = Color(0.01, 0.02, 0.03, 0.8)
+dot_radius = 1.5
+line_width = 1.5
+line_length = 6.0
+minimum_gap = 8.0
+interaction_radius = 5.0
+recoil_follow = 0.3
+recoil_limit_pixels = 7.0
+response_seconds = 0.045
+hit_color = Color(1, 1, 1, 1)
+headshot_color = Color(1, 0.76, 0.24, 1)
+kill_color = Color(1, 0.24, 0.2, 1)
+hit_display_seconds = 0.12
+headshot_display_seconds = 0.2
+kill_display_seconds = 0.3

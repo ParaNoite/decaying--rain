@@ -53,6 +53,8 @@ func _ready() -> void:
 	hud.watch_tab_supplies.emit_signal("pressed")
 	_check(hud.watch_supplies_page.visible and not hud.watch_status_page.visible, "supplies tab did not switch pages")
 
+	# 此处只验证食物恢复量，不让帧间自然饥饿衰减影响精确断言。
+	player.hunger.set_process(false)
 	player.hunger.set_hunger(40.0)
 	_check(player.inventory_component.add_item(&"food_ration"), "food ration could not be added")
 	await get_tree().process_frame

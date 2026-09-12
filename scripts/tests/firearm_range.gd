@@ -6,8 +6,7 @@ const TARGET: PackedScene = preload("res://scenes/tests/firearm_target.tscn")
 var player: Player3DController
 var _status: Label
 var _feedback: Label
-var _crosshair: Label
-var _hit_time: float = 0.0
+var _crosshair: AimHud
 
 
 func _ready() -> void:
@@ -57,17 +56,13 @@ func _ready() -> void:
 	player.camera_rig.capture_mouse()
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if player == null or _status == null:
 		return
-	_hit_time = maxf(0.0, _hit_time - delta)
 	var weapon: WeaponDefinition = player.combat_driver.current_weapon
 	var mode: String = "开镜" if player.combat_driver.aim_fraction > 0.5 else "腰射"
 	var state: String = "装填中" if player.combat_state_machine.current_state == &"reload" else mode
 	_status.text = "%s  |  %d / %d  |  %s\n散布 %.2f°  ·  %s" % [weapon.display_name, player.loadout_component.get_magazine_ammo(), player.loadout_component.get_reserve_ammo(), state, player.combat_driver.get_current_spread(), "自动" if weapon.automatic else "半自动"]
-	_crosshair.text = "×" if _hit_time > 0.0 else "+"
-	_crosshair.visible = _hit_time > 0.0 or player.combat_driver.aim_fraction < 0.5
-	_crosshair.modulate = Color(1, 0.7, 0.25) if _hit_time > 0.0 else Color(0.8, 0.95, 1, 0.8)
 	if player.position.y < -5:
 		player.position = Vector3(0, 0.95, 0)
 		player.velocity = Vector3.ZERO
@@ -94,15 +89,12 @@ func _build_ui() -> void:
 	controls.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	controls.position = Vector2(28, -96)
 	canvas.add_child(controls)
-	_crosshair = Label.new()
-	_crosshair.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	_crosshair.position = Vector2(-12, -20)
-	_crosshair.add_theme_font_size_override("font_size", 28)
+	_crosshair = preload("res://scenes/ui/aim_hud.tscn").instantiate() as AimHud
+	_crosshair.player = player
 	canvas.add_child(_crosshair)
 
 
 func _on_hit(message: String) -> void:
-	_hit_time = 0.12
 	_feedback.text = message
 
 
